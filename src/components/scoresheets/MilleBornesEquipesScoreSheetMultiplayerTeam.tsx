@@ -669,7 +669,10 @@ function MilleBornesEquipesGameInterface({
       if (roundDataEvents.length > 0) {
         const updatedData: MilleBornesRoundData = { distances: {}, primes: {} };
         
-        // Process events to get latest data for each player
+        // Process only the FIRST event (most recent) that contains data for each player
+        const processedDistances = new Set<number>();
+        const processedPrimes = new Set<number>();
+        
         roundDataEvents.forEach(event => {
           if (event.event_data) {
             try {
@@ -677,24 +680,31 @@ function MilleBornesEquipesGameInterface({
               console.log('📡 Processing event data:', data);
               
               if (data.roundData) {
-                // Only accept data from players not in my team
+                // Process distances - only accept data from players not in my team AND not already processed
                 Object.entries(data.roundData.distances || {}).forEach(([playerIdStr, distance]) => {
                   const playerId = Number(playerIdStr);
                   const isMyPlayer = myTeamPlayers.find(p => p.id === playerId);
-                  console.log(`🏃 Player ${playerId} (${isMyPlayer ? 'MY' : 'OTHER'} team): ${distance}km`);
                   
-                  if (!isMyPlayer) {
+                  if (!isMyPlayer && !processedDistances.has(playerId)) {
                     updatedData.distances[playerId] = distance as number;
+                    processedDistances.add(playerId);
+                    console.log(`🏃 Player ${playerId} (OTHER team): ${distance}km ✅ LATEST`);
+                  } else if (!isMyPlayer) {
+                    console.log(`🏃 Player ${playerId} (OTHER team): ${distance}km ⏭️ SKIPPED (older)`);
                   }
                 });
                 
+                // Process primes separately
                 Object.entries(data.roundData.primes || {}).forEach(([playerIdStr, primes]) => {
                   const playerId = Number(playerIdStr);
                   const isMyPlayer = myTeamPlayers.find(p => p.id === playerId);
                   
-                  if (!isMyPlayer) {
+                  if (!isMyPlayer && !processedPrimes.has(playerId)) {
                     updatedData.primes[playerId] = primes as MilleBornesPrimes;
-                    console.log(`⭐ Player ${playerId} primes:`, primes);
+                    processedPrimes.add(playerId);
+                    console.log(`⭐ Player ${playerId} primes:`, primes, '✅ LATEST');
+                  } else if (!isMyPlayer) {
+                    console.log(`⭐ Player ${playerId} primes: ⏭️ SKIPPED (older)`);
                   }
                 });
               }
