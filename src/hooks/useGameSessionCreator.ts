@@ -78,11 +78,11 @@ export function useGameSessionCreator(game?: Game | null) {
         name: `Équipe ${i + 1}`,
         players: ['', '']
       }));
-      setState(prev => ({ ...prev, teams: newTeams }));
+      setState(prev => ({ ...prev, teams: newTeams, players: [] }));
     } else {
       // Start with minimum required players for the game
       const newPlayers = Array.from({ length: game.min_players }, () => ({ name: '' }));
-      setState(prev => ({ ...prev, players: newPlayers }));
+      setState(prev => ({ ...prev, players: newPlayers, teams: [] }));
     }
   };
 

@@ -176,4 +176,25 @@ describe('useGameSessionCreator', () => {
     const error = result.current.validateSession(mockGame);
     expect(error).toContain('score cible');
   });
+
+  it('should reset players and teams when switching between game types', () => {
+    const { result, rerender } = renderHook(({ game }) => useGameSessionCreator(game), {
+      initialProps: { game: mockGame }
+    });
+
+    expect(result.current.state.players).toHaveLength(mockGame.min_players);
+    expect(result.current.state.teams).toHaveLength(0);
+
+    // Switch to a team-based game
+    rerender({ game: mockTeamGame });
+
+    expect(result.current.state.teams).toHaveLength(mockTeamGame.min_players / 2);
+    expect(result.current.state.players).toHaveLength(0);
+
+    // Switch back to a non-team game
+    rerender({ game: mockGame });
+
+    expect(result.current.state.players).toHaveLength(mockGame.min_players);
+    expect(result.current.state.teams).toHaveLength(0);
+  });
 });
