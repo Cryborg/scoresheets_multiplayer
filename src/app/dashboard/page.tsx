@@ -149,7 +149,7 @@ export default function DashboardPage() {
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* Mobile quick join - shown on small screens */}
         <div className="sm:hidden mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
             <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Rejoindre une partie</h3>
             <div className="flex items-center gap-2">
               <input 
@@ -225,13 +225,13 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading ? (
               Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow border dark:border-gray-700 animate-pulse"><div className="p-6"><div className="flex items-center justify-between mb-4"><div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded"></div><div className="w-16 h-5 bg-gray-200 dark:bg-gray-600 rounded-full"></div></div><div className="w-32 h-6 bg-gray-200 dark:bg-gray-600 rounded mb-2"></div><div className="w-full h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-24 h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-full h-10 bg-gray-200 dark:bg-gray-600 rounded"></div></div></div>
+                <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border dark:border-gray-700 animate-pulse"><div className="p-6"><div className="flex items-center justify-between mb-4"><div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded"></div><div className="w-16 h-5 bg-gray-200 dark:bg-gray-600 rounded-full"></div></div><div className="w-32 h-6 bg-gray-200 dark:bg-gray-600 rounded mb-2"></div><div className="w-full h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-24 h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-full h-10 bg-gray-200 dark:bg-gray-600 rounded"></div></div></div>
               ))
             ) : (
               filteredGames.map((game) => {
                 console.log(`[DEBUG DashboardPage] Rendering game: ${game.name}, Slug: ${game.slug}, is_implemented: ${game.is_implemented}, Link Href: /games/${game.slug}/new`);
                 return (
-                  <div key={game.id} className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow border dark:border-gray-700 hover:shadow-lg transition-shadow flex flex-col">
+                  <div key={game.id} className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl border dark:border-gray-700 transition-all duration-200 flex flex-col">
                     {game.multiplayer && (
                       <div className="absolute top-0 left-0 transform -translate-x-1/4 translate-y-4 -rotate-45 bg-yellow-400 text-black text-xs font-bold px-8 py-1 shadow-lg">
                         Multi
