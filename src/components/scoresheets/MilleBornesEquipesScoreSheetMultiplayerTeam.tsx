@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Car, Award } from 'lucide-react';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import RankingSidebar from '@/components/layout/RankingSidebar';
@@ -417,6 +417,9 @@ function MilleBornesEquipesGameInterface({
     primes: {}
   });
 
+  // Debounce timeout for broadcasting changes
+  const broadcastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Variant synchronization: Check session events for host's choice
   const [variantSelected, setVariantSelected] = useState(false);
   
@@ -574,14 +577,28 @@ function MilleBornesEquipesGameInterface({
     }
   }, [session, myTeamPlayers, roundData]);
 
+  // Debounced broadcast function
+  const debouncedBroadcast = useCallback(() => {
+    // Clear any existing timeout
+    if (broadcastTimeoutRef.current) {
+      clearTimeout(broadcastTimeoutRef.current);
+    }
+    
+    // Set new timeout with shorter delay for better responsiveness
+    broadcastTimeoutRef.current = setTimeout(() => {
+      broadcastRoundData();
+      broadcastTimeoutRef.current = null;
+    }, 50); // Reduced from 100ms to 50ms
+  }, [broadcastRoundData]);
+
   const updatePlayerDistance = useCallback((playerId: number, distance: number) => {
     setRoundData(prev => ({
       ...prev,
       distances: { ...prev.distances, [playerId]: distance }
     }));
-    // Broadcast changes to other teams with a small delay
-    setTimeout(broadcastRoundData, 100);
-  }, [broadcastRoundData]);
+    // Use debounced broadcast
+    debouncedBroadcast();
+  }, [debouncedBroadcast]);
 
   const updatePlayerPrime = useCallback((playerId: number, primeKey: keyof MilleBornesPrimes, value: boolean) => {
     setRoundData(prev => ({
@@ -594,13 +611,28 @@ function MilleBornesEquipesGameInterface({
         }
       }
     }));
-    // Broadcast changes to other teams with a small delay
-    setTimeout(broadcastRoundData, 100);
-  }, [broadcastRoundData]);
+    // Use debounced broadcast
+    debouncedBroadcast();
+  }, [debouncedBroadcast]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (broadcastTimeoutRef.current) {
+        clearTimeout(broadcastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmitRound = useCallback(async () => {
     if (!session || isSubmitting || !myTeamPlayers.length) return;
+
+    // Force immediate broadcast of current state before submitting
+    if (broadcastTimeoutRef.current) {
+      clearTimeout(broadcastTimeoutRef.current);
+      broadcastTimeoutRef.current = null;
+    }
+    await broadcastRoundData();
 
     setIsSubmitting(true);
     try {
