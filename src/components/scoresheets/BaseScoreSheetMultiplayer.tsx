@@ -32,21 +32,21 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
   rankingComponent 
 }: BaseScoreSheetProps<T>) {
   
-  const gameState = useMultiplayerGame<T>({ sessionId });
+  const gameState = useMultiplayerGame<T>({ sessionId, gameSlug });
   
   const {
     session,
     error,
-    isConnected,
     connectionStatus,
     playerName,
     setPlayerName,
+    player2Name,
+    setPlayer2Name,
     joiningSession,
     handleJoinSession,
     currentUserId,
     canStartGame,
     canJoinSession,
-    isHost,
     handleStartGame,
     handleLeaveSession,
     goToDashboard
@@ -68,13 +68,17 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
     );
   }
 
-  // Join session state (no session but can join)
-  if (!session && canJoinSession) {
+  // Join session state (user can join but isn't in session yet)
+  if (canJoinSession && session) {
     return (
       <JoinSessionForm
+        sessionName={session.session_name || 'Partie en cours'}
         playerName={playerName}
-        setPlayerName={setPlayerName}
+        onPlayerNameChange={setPlayerName}
+        player2Name={player2Name}
+        onPlayer2NameChange={setPlayer2Name}
         onJoin={handleJoinSession}
+        onCancel={goToDashboard}
         isJoining={joiningSession}
         gameSlug={gameSlug}
       />
@@ -99,7 +103,7 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
         currentUserId={currentUserId}
         canStartGame={canStartGame}
         onStartGame={handleStartGame}
-        onLeaveSession={handleLeaveSession}
+        onBack={handleLeaveSession}
       />
     );
   }
@@ -128,11 +132,11 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
       >
         {/* Status Bar */}
         <StatusBar 
-          isConnected={isConnected}
           connectionStatus={connectionStatus}
+          playersCount={session.players?.length || 0}
+          isEditing={false}
           lastUpdate={gameState.lastUpdate}
-          currentRound={session.current_round || 0}
-          totalPlayers={session.players?.length || 0}
+          gameStatus={session.status || 'active'}
         />
 
         {/* Game-specific content wrapped in error boundary */}

@@ -70,7 +70,9 @@ export default function GameSessionForm({
       <GameSetupCard
         title="Joueurs"
         description={game?.team_based 
-          ? `Configuration des équipes (${game.min_players} joueurs requis)`
+          ? game.slug === 'mille-bornes-equipes'
+            ? 'Créez votre équipe (2 joueurs). La deuxième équipe rejoindra via le salon.'
+            : `Configuration des équipes (${game.min_players} joueurs requis)`
           : `Ajoutez entre ${game?.min_players || 2} et ${game?.max_players || 8} joueurs`
         }
         icon={Users}

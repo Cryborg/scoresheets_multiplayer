@@ -482,6 +482,37 @@ export function generateSessionCode(): string {
   return result;
 }
 
+// Enhanced function to generate unique session codes with collision detection
+export async function generateUniqueSessionCode(): Promise<string> {
+  let attempts = 0;
+  const maxAttempts = 5;
+  
+  while (attempts < maxAttempts) {
+    const code = generateSessionCode();
+    
+    try {
+      // Check if code already exists
+      const existing = await tursoClient.execute({
+        sql: 'SELECT id FROM game_sessions WHERE session_code = ?',
+        args: [code]
+      });
+      
+      if (existing.rows.length === 0) {
+        return code;
+      }
+      
+      attempts++;
+    } catch (error) {
+      console.error('Error checking session code uniqueness:', error);
+      // Fall back to basic generation on database error
+      return generateSessionCode();
+    }
+  }
+  
+  // If we've exhausted attempts, fall back to timestamp-based code to ensure uniqueness
+  return `${generateSessionCode().slice(0, 3)}${Date.now().toString().slice(-3)}`;
+}
+
 // Export client and legacy wrapper
 export { tursoClient };
 export const db = tursoClient;

@@ -9,27 +9,10 @@ import GameCard from '@/components/layout/GameCard';
 import RankingSidebar from '@/components/layout/RankingSidebar';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useRealtimeSession } from '@/hooks/useRealtimeSession';
+import { GameSessionWithRounds, Player } from '@/types/multiplayer';
 
-interface Player {
-  id: number;
-  player_name: string;
-  position: number;
-  is_connected: number;
-  is_ready: number;
-  user_id?: number;
-  total_score?: number;
-}
-
-interface GameSession {
-  id: number;
-  session_name: string;
-  session_code: string;
-  status: 'waiting' | 'active' | 'paused' | 'completed';
-  game_name: string;
-  host_user_id: number;
-  current_round: number;
-  score_target?: number;
-  players: Player[];
+// Extension spécifique pour Tarot avec details typés
+interface TarotGameSession extends GameSessionWithRounds {
   rounds: Array<{
     round_number: number;
     scores: { [playerId: number]: number };
@@ -71,7 +54,7 @@ const OUDLERS_POINTS = [56, 51, 46, 36]; // Points nécessaires selon nombre d'o
 
 export default function TarotScoreSheetMultiplayer({ sessionId }: { sessionId: string }) {
   const router = useRouter();
-  const { session, events, isConnected, error, addRound } = useRealtimeSession<GameSession>({
+  const { session, events, isConnected, error, addRound } = useRealtimeSession<TarotGameSession>({
     sessionId,
     gameSlug: 'tarot'
   });
@@ -198,7 +181,7 @@ export default function TarotScoreSheetMultiplayer({ sessionId }: { sessionId: s
           <div className="text-center">
             <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
             <button 
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => router.push('/dashboard')}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               Retour au dashboard

@@ -1,8 +1,10 @@
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import { LogOut } from 'lucide-react';
 import GameCard from '@/components/layout/GameCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import PlayerInput from '@/components/PlayerInput';
 
 interface LoadingStateProps {
   message?: string;
@@ -70,6 +72,9 @@ interface JoinSessionFormProps {
   onJoin: () => void;
   onCancel: () => void;
   isJoining: boolean;
+  gameSlug?: string;
+  player2Name?: string;
+  onPlayer2NameChange?: (name: string) => void;
 }
 
 export function JoinSessionForm({ 
@@ -78,29 +83,60 @@ export function JoinSessionForm({
   onPlayerNameChange, 
   onJoin, 
   onCancel, 
-  isJoining 
+  isJoining,
+  gameSlug,
+  player2Name = '',
+  onPlayer2NameChange
 }: JoinSessionFormProps) {
+  const [playerSuggestions, setPlayerSuggestions] = useState<string[]>([]);
+  const isTeamGame = gameSlug === 'mille-bornes-equipes';
+  const canJoin = playerName.trim() && (!isTeamGame || (player2Name && player2Name.trim()));
+
+  // Load player suggestions from API
+  useEffect(() => {
+    async function loadSuggestions() {
+      try {
+        const response = await fetch('/api/players/suggestions', {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setPlayerSuggestions(data.players || []);
+        }
+      } catch {
+        // Silently fail, suggestions are optional
+      }
+    }
+    loadSuggestions();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
       <GameCard title="Rejoindre la partie">
         <div className="text-center">
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Entrez votre nom pour rejoindre <strong>{sessionName}</strong>
+            {isTeamGame 
+              ? `Entrez les noms de votre équipe pour rejoindre `
+              : `Entrez votre nom pour rejoindre `
+            }
+            <strong>{sessionName}</strong>
           </p>
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Votre nom"
+          <div className="space-y-4 mb-4">
+            <PlayerInput
+              placeholder={isTeamGame ? "Joueur 1" : "Votre nom"}
               value={playerName}
-              onChange={(e) => onPlayerNameChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              disabled={isJoining}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && playerName.trim()) {
-                  onJoin();
-                }
-              }}
+              onChange={onPlayerNameChange}
+              suggestions={playerSuggestions}
+              autoFocus
             />
+            {isTeamGame && onPlayer2NameChange && (
+              <PlayerInput
+                placeholder="Joueur 2"
+                value={player2Name}
+                onChange={onPlayer2NameChange}
+                suggestions={playerSuggestions}
+              />
+            )}
           </div>
           <div className="flex gap-2">
             <button
@@ -112,7 +148,7 @@ export function JoinSessionForm({
             </button>
             <button
               onClick={onJoin}
-              disabled={!playerName.trim() || isJoining}
+              disabled={!canJoin || isJoining}
               className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
             >
               {isJoining ? 'Connexion...' : 'Rejoindre'}

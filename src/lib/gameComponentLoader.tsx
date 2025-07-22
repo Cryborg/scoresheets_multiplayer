@@ -31,7 +31,7 @@ const specificComponents: Record<string, ComponentType<ScoreSheetProps>> = {
   'mille-bornes': dynamic(() => import('@/components/scoresheets/MilleBornesScoreSheetMultiplayer'), {
     loading: LoadingComponent
   }),
-  'mille-bornes-equipes': dynamic(() => import('@/components/scoresheets/MilleBornesEquipesScoreSheetMultiplayer'), {
+  'mille-bornes-equipes': dynamic(() => import('@/components/scoresheets/MilleBornesEquipesScoreSheetMultiplayerTeam'), {
     loading: LoadingComponent
   }),
 };

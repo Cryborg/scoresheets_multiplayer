@@ -9,11 +9,13 @@ import { notify } from '@/lib/toast';
 
 interface UseMultiplayerGameProps {
   sessionId: string;
+  gameSlug?: string;
 }
 
-export function useMultiplayerGame<T extends GameSession>({ sessionId }: UseMultiplayerGameProps) {
+export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug }: UseMultiplayerGameProps) {
   const router = useRouter();
   const [playerName, setPlayerName] = useState('');
+  const [player2Name, setPlayer2Name] = useState('');
   const [joiningSession, setJoiningSession] = useState(false);
 
   // Use realtime session hook
@@ -28,6 +30,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId }: UseMult
     addRound
   } = useRealtimeSession<T>({
     sessionId,
+    gameSlug,
     onError: useCallback(() => {
       // Silent error handling
     }, [])
@@ -35,6 +38,11 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId }: UseMult
 
   const session = realtimeSession;
   const permissions = useGamePermissions(currentUserId);
+  
+  // Calculate permissions with session context
+  const canJoinSession = permissions.canJoinSession(session);
+  const canStartGame = permissions.canStartGame(session);
+  const isHost = session ? permissions.isHost(session.host_user_id, currentUserId) : false;
 
   // Handle joining the session
   const handleJoinSession = async () => {
@@ -49,7 +57,8 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId }: UseMult
         },
         credentials: 'include',
         body: JSON.stringify({
-          playerName: playerName.trim()
+          playerName: playerName.trim(),
+          player2Name: player2Name.trim() || undefined
         }),
       });
 
@@ -142,11 +151,15 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId }: UseMult
     connectionStatus,
     
     // Permissions
-    ...permissions,
+    canJoinSession,
+    canStartGame,
+    isHost,
     
     // Join functionality
     playerName,
     setPlayerName,
+    player2Name,
+    setPlayer2Name,
     joiningSession,
     handleJoinSession,
     

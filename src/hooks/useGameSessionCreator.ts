@@ -73,12 +73,22 @@ export function useGameSessionCreator(game?: Game | null) {
 
   const initializePlayers = (game: Game) => {
     if (game.team_based) {
-      const teamCount = game.min_players / 2;
-      const newTeams = Array.from({ length: teamCount }, (_, i) => ({
-        name: `Équipe ${i + 1}`,
-        players: ['', '']
-      }));
-      setState(prev => ({ ...prev, teams: newTeams, players: [] }));
+      // Pour Mille Bornes Équipes : commencer avec juste la première équipe
+      // La deuxième équipe sera créée via le salon
+      if (game.slug === 'mille-bornes-equipes') {
+        const newTeams = [
+          { name: 'Équipe 1', players: ['', ''] }
+        ];
+        setState(prev => ({ ...prev, teams: newTeams, players: [] }));
+      } else {
+        // Mode équipe standard : toutes les équipes
+        const teamCount = game.min_players / 2;
+        const newTeams = Array.from({ length: teamCount }, (_, i) => ({
+          name: `Équipe ${i + 1}`,
+          players: ['', '']
+        }));
+        setState(prev => ({ ...prev, teams: newTeams, players: [] }));
+      }
     } else {
       // Start with minimum required players for the game
       const newPlayers = Array.from({ length: game.min_players }, () => ({ name: '' }));
@@ -137,9 +147,18 @@ export function useGameSessionCreator(game?: Game | null) {
       ? state.teams.flatMap(team => team.players).filter(p => p.trim())
       : state.players.map(p => p.name).filter(p => p.trim());
     
+    // Pour les jeux d'équipes multiplayer, permettre de créer avec une équipe complète (2 joueurs minimum)
+    // L'autre équipe sera ajoutée via le salon
+    const minPlayersRequired = game?.team_based && game?.slug === 'mille-bornes-equipes'
+      ? 2  // Permettre de créer avec juste la première équipe
+      : game?.min_players || 2;
+    
     // Enforce minimum players requirement
-    if (game && validPlayers.length < game.min_players) {
-      return `Il faut au moins ${game.min_players} joueurs pour créer une partie de ${game.name}`;
+    if (game && validPlayers.length < minPlayersRequired) {
+      const message = game?.team_based && game?.slug === 'mille-bornes-equipes'
+        ? 'Il faut au moins 2 joueurs pour créer la première équipe'
+        : `Il faut au moins ${minPlayersRequired} joueurs pour créer une partie de ${game.name}`;
+      return message;
     }
 
     // Enforce max_players limit

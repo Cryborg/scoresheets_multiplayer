@@ -9,14 +9,14 @@ export async function POST(
   try {
     const { sessionId } = await params;
     const body = await request.json();
-    const { playerName } = body;
+    const { playerName, player2Name } = body;
 
     if (!playerName || !playerName.trim()) {
       return NextResponse.json({ error: 'Nom du joueur requis' }, { status: 400 });
     }
 
     // Get user ID if authenticated
-    const userId = getAuthenticatedUserId(request);
+    let userId = getAuthenticatedUserId(request);
 
     // Check if session exists and is joinable
     const sessionResult = await tursoClient.execute({
@@ -24,6 +24,8 @@ export async function POST(
         SELECT 
           gs.*,
           g.max_players,
+          g.slug as game_slug,
+          g.team_based,
           (SELECT COUNT(*) FROM players WHERE session_id = gs.id) as current_players
         FROM game_sessions gs
         JOIN games g ON gs.game_id = g.id
@@ -43,14 +45,15 @@ export async function POST(
       return NextResponse.json({ error: 'La partie est complète' }, { status: 400 });
     }
 
-    // Check if player name already exists in session
+    // Check if player names already exist in session
     const existingPlayerResult = await tursoClient.execute({
-      sql: 'SELECT id FROM players WHERE session_id = ? AND player_name = ?',
-      args: [sessionId, playerName.trim()]
+      sql: 'SELECT player_name FROM players WHERE session_id = ? AND player_name IN (?, ?)',
+      args: [sessionId, playerName.trim(), player2Name?.trim() || '']
     });
 
     if (existingPlayerResult.rows.length > 0) {
-      return NextResponse.json({ error: 'Ce nom est déjà pris dans cette partie' }, { status: 400 });
+      const takenNames = existingPlayerResult.rows.map(row => row.player_name).join(', ');
+      return NextResponse.json({ error: `Ces noms sont déjà pris dans cette partie: ${takenNames}` }, { status: 400 });
     }
 
     // Get next position
@@ -61,19 +64,74 @@ export async function POST(
 
     const nextPosition = Number(positionResult.rows[0].next_position);
 
-    // Add player to session
-    const insertResult = await tursoClient.execute({
-      sql: `
-        INSERT INTO players (session_id, user_id, player_name, position, is_ready, is_connected, last_seen)
-        VALUES (?, ?, ?, ?, 0, 1, CURRENT_TIMESTAMP)
-      `,
-      args: [sessionId, userId, playerName.trim(), nextPosition]
-    });
+    let teamId = null;
+    
+    // Special handling for Mille Bornes Équipes
+    if (session.game_slug === 'mille-bornes-equipes' && session.team_based) {
+      // Check if we need to create a second team
+      const teamsResult = await tursoClient.execute({
+        sql: 'SELECT COUNT(*) as team_count FROM teams WHERE session_id = ?',
+        args: [sessionId]
+      });
+      
+      const teamCount = Number(teamsResult.rows[0].team_count);
+      
+      if (teamCount === 1) {
+        // Create the second team (Équipe 2)
+        const teamResult = await tursoClient.execute({
+          sql: 'INSERT INTO teams (session_id, team_name) VALUES (?, ?)',
+          args: [sessionId, 'Équipe 2']
+        });
+        
+        teamId = typeof teamResult.lastInsertRowid === 'bigint' 
+          ? Number(teamResult.lastInsertRowid) 
+          : teamResult.lastInsertRowid;
+      } else if (teamCount >= 2) {
+        // Get the second team ID
+        const secondTeamResult = await tursoClient.execute({
+          sql: 'SELECT id FROM teams WHERE session_id = ? ORDER BY id LIMIT 1 OFFSET 1',
+          args: [sessionId]
+        });
+        
+        if (secondTeamResult.rows.length > 0) {
+          teamId = Number(secondTeamResult.rows[0].id);
+        }
+      }
+    }
+
+    // For Mille Bornes Équipes, add two players if player2Name is provided
+    const playersToAdd = [{ name: playerName.trim(), position: nextPosition }];
+    if (session.game_slug === 'mille-bornes-equipes' && player2Name?.trim()) {
+      playersToAdd.push({ name: player2Name.trim(), position: nextPosition + 1 });
+    }
+
+    const insertedPlayers = [];
+    let playersAdded = 0;
+
+    for (const player of playersToAdd) {
+      const insertResult = await tursoClient.execute({
+        sql: `
+          INSERT INTO players (session_id, user_id, player_name, position, team_id, is_ready, is_connected, last_seen)
+          VALUES (?, ?, ?, ?, ?, 0, 1, CURRENT_TIMESTAMP)
+        `,
+        args: [sessionId, userId, player.name, player.position, teamId]
+      });
+
+      const playerId = typeof insertResult.lastInsertRowid === 'bigint' 
+        ? Number(insertResult.lastInsertRowid) 
+        : insertResult.lastInsertRowid;
+
+      insertedPlayers.push({ playerId, name: player.name, position: player.position });
+      playersAdded++;
+
+      // Only the first player gets linked to the user_id for authentication
+      userId = null; // Subsequent players won't be linked to user account
+    }
 
     // Update current_players count
     await tursoClient.execute({
-      sql: 'UPDATE game_sessions SET current_players = current_players + 1 WHERE id = ?',
-      args: [sessionId]
+      sql: 'UPDATE game_sessions SET current_players = current_players + ? WHERE id = ?',
+      args: [playersAdded, sessionId]
     });
 
     // Add join event
@@ -84,23 +142,17 @@ export async function POST(
       `,
       args: [
         sessionId,
-        userId,
+        getAuthenticatedUserId(request), // Use original userId for the event
         JSON.stringify({ 
-          playerName: playerName.trim(),
-          position: nextPosition
+          players: insertedPlayers,
+          teamName: session.game_slug === 'mille-bornes-equipes' ? 'Équipe 2' : undefined
         })
       ]
     });
 
-    // Convert BigInt to number for JSON serialization
-    const playerId = typeof insertResult.lastInsertRowid === 'bigint' 
-      ? Number(insertResult.lastInsertRowid) 
-      : insertResult.lastInsertRowid;
-
     return NextResponse.json({ 
       success: true,
-      playerId,
-      position: nextPosition
+      players: insertedPlayers
     });
 
   } catch (error) {

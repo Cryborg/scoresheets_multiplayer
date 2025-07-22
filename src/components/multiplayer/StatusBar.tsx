@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import { Users, Wifi, WifiOff, Clock, Trophy } from 'lucide-react';
 
 interface StatusBarProps {
@@ -12,40 +12,64 @@ interface StatusBarProps {
 }
 
 // Memoized status bar component to prevent flickering
-export const StatusBar = memo(({ 
+export const StatusBar = memo(function StatusBar({ 
   connectionStatus, 
   playersCount, 
   isEditing, 
   lastUpdate,
   gameStatus 
-}: StatusBarProps) => {
+}: StatusBarProps) {
+  const [stableStatus, setStableStatus] = useState(connectionStatus);
+  const [hasBeenConnected, setHasBeenConnected] = useState(false);
+
+  // Debounce connection status changes to prevent blinking
+  useEffect(() => {
+    // Mark that we've been connected at least once
+    if (connectionStatus === 'connected') {
+      setHasBeenConnected(true);
+    }
+
+    // For the first connection, update immediately
+    if (!hasBeenConnected && connectionStatus === 'connected') {
+      setStableStatus(connectionStatus);
+      return;
+    }
+
+    // For subsequent changes, debounce to prevent blinking
+    const timer = setTimeout(() => {
+      setStableStatus(connectionStatus);
+    }, hasBeenConnected ? 1000 : 100); // Longer delay after first connection
+
+    return () => clearTimeout(timer);
+  }, [connectionStatus, hasBeenConnected]);
+
   // Memoize the last update time string to avoid constant re-renders
   const lastUpdateDisplay = useMemo(() => {
     if (!lastUpdate) return 'En attente...';
     return `MAJ: ${lastUpdate.toLocaleTimeString()}`;
-  }, [lastUpdate ? Math.floor(lastUpdate.getTime() / 1000) : null]); // Update only every second
+  }, [lastUpdate]);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            {connectionStatus === 'connected' ? (
+            {stableStatus === 'connected' ? (
               <Wifi className="w-5 h-5 text-green-500" />
-            ) : connectionStatus === 'connecting' ? (
+            ) : stableStatus === 'connecting' ? (
               <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
             ) : (
               <WifiOff className="w-5 h-5 text-red-500" />
             )}
             <span className={`text-sm font-medium ${
-              connectionStatus === 'connected' ? 'text-green-600 dark:text-green-400' : 
-              connectionStatus === 'connecting' ? 'text-blue-600 dark:text-blue-400' :
+              stableStatus === 'connected' ? 'text-green-600 dark:text-green-400' : 
+              stableStatus === 'connecting' ? 'text-blue-600 dark:text-blue-400' :
               'text-red-600 dark:text-red-400'
             }`}>
-              {connectionStatus === 'connected' ? 'Connecté' :
-               connectionStatus === 'connecting' ? 'Connexion...' :
-               connectionStatus === 'error' ? 'Reconnexion...' : 
-               connectionStatus}
+              {stableStatus === 'connected' ? 'Connecté' :
+               stableStatus === 'connecting' ? 'Connexion...' :
+               stableStatus === 'error' ? 'Reconnexion...' : 
+               stableStatus}
             </span>
           </div>
           

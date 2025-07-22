@@ -8,28 +8,10 @@ import GameLayout from '@/components/layout/GameLayout';
 import GameCard from '@/components/layout/GameCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useRealtimeSession } from '@/hooks/useRealtimeSession';
+import { GameSessionWithRounds, Player } from '@/types/multiplayer';
 
-interface Player {
-  id: number;
-  player_name: string;
-  position: number;
-  is_connected: number;
-  is_ready: number;
-  user_id?: number;
-  total_score?: number;
-  team_id?: number;
-}
-
-interface GameSession {
-  id: number;
-  session_name: string;
-  session_code: string;
-  status: 'waiting' | 'active' | 'paused' | 'completed';
-  game_name: string;
-  host_user_id: number;
-  current_round: number;
-  score_target?: number;
-  players: Player[];
+// Extension spécifique pour Bridge avec details typés
+interface BridgeGameSession extends GameSessionWithRounds {
   rounds: Array<{
     round_number: number;
     scores: { [playerId: number]: number };
@@ -73,7 +55,7 @@ const POSITIONS = ['Nord', 'Est', 'Sud', 'Ouest'];
 
 export default function BridgeScoreSheetMultiplayer({ sessionId }: { sessionId: string }) {
   const router = useRouter();
-  const { session, events, isConnected, error, addRound } = useRealtimeSession<GameSession>({
+  const { session, events, isConnected, error, addRound } = useRealtimeSession<BridgeGameSession>({
     sessionId,
     gameSlug: 'bridge'
   });
@@ -257,7 +239,7 @@ export default function BridgeScoreSheetMultiplayer({ sessionId }: { sessionId: 
           <div className="text-center">
             <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
             <button 
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => router.push('/dashboard')}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               Retour au dashboard

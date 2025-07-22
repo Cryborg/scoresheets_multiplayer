@@ -3,25 +3,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Copy, Share2, CheckCircle } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { authenticatedFetch } from '@/lib/authClient';
 import { useGameSessionCreator, Game } from '@/hooks/useGameSessionCreator';
 import GameSessionForm from '@/components/GameSessionForm';
 import AuthGuard from '@/components/AuthGuard';
 
 export default function NewGamePage() {
-  console.log('[DEBUG NewGamePage] Component mounted.');
   const params = useParams();
   const slug = params.slug as string;
-  
-  console.log('[DEBUG NewGamePage] Slug:', slug);
-  console.log('[DEBUG NewGamePage] Full params:', params);
   const router = useRouter();
   
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sessionCreated, setSessionCreated] = useState<{ sessionId: string; sessionCode: string } | null>(null);
-  const [copied, setCopied] = useState(false);
   
   const {
     state,
@@ -75,18 +69,11 @@ export default function NewGamePage() {
     const result = await createSession(`/api/games/${slug}/sessions`);
     
     if (result) {
-      // Redirect directly to the session instead of showing success screen
+      // Redirect directly to the game session (salon/lobby)
       router.push(`/games/${slug}/${result.sessionId}`);
     }
   };
 
-  const handleCopyCode = () => {
-    if (sessionCreated) {
-      navigator.clipboard.writeText(sessionCreated.sessionCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   if (loading) {
     return (
@@ -105,61 +92,6 @@ export default function NewGamePage() {
     return null;
   }
 
-  if (sessionCreated) {
-    return (
-      <AuthGuard>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-          <div className="max-w-2xl mx-auto px-6 py-16">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
-              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Partie créée avec succès !
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-8">
-                Partagez ce code avec les autres joueurs pour qu'ils rejoignent la partie
-              </p>
-              
-              <div className="bg-gray-100 dark:bg-gray-700 rounded-xl p-6 mb-8">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Code de la partie</p>
-                <div className="flex items-center justify-center gap-4">
-                  <span className="text-4xl font-mono font-bold text-gray-900 dark:text-white">
-                    {sessionCreated.sessionCode}
-                  </span>
-                  <button
-                    onClick={handleCopyCode}
-                    className="p-3 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
-                    title="Copier le code"
-                  >
-                    {copied ? (
-                      <CheckCircle className="h-6 w-6 text-green-500" />
-                    ) : (
-                      <Copy className="h-6 w-6 text-gray-600 dark:text-gray-400" />
-                    )}
-                  </button>
-                </div>
-              </div>
-              
-              <div className="flex gap-4">
-                <Link
-                  href="/dashboard"
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium py-3 px-4 rounded-lg transition-colors"
-                >
-                  Retour au dashboard
-                </Link>
-                <Link
-                  href={`/games/${slug}/${sessionCreated.sessionId}`}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Share2 className="h-5 w-5" />
-                  Rejoindre la partie
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </AuthGuard>
-    );
-  }
 
   return (
     <AuthGuard>

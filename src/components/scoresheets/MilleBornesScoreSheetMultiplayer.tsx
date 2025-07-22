@@ -287,36 +287,41 @@ export default function MilleBornesScoreSheetMultiplayer({ sessionId }: { sessio
   const initializePlayerData = useCallback(() => {
     if (!session?.players) return;
     
-    const newDistances: { [playerId: number]: number } = {};
-    const newPrimes: { [playerId: number]: MilleBornesPrimes } = {};
-    
-    session.players.forEach(player => {
-      if (!(player.id in roundData.distances)) {
-        newDistances[player.id] = 0;
-      }
-      if (!(player.id in roundData.primes)) {
-        newPrimes[player.id] = {
-          as_volant: false,
-          as_volant_coup_fourre: false,
-          increvable: false,
-          increvable_coup_fourre: false,
-          citerne: false,
-          citerne_coup_fourre: false,
-          prioritaire: false,
-          prioritaire_coup_fourre: false,
-          allonge: false,
-          sans_les_200: false,
-          coup_couronnement: false,
-          capot: false,
-        };
-      }
-    });
+    setRoundData(prev => {
+      const newDistances: { [playerId: number]: number } = {};
+      const newPrimes: { [playerId: number]: MilleBornesPrimes } = {};
+      let needsUpdate = false;
+      
+      session.players.forEach(player => {
+        if (!(player.id in prev.distances)) {
+          newDistances[player.id] = 0;
+          needsUpdate = true;
+        }
+        if (!(player.id in prev.primes)) {
+          newPrimes[player.id] = {
+            as_volant: false,
+            as_volant_coup_fourre: false,
+            increvable: false,
+            increvable_coup_fourre: false,
+            citerne: false,
+            citerne_coup_fourre: false,
+            prioritaire: false,
+            prioritaire_coup_fourre: false,
+            allonge: false,
+            sans_les_200: false,
+            coup_couronnement: false,
+            capot: false,
+          };
+          needsUpdate = true;
+        }
+      });
 
-    setRoundData(prev => ({
-      distances: { ...prev.distances, ...newDistances },
-      primes: { ...prev.primes, ...newPrimes }
-    }));
-  }, [session?.players, roundData.distances, roundData.primes]);
+      return needsUpdate ? {
+        distances: { ...prev.distances, ...newDistances },
+        primes: { ...prev.primes, ...newPrimes }
+      } : prev;
+    });
+  }, [session?.players]);
 
   React.useEffect(() => {
     initializePlayerData();
@@ -494,7 +499,7 @@ export default function MilleBornesScoreSheetMultiplayer({ sessionId }: { sessio
           <div className="text-center">
             <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
             <button 
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => router.push('/dashboard')}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               Retour au dashboard

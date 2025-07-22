@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Menu, Zap, Users, Clock, Gamepad2, Share2 } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 import Sidebar from '@/components/Sidebar';
@@ -9,6 +10,7 @@ import { loadMultipleGameMetadata, defaultGameMetadata } from '@/lib/gameMetadat
 import { Game, GamesAPIResponse } from '@/types/dashboard';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [sessionId, setSessionId] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [allGames, setAllGames] = useState<Game[]>([]);
@@ -99,7 +101,7 @@ export default function DashboardPage() {
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-      window.location.href = '/auth/login';
+      router.push('/auth/login');
     } catch (error) {
       console.error('Logout error:', error);
     }

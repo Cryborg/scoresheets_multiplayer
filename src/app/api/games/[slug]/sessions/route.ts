@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, initializeDatabase } from '@/lib/database';
+import { db, initializeDatabase, generateUniqueSessionCode } from '@/lib/database';
 import { getAuthenticatedUserId, unauthorizedResponse } from '@/lib/auth';
 
 export async function POST(
@@ -89,11 +89,25 @@ export async function POST(
 
     if (game.team_based && teams) {
       const expectedTeams = game.max_players / 2;
-      if (teams.length !== expectedTeams || teams.some((team: { players: string[] }) => team.players.length !== 2)) {
-        return NextResponse.json(
-          { error: `Il faut ${expectedTeams} équipes de 2 joueurs` },
-          { status: 400 }
-        );
+      
+      // Pour Mille Bornes Équipes, permettre de créer avec juste la première équipe
+      // La deuxième équipe sera ajoutée via le salon multiplayer
+      if (game.slug === 'mille-bornes-equipes') {
+        // Vérifier qu'il y a au moins une équipe complète (2 joueurs)
+        if (teams.length === 0 || teams.some((team: { players: string[] }) => team.players.length !== 2)) {
+          return NextResponse.json(
+            { error: 'Il faut au moins une équipe complète (2 joueurs)' },
+            { status: 400 }
+          );
+        }
+      } else {
+        // Pour les autres jeux d'équipes, validation standard
+        if (teams.length !== expectedTeams || teams.some((team: { players: string[] }) => team.players.length !== 2)) {
+          return NextResponse.json(
+            { error: `Il faut ${expectedTeams} équipes de 2 joueurs` },
+            { status: 400 }
+          );
+        }
       }
     }
 
@@ -118,7 +132,7 @@ export async function POST(
     }
     
     // Generate session code
-    const sessionCode = `${game.slug.toUpperCase()}-${Date.now().toString().slice(-6)}`;
+    const sessionCode = await generateUniqueSessionCode();
     
     console.log('[PROD] Safe parameters before insert:', {
       userId,
@@ -131,13 +145,14 @@ export async function POST(
     });
     
     const sessionResult = await db.execute({
-      sql: `INSERT INTO game_sessions (host_user_id, game_id, session_name, session_code, has_score_target, score_target, finish_current_round)
-            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO game_sessions (host_user_id, game_id, session_name, session_code, status, has_score_target, score_target, finish_current_round)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         userId, 
         game.id, 
         sessionName || `Partie de ${game.name}`, 
         sessionCode,
+        'waiting',  // Start sessions in waiting state
         hasScoreTarget ? 1 : 0,  // Convert boolean to 0/1 for SQLite
         safeScoreTarget,
         finishCurrentRound ? 1 : 0

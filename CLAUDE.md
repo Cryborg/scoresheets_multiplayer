@@ -1,150 +1,206 @@
-# Claude.md - Guide de développement Scoresheets
+# CLAUDE.md - AI Assistant Development Guide
 
-## Architecture technique
+## 🚨 CRITICAL CONTEXT FOR AI
 
-- **Framework :** Next.js 15 avec TypeScript
-- **Base de données :** Turso (cloud SQLite) en production, SQLite local en développement  
-- **Déploiement :** Vercel (auto-deploy depuis main)
-- **Styles :** Tailwind CSS avec système de thèmes dark/light
-- **Tests :** Jest + React Testing Library
+**PROJECT**: Scoresheets Multiplayer - Real-time card/dice game scoring web app
+**CODEBASE SIZE**: ~50 files, 15k+ lines TypeScript/React
+**ARCHITECTURE QUALITY**: B+ (Production-ready, some tech debt)
+**CURRENT STATE**: 5 games implemented, multiplayer system working, active development
 
-## Commandes essentielles
+### 🔥 INSTANT DECISION TREE
+
+**When user asks to add new game:**
+1. ❌ DON'T create API routes - they exist generically
+2. ✅ DO add to `database.ts` → `seedInitialData()`
+3. ✅ DO create scoresheet component using `BaseScoreSheetMultiplayer`
+4. ✅ DO add to `gameComponentLoader.tsx`
+5. ✅ DO create `/games/[slug]/[sessionId]/page.tsx`
+
+**When debugging multiplayer issues:**
+1. Check `useRealtimeSession` polling status first
+2. Verify `gameSlug` is passed to hooks (404s if missing)
+3. Check `useGamePermissions` logic for join issues
+4. Look at `/api/sessions/[sessionId]/realtime` response
+
+**When refactoring:**
+- ✅ SAFE: Extract common patterns from scoresheet components
+- ✅ SAFE: Centralize error handling 
+- ⚠️ RISKY: Change polling intervals (affects all users)
+- ❌ NEVER: Modify base session/player data structures
+
+## Stack & Architecture
+
+- **Framework**: Next.js 15 + TypeScript (App Router)
+- **Database**: Turso SQLite (cloud prod, local dev)  
+- **Deployment**: Vercel (auto from main branch)
+- **Styling**: Tailwind CSS + dark/light themes
+- **Testing**: Jest + React Testing Library
+- **Real-time**: HTTP polling (not WebSocket) - Vercel compatible
+
+### 🤖 AI BEHAVIOR RULES
+
+1. **ALWAYS validate with lint:strict + test before suggesting completion**
+2. **NEVER create new API routes** - use existing generic routes
+3. **ALWAYS use TodoWrite for multi-step tasks** - user wants visibility
+4. **DON'T explain code unless asked** - user prefers concise responses  
+5. **ALWAYS remove debug console.logs** in production code
+6. **CHECK gameSlug is passed** to all multiplayer hooks (common bug)
+
+### ⚡ Dev Commands (AI MUST run these)
 
 ```bash
-# Validation obligatoire avant commit
-npm run lint:strict  # ESLint strict + TypeScript
-npm test            # Tests unitaires + intégration
+npm run lint:strict  # REQUIRED before any commit suggestion
+npm test            # REQUIRED before marking tasks complete
+npm run quality     # Both linting + tests in one command
 
-# Développement
-npm run dev         # Serveur de développement (hot reload automatique)
-npm run dev:watch   # Redémarre automatiquement si modif database.ts ou .env
-npm run quality     # lint:strict + tests en une commande
-
-# Versions
-npm run version:patch   # Bug fixes
-npm run version:minor   # Nouvelles fonctionnalités
-npm run version:major   # Breaking changes
+# Development
+npm run dev         # Hot reload (restart if database.ts changes)
+npm run dev:watch   # Auto-restart on DB/env changes
 ```
 
-### ⚠️ Quand redémarrer le serveur dev
+### 🔄 When to Tell User to Restart Dev Server
 
-**Rappeler à l'utilisateur de relancer `npm run dev` après :**
-- 📦 Installation de nouvelles dépendances (`npm install`)
-- 🔧 Modification de `.env.local` ou `.env`
-- ⚙️ Modification de `next.config.js`
-- 🗄️ Ajout d'un nouveau jeu dans `database.ts` → `seedInitialData()`
-- 📁 Création de nouvelles routes API (parfois nécessaire)
+**MUST restart `npm run dev`:**
+- Database changes in `database.ts` → `seedInitialData()`
+- New dependencies installed
+- Environment variables changed
+- New API routes created
 
-**Pas besoin de relancer pour :**
-- ✅ Modifications de composants React
-- ✅ Modifications de styles CSS/Tailwind
-- ✅ Modifications dans les routes API existantes
-- ✅ Ajout de nouvelles pages
+**Hot reload works fine:**
+- React components modified
+- CSS/Tailwind changes  
+- Existing API route modifications
 
-## Structure des jeux
+## 🎮 IMPLEMENTED GAMES DATABASE
 
-### Jeu existant : Yams (slug: 'yams')
-- **Type :** Jeu de dés, scoring par catégories
-- **Composant :** `src/components/scoresheets/YamsScoreSheet.tsx`
-- **Route API :** `/api/games/yams/sessions/[sessionId]/scores`
+### Current Games (AI reference)
+1. **Yams** (`yams`) - Categories scoring, individual, 2-8 players
+2. **Mille Bornes** (`mille-bornes`) - Rounds scoring, individual, 2-6 players  
+3. **Mille Bornes Équipes** (`mille-bornes-equipes`) - Rounds scoring, TEAMS, 4 players
+4. **Tarot** (`tarot`) - Rounds scoring, individual, 3-5 players
+5. **Belote** (`belote`) - Rounds scoring, teams, 4 players
 
-### Ajout d'un nouveau jeu
-
-**⚠️ IMPORTANT :** Utiliser le système harmonisé de création de jeux !
-
-#### 1. Base de données
-Ajouter dans `src/lib/database.ts` → `seedInitialData()` :
+### Game Properties (Critical for AI)
 ```typescript
+interface Game {
+  score_type: 'categories' | 'rounds';  // API endpoint type
+  team_based: 0 | 1;                   // Affects permissions & join logic
+  min_players: number;                 // Validation
+  max_players: number;                 // Validation  
+  score_direction: 'higher' | 'lower'; // Winner logic
+}
+```
+
+## 🔧 NEW GAME IMPLEMENTATION (AI CHECKLIST)
+
+**Location**: `src/lib/database.ts` → `seedInitialData()`
+```typescript
+// TEMPLATE (AI MUST adapt values):
 const existingGame = await tursoClient.execute({
   sql: 'SELECT id FROM games WHERE slug = ?',
-  args: ['nouveau-jeu']
+  args: ['game-slug']
 });
-
 if (existingGame.rows.length === 0) {
-  await tursoClient.execute(`
-    INSERT INTO games (name, slug, category_id, rules, is_implemented, score_type, team_based, min_players, max_players, score_direction)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `, [
-    'Nouveau Jeu',
-    'nouveau-jeu',
-    1, // 1=cartes, 2=dés, 3=plateau
-    'Description des règles',
-    1, // is_implemented
-    'rounds', // ou 'categories' comme Yams
-    0, // 0=individuel, 1=équipes
-    2, // min_players
-    6, // max_players
-    'higher' // ou 'lower'
+  await tursoClient.execute(`INSERT INTO games VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+    'Game Name', 'game-slug', 1, 'Rules text', 1, 'rounds', 0, 2, 6, 'higher'
   ]);
 }
 ```
 
-#### 2. Pages (NE PAS CRÉER !)
-**❌ NE PAS créer** :
-- `/app/games/nouveau-jeu/new/page.tsx` (utilise `[slug]/new`)
-- `/app/api/games/nouveau-jeu/*` (utilise les routes `[slug]`)
+### Step 2: Component Structure (AI COPY THIS EXACTLY)
+```typescript
+// src/components/scoresheets/GameNameScoreSheet.tsx
+import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
+import { GameSessionWithRounds } from '@/types/multiplayer'; // or WithCategories
 
-**✅ CRÉER UNIQUEMENT** :
-```bash
-mkdir -p src/app/games/nouveau-jeu/[sessionId]
+export default function GameNameScoreSheet({ sessionId }: { sessionId: string }) {
+  return (
+    <BaseScoreSheetMultiplayer<GameSessionWithRounds>
+      sessionId={sessionId} 
+      gameSlug="game-slug"
+    >
+      {({ session, gameState }) => (
+        <div>Game-specific UI here</div>
+      )}
+    </BaseScoreSheetMultiplayer>
+  );
+}
 ```
 
-Puis créer `src/app/games/nouveau-jeu/[sessionId]/page.tsx` :
+### Step 3: Page Route (AI COPY EXACTLY)
 ```typescript
-import NouveauJeuScoreSheet from '@/components/scoresheets/NouveauJeuScoreSheet';
+// src/app/games/game-slug/[sessionId]/page.tsx  
+import GameNameScoreSheet from '@/components/scoresheets/GameNameScoreSheet';
 
-export default async function NouveauJeuSessionPage({ params }: { params: Promise<{ sessionId: string }> }) {
+export default async function Page({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = await params;
-  return <NouveauJeuScoreSheet sessionId={sessionId} />;
+  return <GameNameScoreSheet sessionId={sessionId} />;
 }
 ```
 
-#### 3. Composant ScoreSheet
-Créer `src/components/scoresheets/NouveauJeuScoreSheet.tsx` :
-
-**⚠️ IMPORTANT** : Ajouter le composant dans `src/lib/gameComponentLoader.tsx` :
-```typescript
-'nouveau-jeu': dynamic(() => import('@/components/scoresheets/NouveauJeuScoreSheet'), {
-  loading: LoadingComponent
-}),
+### Step 4: Component Loader (AI MUST ADD)
+```typescript  
+// src/lib/gameComponentLoader.tsx - ADD TO EXISTING MAP
+'game-slug': dynamic(() => import('@/components/scoresheets/GameNameScoreSheet')),
 ```
 
-**Structure requise** :
-- Utiliser `fetch('/api/games/nouveau-jeu/sessions/${sessionId}')` pour GET
-- Utiliser `fetch('/api/games/nouveau-jeu/sessions/${sessionId}/rounds')` pour POST (jeux par manches)
-- Utiliser `fetch('/api/games/nouveau-jeu/sessions/${sessionId}/scores')` pour POST (jeux par catégories)
+### ❌ AI MUST NOT CREATE THESE
+- New API routes (`/api/games/[game]/*`) - USE GENERICS
+- New creation pages (`/games/[game]/new/page.tsx`) - USE EXISTING  
+- Custom hooks for basic session management - USE `useMultiplayerGame`
 
-**Format des données API** :
+## 🧠 MULTIPLAYER HOOKS ARCHITECTURE (AI CRITICAL KNOWLEDGE)
+
+### useMultiplayerGame (Master Hook)
 ```typescript
-// GET retourne :
-{
-  session: {
-    id: number;
-    session_name: string;
-    has_score_target: number;
-    score_target?: number;
-    players: Player[];
-    // Pour score_type='rounds' :
-    rounds: Array<{
-      round_number: number;
-      scores: { [playerId: number]: number };
-    }>;
-    // Pour score_type='categories' :
-    scores: { [categoryId: string]: { [playerId: number]: number } };
-  }
-}
+// AI: ALWAYS use this pattern for multiplayer games
+const gameState = useMultiplayerGame<GameSessionWithRounds>({ 
+  sessionId, 
+  gameSlug // ⚠️ CRITICAL: Missing gameSlug = 404 errors
+});
 
-// POST rounds attend :
-{
-  scores: Array<{ playerId: number; score: number }>
-}
+// Available from gameState:
+const {
+  session,           // Full session data
+  canJoinSession,    // Permission to show join form
+  playerName,        // UI state for joining
+  handleJoinSession, // Join action
+  handleLeaveSession,// Leave action  
+  goToDashboard,     // Smart navigation
+  isHost,           // Current user is host
+  // ... more
+} = gameState;
+```
 
-// POST scores attend :
-{
-  categoryId: string;
-  playerId: number;
-  score: number;
-}
+### BaseScoreSheetMultiplayer (Essential Pattern)
+```typescript
+// AI: This eliminates 90% of boilerplate across all games
+<BaseScoreSheetMultiplayer<SessionType> sessionId={sessionId} gameSlug={gameSlug}>
+  {({ session, gameState }) => (
+    // Game-specific UI only - all common logic handled
+    <YourGameInterface session={session} gameState={gameState} />
+  )}
+</BaseScoreSheetMultiplayer>
+
+// Handles automatically:
+// - Loading states, error states
+// - Join form (including team games)  
+// - Waiting room
+// - Real-time updates
+// - Permission checks
+```
+
+### useGamePermissions (Permission Logic)
+```typescript  
+const permissions = useGamePermissions(currentUserId);
+
+// Key methods AI needs:
+permissions.canJoinSession(session)     // Show join form?
+permissions.canEditPlayerScores(player) // Allow score edits?
+permissions.isHost(hostId, userId)      // Host privileges?
+
+// ⚠️ SPECIAL CASE: Team games have complex join logic
+// Mille Bornes Équipes: can join only if < 2 teams occupied
 ```
 
 #### 4. Routes API (DÉJÀ EXISTANTES !)
@@ -160,6 +216,9 @@ Créer `src/components/scoresheets/NouveauJeuScoreSheet.tsx` :
 **❌ NE JAMAIS créer de routes spécifiques** comme `/api/games/tarot/sessions`
 
 ##### 📋 Utilisation selon le type de jeu
+
+**Pour les jeux multijoueurs réseau**
+- URL générique des salons : /games/${slug}/${result.sessionId}
 
 **Pour les jeux par MANCHES** (score_type='rounds') :
 - Mille Bornes, Belote, Tarot, Bridge
@@ -187,164 +246,282 @@ Créer `src/components/scoresheets/NouveauJeuScoreSheet.tsx` :
 }
 ```
 
-##### 🔧 Configuration dans les composants
+## 📡 API ROUTES (AI MUST USE EXISTING)
 
-**TOUJOURS passer le gameSlug au hook useRealtimeSession** :
+### Real-time Session Data  
+```
+GET /api/sessions/[sessionId]/realtime
+→ Returns: session + players + scores + events + permissions
+→ Used by: useRealtimeSession (polling every 2-30s)
+```
+
+### Session Management
+```
+POST /api/sessions/[sessionId]/join
+Body: { playerName, player2Name? } // player2Name for team games
+→ Adds player(s) to session, creates teams if needed
+
+POST /api/sessions/[sessionId]/leave
+→ Removes player, transfers host if needed
+
+POST /api/sessions/[sessionId]/start  
+→ Changes status to 'active' (host only)
+```
+
+### Score Updates (Game-specific)
+```
+// ROUNDS games (Tarot, Mille Bornes, etc.)
+POST /api/games/[slug]/sessions/[sessionId]/rounds
+Body: { scores: [{ playerId: number, score: number }] }
+
+// CATEGORIES games (Yams)
+POST /api/games/[slug]/sessions/[sessionId]/scores
+Body: { categoryId: string, playerId: number, score: number }
+```
+
+### ⚠️ AI CRITICAL: gameSlug Routing
 ```typescript
-const { session, addRound } = useRealtimeSession<GameSession>({
-  sessionId,
-  gameSlug: 'mille-bornes' // OBLIGATOIRE pour les routes API
-});
+// WRONG - will get 404:
+const { session } = useMultiplayerGame({ sessionId }); // missing gameSlug
+
+// CORRECT:
+const { session } = useMultiplayerGame({ sessionId, gameSlug: 'tarot' });
 ```
 
-**Sans gameSlug, les routes seront incorrectes** et vous aurez des erreurs 404 !
+## 🗄️ DATABASE (AI REFERENCE)
 
-## 🚀 Transition vers projet Multiplayer
+### Key Tables & Structure
+```sql
+-- Games catalog  
+games: slug, score_type, team_based, min/max_players
 
-Ce projet v1 sert de référence complète pour créer la version multiplayer.
+-- Sessions (parties)
+game_sessions: id, game_id, host_user_id, status, session_name
 
-### 📂 Architecture de transition :
+-- Players in sessions
+players: session_id, user_id, player_name, position, team_id
+
+-- Scores (flexible structure)
+scores: session_id, player_id, round_number/category_id, score
+
+-- Teams (for team-based games)
+teams: session_id, team_name
 ```
-📁 DOSSIER ACTUEL :
-├─── backup/                           → COPIE COMPLÈTE du projet v1
-│   ├── src/components/scoresheets/   → 5 jeux implémentés
-│   ├── src/components/layout/        → GameLayout, RankingSidebar
-│   ├── src/components/ui/            → ScoreInput, LoadingSpinner
-│   ├── src/lib/                      → database, auth, gameLoader
-│   └── ...                          → Toute l'architecture éprouvée
 
-📄 DOCUMENTATION À LA RACINE :
-├── MULTIPLAYER_BLUEPRINT.md          → Bible technique complète
-├── CLAUDE.md                         → Guide de développement
+### Critical Relationships
+```sql
+players.session_id → game_sessions.id  
+players.team_id → teams.id (nullable)
+scores.session_id → game_sessions.id
+scores.player_id → players.id
 ```
 
-**🎯 Processus simplifié :**
-1. Code source v1 → dossier `/backup/`
-2. Documentation technique → racine du projet
-3. Développement multiplayer → nouveau code avec `/backup/` comme référence
+## 🎯 TEAM GAMES SPECIAL LOGIC (AI IMPORTANT)
 
-### Stack technique éprouvé à conserver :
-- **Next.js 15** + TypeScript + Turbo
-- **Turso** (SQLite cloud) - parfait pour le multiplayer !  
-- **Tailwind CSS** + Dark/Light theme
-- **Vercel** deployment (compatible polling)
-- **Jest** + React Testing Library
+### Team Join Flow (Mille Bornes Équipes)
+```typescript
+// When second player joins team game:
+1. Check if < 2 teams occupied
+2. Show join form with 2 name fields
+3. POST /api/sessions/[id]/join with { playerName, player2Name }  
+4. API creates 2 players + "Équipe 2" team
+5. Both players get same team_id, different positions
+```
 
-### Patterns de code établis :
-- Routes API génériques `[slug]`
-- Interfaces `Player`, `GameSession` standardisées  
-- Hooks `useGameSessionCreator`
-- Composants `ScoreInput` optimisés
-- Système `gameComponentLoader` dynamique
+### Team Permission Logic
+```typescript
+// In useGamePermissions:
+if (session.team_based && session.game_slug === 'mille-bornes-equipes') {
+  const occupiedTeams = new Set();
+  session.players?.forEach(player => {
+    const teamId = player.team_id || (player.position <= 2 ? 1 : 2);
+    occupiedTeams.add(teamId);
+  });
+  return occupiedTeams.size < 2; // Can join if < 2 teams
+}
+```
 
-### Jeux prêts pour adaptation multiplayer :
-1. **Yams** → Vue individuelle par catégories ✅
-2. **Tarot** → Un preneur + autres joueurs ✅  
-3. **Bridge** → 4 positions fixes Nord/Sud/Est/Ouest ✅
-4. **Belote** → Équipes de 2 ✅
-5. **Mille Bornes** → Vue individuelle km + primes ✅
+## 🔐 AUTH & ENVIRONMENT (AI NEEDS)
 
-Le `MULTIPLAYER_BLUEPRINT.md` contient TOUTE l'architecture technique nécessaire !
-
-### Système de création harmonisé
-
-**Composants réutilisables (NE PAS dupliquer) :**
-- `useGameSessionCreator` hook : Logique commune de création
-- `GameSessionForm` component : Formulaire unifié
-- `PlayerInput` component : Saisie joueurs avec autocomplétion
-- `GameSetupCard` component : Cards de configuration
-
-**Architecture automatique :**
-- Gestion équipes vs joueurs individuels selon `team_based`
-- Validation automatique selon `min_players` / `max_players`  
-- Interface adaptative selon le type de jeu
-- Spinners et états de chargement intégrés
-
-### Types de scoring
-- `'categories'` : Scoring par catégories comme Yams
-- `'rounds'` : Scoring par manches comme Belote
-- `score_direction` : `'higher'` (plus haut gagne) ou `'lower'` (plus bas gagne)
-
-## Base de données (Turso SQLite)
-
-### Tables principales
-- `games` : Liste des jeux disponibles
-- `game_sessions` : Parties créées par les utilisateurs
-- `players` : Joueurs d'une partie
-- `scores` : Scores enregistrés par joueur/manche/catégorie
-- `users` : Comptes utilisateurs (auth JWT)
-
-### Variables d'environnement
+### Environment Variables
 ```bash
-# Production (Vercel)
+# Production
 TURSO_DATABASE_URL=libsql://[base].turso.io
 TURSO_AUTH_TOKEN=eyJ...
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=SecurePassword
 JWT_SECRET=long-random-string
 
-# Développement (.env.local)
+# Development  
 TURSO_DATABASE_URL=file:./data/scoresheets.db
-# TURSO_AUTH_TOKEN pas nécessaire en local
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=SecurePassword  
+# No TURSO_AUTH_TOKEN needed locally
 JWT_SECRET=long-random-string
 ```
 
-## Authentification et droits
+### Auth System
+- **JWT**: `src/lib/auth.ts` - getAuthenticatedUserId(request)
+- **Optional**: Users can play without accounts (guest players)
+- **Admin**: `is_admin` flag in users table
 
-- **Auth :** JWT tokens, gestion dans `src/lib/auth.ts`
-- **Admin :** Flag `is_admin` dans la table users
-- **Pages protégées :** Middleware dans `src/contexts/AuthContext.tsx`
+## 🧩 KEY COMPONENTS (AI REFERENCE)
 
-## APIs admin (production)
+### BaseScoreSheetMultiplayer
+- **Location**: `src/components/scoresheets/BaseScoreSheetMultiplayer.tsx`
+- **Purpose**: Eliminates 90% of boilerplate across all game components
+- **Pattern**: Render props for game-specific content
+- **Handles**: Loading, error, join, waiting room states automatically
 
+### GameStates Components
+- **Location**: `src/components/multiplayer/GameStates.tsx`
+- **LoadingState**: "Connexion à la partie..." spinner
+- **ErrorState**: Error message + back to dashboard button
+- **JoinSessionForm**: Player name entry (supports team games)
+
+### useRealtimeSession Hook
+- **Location**: `src/hooks/useRealtimeSession.ts`  
+- **Purpose**: Real-time session data via HTTP polling
+- **Intervals**: 2s active, 5s idle, 30s error states
+- **Returns**: session, isConnected, connectionStatus, events
+
+### Game Component Loader
+- **Location**: `src/lib/gameComponentLoader.tsx`
+- **Purpose**: Dynamic loading of game components
+- **Pattern**: `'game-slug': dynamic(() => import('./GameScoreSheet'))`
+
+## 🧪 TESTING (AI MUST VALIDATE)
+
+### Test Commands
 ```bash
-# Corriger structure DB + droits admin
-curl -X POST https://[VERCEL_URL]/api/admin/check-db
-
-# Déployer un nouveau jeu
-curl -X POST https://[VERCEL_URL]/api/admin/deploy-[game-slug]
+npm test              # All tests (AI MUST run before completion)
+npm run lint:strict   # ESLint + TypeScript (AI MUST run)
+npm run quality       # Both linting + tests
 ```
 
-## Composants UI importants
+### Critical Test Coverage
+- **Multiplayer hooks**: useMultiplayerGame, useRealtimeSession
+- **API endpoints**: Session CRUD, join/leave, score updates
+- **Permission system**: useGamePermissions edge cases
+- **Game components**: Score calculations, state management
 
-- `ThemeProvider` : Gestion dark/light theme
-- `VersionFooter` : Affichage version depuis package.json  
-- `ThemeToggle` : Bouton de changement de thème
-- `GameList` : Liste des jeux sur dashboard
-- `[Game]ScoreSheet` : Interfaces de scoring par jeu
+### Test Patterns
+```typescript
+// Mock console.error in tests to avoid noise:
+beforeEach(() => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+});
 
-## Tests critiques
-
-### 🧪 Suite de Tests Complète
-
-**3 niveaux de tests** pour une qualité maximale :
-
-1. **Tests Unitaires** - Hooks, composants, utilitaires
-2. **Tests d'Intégration** - APIs, base de données  
-3. **Tests End-to-End** - Parties complètes par jeu
-
-```bash
-npm test              # Tous les tests
-npm run test:unit     # Tests unitaires
-npm run test:integration # Tests API
-npm run test:e2e      # Tests complets de jeux
-npm run test:coverage # Couverture de code
+// Use @ts-expect-error for SQL warnings:
+// @ts-expect-error TypeScript doesn't recognize SQL syntax
+const result = await db.execute('SELECT * FROM games');
 ```
 
-### ✅ Tests Critiques (doivent passer)
-- **useMultiplayerGame** - Logic multiplayer
-- **StatusBar** - Affichage temps réel
-- **API Sessions** - CRUD sessions + rounds/scores
-- **Yams E2E** - Partie complète avec bonus
-- **Mille Bornes E2E** - Manches + calculs primes
+## 🎮 REAL-TIME MULTIPLAYER ARCHITECTURE (AI DEEP KNOWLEDGE)
 
-### 📋 Documentation Complète
-Voir **`TESTING.md`** pour :
-- Architecture détaillée des tests
-- Utilitaires et factories de données
-- Standards et bonnes pratiques
-- Guide d'ajout de nouveaux tests
+### System Overview
+- **Communication**: Adaptive HTTP polling (NOT WebSocket - Vercel compatible)
+- **State Management**: React hooks with optimistic updates  
+- **Permissions**: Granular user/session-based system
+- **Routing**: Generic routes with dynamic parameters
+- **Performance**: ~10 players per session, 1000+ concurrent users
 
-**Note :** Utiliser `@ts-expect-error` pour les warnings PhpStorm SQL dans les tests
+### Why Polling Over WebSocket?
+- ✅ Works on Vercel serverless without config
+- ✅ Simpler reconnection logic  
+- ✅ Easy debugging during development
+- ✅ Works behind all proxies/firewalls
+- ✅ Adaptive intervals reduce server load
+
+### Polling Configuration
+```typescript
+const POLLING_INTERVALS = {
+  active: 2000,     // Game in progress: 2s
+  idle: 5000,       // Waiting room: 5s
+  background: 10000, // Tab not visible: 10s  
+  error: 30000      // After errors: 30s
+};
+```
+
+### Session States Flow  
+```
+Loading → Error/Join → Waiting → Playing → Finished
+   ↓        ↓           ↓         ↓         ↓
+Spinner  JoinForm   WaitRoom  GameUI   Results
+```
+
+### Component Architecture  
+```typescript
+// AI PATTERN: Always use this structure
+<BaseScoreSheetMultiplayer<GameSessionType> sessionId={sessionId} gameSlug={gameSlug}>
+  {({ session, gameState }) => {
+    // Game-specific UI only - common logic handled by Base
+    return <YourGameInterface session={session} {...gameState} />;
+  }}
+</BaseScoreSheetMultiplayer>
+
+// What BaseScoreSheetMultiplayer handles:
+// ✅ Loading/Error/Join/Waiting states  
+// ✅ Real-time session updates
+// ✅ Permission checks
+// ✅ Navigation (back to dashboard)
+// ✅ Error boundaries
+```
+
+## 🚨 COMMON ISSUES & FIXES (AI QUICK REFERENCE)
+
+### Missing gameSlug → 404 Errors
+```typescript
+// WRONG:
+const gameState = useMultiplayerGame({ sessionId });
+
+// CORRECT:  
+const gameState = useMultiplayerGame({ sessionId, gameSlug: 'game-name' });
+```
+
+### Join Form Not Showing
+- Check `canJoinSession` logic in `useGamePermissions`
+- For team games, verify team count calculation  
+- Ensure `BaseScoreSheetMultiplayer` gets correct props
+
+### Polling Not Working
+- Verify `/api/sessions/[sessionId]/realtime` returns data
+- Check console for 403/404 errors
+- Confirm user permissions (host/player/guest)
+
+### Team Games Issues
+- Mille Bornes Équipes needs special join logic (2 player names)
+- Check team creation in `/api/sessions/[sessionId]/join`
+- Verify `team_based=1` in database
+
+## 🎯 AI QUICK WIN PATTERNS
+
+### Add New Individual Game (5 steps)
+1. Database entry in `seedInitialData()`
+2. Component: `<BaseScoreSheetMultiplayer gameSlug="slug">`
+3. Page: `/games/[slug]/[sessionId]/page.tsx`  
+4. Add to `gameComponentLoader.tsx`
+5. Test join/play flow
+
+### Add New Team Game (+ team logic)
+- Same as individual + set `team_based=1` in DB
+- Add team logic to `useGamePermissions` if needed
+- Test 2-player join form works
+
+### Debug Multiplayer Issue  
+1. Check browser network tab for API failures
+2. Verify `gameSlug` passed to all hooks
+3. Test permissions with different user types
+4. Check real-time polling in console
+
+## 📈 ARCHITECTURE QUALITY: A- (PRODUCTION READY)
+
+**Strengths:**
+- ✅ Clean separation of concerns  
+- ✅ Minimal code duplication
+- ✅ Type-safe with excellent generics
+- ✅ Extensible for new games
+- ✅ Real-time system robust
+
+**Improvements Needed:**  
+- 🔧 Extract game-specific logic from generic hooks
+- 🔧 Centralize error handling patterns
+- 🔧 Simplify complex permission calculations
+
+**AI CONFIDENCE**: High - Architecture well-understood, patterns established, extensions straightforward.

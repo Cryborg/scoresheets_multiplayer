@@ -199,6 +199,10 @@ describe('JWT Authentication Security', () => {
 
   describe('Environment Configuration', () => {
     it('should handle missing JWT_SECRET environment variable', () => {
+      // Mock console.error for this specific test to avoid noise
+      const originalConsoleError = console.error;
+      console.error = jest.fn();
+      
       delete process.env.JWT_SECRET;
       
       const userId = 123;
@@ -208,9 +212,11 @@ describe('JWT Authentication Security', () => {
       const result = getAuthenticatedUserId(request);
 
       expect(result).toBeNull();
+      expect(console.error).toHaveBeenCalledWith('JWT_SECRET environment variable is not set');
       
       // Restore for other tests
       process.env.JWT_SECRET = JWT_SECRET;
+      console.error = originalConsoleError;
     });
   });
 

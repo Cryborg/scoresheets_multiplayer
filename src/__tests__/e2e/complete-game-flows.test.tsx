@@ -26,14 +26,12 @@ describe('Flux de jeux complets - Tests E2E basiques', () => {
       const { useOptimisticScores } = await import('../../hooks/useOptimisticScores');
       const { useScoreActions } = await import('../../hooks/useScoreActions');
       const { useGamePermissions } = await import('../../hooks/useGamePermissions');
-      const { useAutoReconnect } = await import('../../hooks/useAutoReconnect');
       
       expect(useMultiplayerGame).toBeDefined();
       expect(useRealtimeSession).toBeDefined();
       expect(useOptimisticScores).toBeDefined();
       expect(useScoreActions).toBeDefined();
       expect(useGamePermissions).toBeDefined();
-      expect(useAutoReconnect).toBeDefined();
     });
   });
 
