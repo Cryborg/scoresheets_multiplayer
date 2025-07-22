@@ -47,7 +47,7 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
   const { 
     sessionId, 
     gameSlug,
-    pollInterval = 5000, // DEBUG: Increased from 2000 
+    pollInterval = POLLING_CONFIG.active, 
     pausePolling = false, 
     onUpdate, 
     onError, 
