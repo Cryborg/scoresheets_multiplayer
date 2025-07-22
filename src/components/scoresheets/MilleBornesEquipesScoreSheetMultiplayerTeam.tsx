@@ -293,7 +293,7 @@ const ReadOnlyPlayerScoreModule: React.FC<ReadOnlyPlayerScoreModuleProps> = ({
               botteKey: 'citerne' as const, 
               coupKey: 'citerne_coup_fourre' as const, 
               label: 'Citerne',
-              description: 'contre Panne d\\'Essence'
+              description: 'contre Panne d\'Essence'
             },
             { 
               botteKey: 'prioritaire' as const, 
