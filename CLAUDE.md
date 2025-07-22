@@ -206,7 +206,7 @@ Ce projet v1 sert de référence complète pour créer la version multiplayer.
 ### 📂 Architecture de transition :
 ```
 📁 DOSSIER ACTUEL :
-├── .backup/                          → COPIE COMPLÈTE du projet v1
+├─── backup/                           → COPIE COMPLÈTE du projet v1
 │   ├── src/components/scoresheets/   → 5 jeux implémentés
 │   ├── src/components/layout/        → GameLayout, RankingSidebar
 │   ├── src/components/ui/            → ScoreInput, LoadingSpinner
@@ -219,9 +219,9 @@ Ce projet v1 sert de référence complète pour créer la version multiplayer.
 ```
 
 **🎯 Processus simplifié :**
-1. Code source v1 → dossier `.backup/`
+1. Code source v1 → dossier `/backup/`
 2. Documentation technique → racine du projet
-3. Développement multiplayer → nouveau code avec `.backup/` comme référence
+3. Développement multiplayer → nouveau code avec `/backup/` comme référence
 
 ### Stack technique éprouvé à conserver :
 - **Next.js 15** + TypeScript + Turbo

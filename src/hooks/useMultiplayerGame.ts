@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useRealtimeSession } from './useRealtimeSession';
 import { useGamePermissions } from './useGamePermissions';
 import { GameSession } from '@/types/multiplayer';
+import { notify } from '@/lib/toast';
 
 interface UseMultiplayerGameProps {
   sessionId: string;
@@ -60,7 +61,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId }: UseMult
       // Refresh the session data to show the user is now in the session
       // The realtime hook will handle the update
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Erreur lors de la connexion');
+      notify.error(error instanceof Error ? error.message : 'Erreur lors de la connexion');
     } finally {
       setJoiningSession(false);
     }
@@ -115,7 +116,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId }: UseMult
       // Rediriger vers le dashboard
       router.push('/dashboard');
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Erreur lors de la sortie');
+      notify.error(error instanceof Error ? error.message : 'Erreur lors de la sortie');
     }
   };
 

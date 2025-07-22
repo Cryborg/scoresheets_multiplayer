@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { tursoClient } from '@/lib/database';
 import { getAuthenticatedUserId } from '@/lib/auth';
+import { 
+  ScoreRecord, 
+  RoundsScoreData, 
+  CategoriesScoreData,
+  ScoreData,
+  SessionRecord,
+  PlayerRecord,
+  SessionEventRecord,
+  RealtimeAPIResponse 
+} from '@/types/realtime';
 
 export async function GET(
   request: NextRequest,
@@ -12,13 +22,8 @@ export async function GET(
     // Get current user ID if authenticated
     const currentUserId = getAuthenticatedUserId(request);
 
-    // Add a small random delay to prevent concurrent access issues
-    if (Math.random() < 0.1) {
-      await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
-    }
-
-    // Get session with all related data
-    const sessionResult = await tursoClient.execute({
+    // Get session with access control in a single optimized query
+    const sessionWithAccessResult = await tursoClient.execute({
       sql: `
         SELECT 
           gs.*,
@@ -28,47 +33,36 @@ export async function GET(
           g.team_based,
           g.min_players,
           g.max_players,
-          u.username as host_username
+          u.username as host_username,
+          CASE 
+            WHEN gs.host_user_id = ? THEN 'host'
+            WHEN p.user_id = ? THEN 'player'
+            WHEN gs.status = 'waiting' THEN 'can_join'
+            WHEN EXISTS(SELECT 1 FROM players p2 WHERE p2.session_id = gs.id AND p2.user_id IS NULL) AND ? IS NULL THEN 'guest_allowed'
+            ELSE 'denied'
+          END as access_level
         FROM game_sessions gs
         JOIN games g ON gs.game_id = g.id
         JOIN users u ON gs.host_user_id = u.id
+        LEFT JOIN players p ON p.session_id = gs.id AND p.user_id = ?
         WHERE gs.id = ?
+        GROUP BY gs.id
       `,
-      args: [sessionId]
+      args: [currentUserId, currentUserId, currentUserId, currentUserId, sessionId]
     });
 
-    if (sessionResult.rows.length === 0) {
+    if (sessionWithAccessResult.rows.length === 0) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    const session = sessionResult.rows[0];
+    const session = sessionWithAccessResult.rows[0] as SessionRecord;
     
-    // Check if current user has access to this session
-    if (currentUserId) {
-      // User is authenticated - check if they are host, player, or if session is still open for joining
-      const accessCheckResult = await tursoClient.execute({
-        sql: `
-          SELECT 1 FROM (
-            SELECT host_user_id as user_id FROM game_sessions WHERE id = ?
-            UNION
-            SELECT user_id FROM players WHERE session_id = ? AND user_id IS NOT NULL
-          ) WHERE user_id = ?
-        `,
-        args: [sessionId, sessionId, currentUserId]
-      });
-      
-      // If user is not host or player, check if session is still joinable (waiting status)
-      if (accessCheckResult.rows.length === 0 && session.status !== 'waiting') {
+    // Check access level
+    const accessLevel = String(session.access_level);
+    if (accessLevel === 'denied') {
+      if (currentUserId) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });
-      }
-    } else {
-      // User is not authenticated - only allow access if there are guest players (user_id is null)
-      const guestPlayersResult = await tursoClient.execute({
-        sql: 'SELECT 1 FROM players WHERE session_id = ? AND user_id IS NULL LIMIT 1',
-        args: [sessionId]
-      });
-      
-      if (guestPlayersResult.rows.length === 0) {
+      } else {
         return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
       }
     }
@@ -90,7 +84,9 @@ export async function GET(
     });
 
     // Get scores based on game type
-    let scoresData: any = {};
+    let scoresData: ScoreData = session.score_type === 'rounds' 
+      ? { rounds: [] } 
+      : { scores: {} };
     
     if (session.score_type === 'rounds') {
       // Round-based scoring (like Tarot, Belote)
@@ -111,9 +107,10 @@ export async function GET(
       const roundsMap: { [round: number]: { [playerId: number]: number } } = {};
       
       for (const score of scoresResult.rows) {
-        const round = Number(score.round_number);
-        const playerId = Number(score.player_id);
-        const scoreValue = Number(score.score);
+        const scoreRecord = score as ScoreRecord;
+        const round = Number(scoreRecord.round_number);
+        const playerId = Number(scoreRecord.player_id);
+        const scoreValue = Number(scoreRecord.score);
         
         if (!roundsMap[round]) {
           roundsMap[round] = {};
@@ -126,7 +123,7 @@ export async function GET(
           round_number: Number(round),
           scores
         }))
-      };
+      } as RoundsScoreData;
 
     } else {
       // Category-based scoring (like Yams)
@@ -147,9 +144,10 @@ export async function GET(
       const categoriesMap: { [categoryId: string]: { [playerId: number]: number } } = {};
       
       for (const score of scoresResult.rows) {
-        const categoryId = String(score.category_id);
-        const playerId = Number(score.player_id);
-        const scoreValue = Number(score.score);
+        const scoreRecord = score as ScoreRecord & { category_id: string };
+        const categoryId = String(scoreRecord.category_id);
+        const playerId = Number(scoreRecord.player_id);
+        const scoreValue = Number(scoreRecord.score);
         
         if (!categoriesMap[categoryId]) {
           categoriesMap[categoryId] = {};
@@ -157,7 +155,7 @@ export async function GET(
         categoriesMap[categoryId][playerId] = scoreValue;
       }
 
-      scoresData = { scores: categoriesMap };
+      scoresData = { scores: categoriesMap } as CategoriesScoreData;
     }
 
     // Get recent events (last 50)
@@ -187,32 +185,33 @@ export async function GET(
 
     // Calculate totals for players
     const players = playersResult.rows.map(player => {
-      const playerId = Number(player.id);
+      const playerRecord = player as PlayerRecord;
+      const playerId = Number(playerRecord.id);
       let totalScore = 0;
 
-      if (session.score_type === 'rounds' && scoresData.rounds) {
-        totalScore = scoresData.rounds.reduce((sum: number, round: any) => {
+      if (session.score_type === 'rounds' && 'rounds' in scoresData) {
+        totalScore = scoresData.rounds.reduce((sum: number, round) => {
           return sum + (round.scores[playerId] || 0);
         }, 0);
-      } else if (session.score_type === 'categories' && scoresData.scores) {
-        totalScore = Object.values(scoresData.scores).reduce((sum: number, categoryScores: any) => {
+      } else if (session.score_type === 'categories' && 'scores' in scoresData) {
+        totalScore = Object.values(scoresData.scores).reduce((sum: number, categoryScores) => {
           return sum + (categoryScores[playerId] || 0);
         }, 0);
       }
 
       return {
-        ...player,
+        ...playerRecord,
         total_score: totalScore
       };
     });
 
-    const responseData = {
+    const responseData: RealtimeAPIResponse = {
       session: {
         ...session,
         players,
         ...scoresData
       },
-      events: eventsResult.rows.reverse(), // Most recent first
+      events: eventsResult.rows.map(event => event as SessionEventRecord).reverse(), // Most recent first
       timestamp: new Date().toISOString(),
       currentUserId // Include current user ID for client-side permissions
     };

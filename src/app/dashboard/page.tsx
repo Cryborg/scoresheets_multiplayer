@@ -6,11 +6,12 @@ import { Menu, Zap, Users, Clock, Gamepad2, Share2 } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 import Sidebar from '@/components/Sidebar';
 import { loadMultipleGameMetadata, defaultGameMetadata } from '@/lib/gameMetadata';
+import { Game, GamesAPIResponse } from '@/types/dashboard';
 
 export default function DashboardPage() {
   const [sessionId, setSessionId] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [games, setGames] = useState<any[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Chargement des jeux depuis l'API avec métadonnées
@@ -18,14 +19,14 @@ export default function DashboardPage() {
     const fetchGames = async () => {
       try {
         const response = await fetch('/api/games');
-        const data = await response.json();
+        const data: GamesAPIResponse = await response.json();
         
         // Charger les métadonnées pour tous les jeux
-        const slugs = data.games.map((game: any) => game.slug);
+        const slugs = data.games.map(game => game.slug);
         const metadataMap = await loadMultipleGameMetadata(slugs);
         
         // Transformation des données API avec métadonnées
-        const formattedGames = data.games.map((game: any) => {
+        const formattedGames: Game[] = data.games.map(game => {
           const metadata = metadataMap[game.slug] || defaultGameMetadata;
           
           return {

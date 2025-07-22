@@ -31,6 +31,7 @@ const POLLING_CONFIG = {
 
 const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_BASE = 1000;
+const MAX_CONSECUTIVE_FAILURES = 5; // Circuit breaker threshold
 
 interface UseRealtimeSessionOptions {
   sessionId: string;
@@ -65,6 +66,7 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
   const isPollingRef = useRef(false);
   const lastDataHashRef = useRef<string>('');
   const retryCountRef = useRef(0);
+  const consecutiveFailuresRef = useRef(0); // Circuit breaker counter
   const lastActivityRef = useRef<Date>(new Date());
   const visibilityRef = useRef<boolean>(typeof window !== 'undefined' ? !document.hidden : true);
   const fetchSessionDataRef = useRef<(() => Promise<void>) | null>(null);
@@ -95,12 +97,24 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
   }, []);
 
   const getCurrentPollInterval = useCallback(() => {
+    // Circuit breaker: stop polling if too many consecutive failures
+    if (consecutiveFailuresRef.current >= MAX_CONSECUTIVE_FAILURES) {
+      return POLLING_CONFIG.error * 2; // Extra long delay when circuit is open
+    }
+    
     if (connectionStatus === 'error') return POLLING_CONFIG.error;
     if (!visibilityRef.current) return POLLING_CONFIG.background;
     
-    // Utilise le pollInterval fourni comme base
-    const timeSinceActivity = Date.now() - lastActivityRef.current.getTime();
-    return timeSinceActivity > 30000 ? pollInterval * 2.5 : pollInterval;
+    // Add jitter to prevent thundering herd (5-15% random variation)
+    const baseInterval = (() => {
+      const timeSinceActivity = Date.now() - lastActivityRef.current.getTime();
+      return timeSinceActivity > 30000 ? pollInterval * 2.5 : pollInterval;
+    })();
+    
+    const jitterRange = baseInterval * 0.1; // 10% jitter
+    const jitter = (Math.random() - 0.5) * jitterRange;
+    
+    return Math.max(1000, Math.floor(baseInterval + jitter)); // Min 1s interval
   }, [connectionStatus, pollInterval]);
 
   const fetchSessionData = useCallback(async () => {
@@ -145,20 +159,30 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
         updateActivity();
       }
 
-      // Succès : reset compteurs d'erreur
+      // Succès : reset compteurs d'erreur et circuit breaker
       setIsConnected(true);
       setConnectionStatusDebounced('connected');
       setError(null);
       retryCountRef.current = 0;
+      consecutiveFailuresRef.current = 0; // Reset circuit breaker on success
 
     } catch (err) {
       
       retryCountRef.current++;
+      consecutiveFailuresRef.current++; // Track consecutive failures for circuit breaker
       const errorMessage = err instanceof Error ? err.message : 'Erreur de connexion';
       
       setError(errorMessage);
       setIsConnected(false);
-      setConnectionStatusDebounced(retryCountRef.current >= MAX_RETRY_ATTEMPTS ? 'error' : 'disconnected');
+      
+      // Determine connection status based on failure count
+      if (consecutiveFailuresRef.current >= MAX_CONSECUTIVE_FAILURES) {
+        setConnectionStatusDebounced('error'); // Circuit breaker open
+      } else if (retryCountRef.current >= MAX_RETRY_ATTEMPTS) {
+        setConnectionStatusDebounced('error');
+      } else {
+        setConnectionStatusDebounced('disconnected');
+      }
       
     } finally {
       isPollingRef.current = false;

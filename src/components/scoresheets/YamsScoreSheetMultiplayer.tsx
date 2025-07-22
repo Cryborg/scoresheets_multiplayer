@@ -1,14 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Share2, X } from 'lucide-react';
 import ScoreInput from '@/components/ui/ScoreInput';
-import GameLayout from '@/components/layout/GameLayout';
+import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import RankingSidebar from '@/components/layout/RankingSidebar';
-import WaitingRoom from '@/components/multiplayer/WaitingRoom';
-import { StatusBar } from '@/components/multiplayer/StatusBar';
-import { LoadingState, ErrorState, JoinSessionForm } from '@/components/multiplayer/GameStates';
-import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
 import { useOptimisticScores } from '@/hooks/useOptimisticScores';
 import { useScoreActions } from '@/hooks/useScoreActions';
 import { GameSessionWithCategories, Player } from '@/types/multiplayer';
@@ -43,50 +39,24 @@ interface YamsScoreSheetMultiplayerProps {
 }
 
 export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetMultiplayerProps) {
-  // Use our new multiplayer game hook
-  const gameState = useMultiplayerGame<GameSessionWithCategories>({ sessionId });
   const optimisticScores = useOptimisticScores();
   const scoreActions = useScoreActions({ 
     sessionId,
     onScoreUpdate: optimisticScores.clearOptimisticScore
   });
 
-  const {
-    session,
-    error,
-    lastUpdate,
-    currentUserId,
-    connectionStatus,
-    isConnected,
-    canEditPlayerScores,
-    isUserInSession,
-    playerName,
-    setPlayerName,
-    joiningSession,
-    handleJoinSession,
-    handleStartGame,
-    goToDashboard
-  } = gameState;
-  
-
-  // Handle score submission
-  const handleScoreSubmit = async (categoryId: string, playerId: number, score: string) => {
+  // Handle score submission with error handling
+  const handleScoreSubmit = useCallback(async (categoryId: string, playerId: number, score: string) => {
     try {
       await scoreActions.submitScore(categoryId, playerId, score);
     } catch (error) {
       console.error('Score submission failed:', error);
-      // Revert optimistic update on error
-      if (session) {
-        const originalScore = session.scores[categoryId]?.[playerId];
-        optimisticScores.revertOptimisticScore(categoryId, playerId, originalScore);
-      }
+      // Revert optimistic update handled by scoreActions
     }
-  };
+  }, [scoreActions]);
 
-
-  const calculateUpperSectionTotal = (playerId: number): number => {
-    if (!session) return 0;
-    
+  // Memoized calculations to prevent re-renders
+  const calculateUpperSectionTotal = useCallback((session: GameSessionWithCategories, playerId: number): number => {
     let total = 0;
     ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'].forEach(categoryId => {
       const score = session.scores[categoryId]?.[playerId];
@@ -95,124 +65,69 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
       }
     });
     return total;
-  };
+  }, []);
 
-  const calculatePlayerTotal = (playerId: number): number => {
+  const calculatePlayerTotal = useCallback((session: GameSessionWithCategories, playerId: number): number => {
     let total = 0;
-    let bonus = 0;
     
     // Calculate base total
     YAMS_CATEGORIES.forEach(category => {
-      const score = session?.scores[category.id]?.[playerId];
+      const score = session.scores[category.id]?.[playerId];
       if (score !== undefined) {
         total += score;
       }
     });
     
     // Add bonus if upper section >= 63
-    const upperTotal = calculateUpperSectionTotal(playerId);
+    const upperTotal = calculateUpperSectionTotal(session, playerId);
     if (upperTotal >= 63) {
-      bonus = 35;
+      total += 35; // Bonus
     }
     
-    return total + bonus;
-  };
+    return total;
+  }, [calculateUpperSectionTotal]);
 
-  const getPlayerRanking = (): Player[] => {
-    if (!session?.players) return [];
-    
-    return [...session.players]
-      .map(player => ({
-        ...player,
-        total_score: calculatePlayerTotal(player.id)
-      }))
-      .sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
-  };
+  const createRankingComponent = useCallback((session: GameSessionWithCategories) => {
+    const playersWithTotals = session.players.map(player => ({
+      ...player,
+      total_score: calculatePlayerTotal(session, player.id)
+    })).sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
 
+    return <RankingSidebar session={{ ...session, players: playersWithTotals }} />;
+  }, [calculatePlayerTotal]);
 
-
-  if (!isConnected && !session && !error) {
-    return <LoadingState message="Connexion à la partie de Yams..." />;
-  }
-
-  if (error) {
-    return <ErrorState error={error} onBack={goToDashboard} />;
-  }
-
-  // Check if user needs to join the session first  
-  if (session && currentUserId && !isUserInSession(session.players, currentUserId) && session.status === 'waiting') {
-    return (
-      <JoinSessionForm
-        sessionName={session.session_name}
-        playerName={playerName}
-        onPlayerNameChange={setPlayerName}
-        onJoin={handleJoinSession}
-        onCancel={goToDashboard}
-        isJoining={joiningSession}
-      />
-    );
-  }
-
-  // Show waiting room if game hasn't started yet
-  if (session && session.status === 'waiting') {
-    return (
-      <WaitingRoom
-        session={session}
-        currentUserId={currentUserId}
-        onStartGame={handleStartGame}
-        onBack={goToDashboard}
-      />
-    );
-  }
-
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
-          <div className="text-center">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Session introuvable</h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">La session demandée n&apos;existe pas ou n&apos;est plus accessible.</p>
-            <button
-              onClick={goToDashboard}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Retour au dashboard
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <GameLayout
-      title={session.session_name}
-      subtitle={
-        <div className="flex items-center gap-2">
-          <Share2 className="w-4 h-4" />
-          <span>Code: <strong className="font-mono">{session.session_code}</strong></span>
-        </div>
-      }
-      onBack={goToDashboard}
-      rightContent={
-        <RankingSidebar 
-          players={getPlayerRanking()} 
-          currentRound={session.current_round}
-          scoreTarget={session.score_target}
-        />
-      }
+    <BaseScoreSheetMultiplayer<GameSessionWithCategories>
+      sessionId={sessionId}
+      gameSlug="yams"
+      rankingComponent={({ session }) => createRankingComponent(session)}
     >
-      {/* Status bar */}
-      <StatusBar 
-        connectionStatus={connectionStatus}
-        playersCount={session.players.length}
-        isEditing={isEditing}
-        lastUpdateDisplay={lastUpdateDisplay}
-        gameStatus={session.status}
-      />
+      {({ session, gameState }) => (
+        <>
+          {/* Session info header */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                  {session.session_name}
+                </h2>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  Code de partie: <span className="font-mono font-bold">{session.session_code}</span>
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-blue-700 dark:text-blue-300">
+                  Manche {session.current_round || 1}
+                </div>
+                <div className="text-xs text-blue-600 dark:text-blue-400">
+                  {session.players.length} joueur{session.players.length > 1 ? 's' : ''}
+                </div>
+              </div>
+            </div>
+          </div>
 
-
-      {/* Score grid */}
+          {/* Score grid */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -222,7 +137,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                   Catégorie
                 </th>
                 {session.players.map(player => {
-                  const canEdit = canEditPlayerScores(player);
+                  const canEdit = gameState.canEditPlayerScores?.(player) ?? false;
                   return (
                     <th key={player.id} className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       <div className="flex flex-col items-center gap-1">
@@ -261,7 +176,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                     const saveKey = `${category.id}-${player.id}`;
                     const isSaving = scoreActions.isSaving(saveKey);
                     const existingScore = session.scores[category.id]?.[player.id];
-                    const canEdit = canEditPlayerScores(player);
+                    const canEdit = gameState.canEditPlayerScores?.(player) ?? false;
                     
                     return (
                       <td key={`${category.id}-${player.id}`} className="px-4 py-4 text-center">
@@ -343,7 +258,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                     const saveKey = `${category.id}-${player.id}`;
                     const isSaving = scoreActions.isSaving(saveKey);
                     const existingScore = session.scores[category.id]?.[player.id];
-                    const canEdit = canEditPlayerScores(player);
+                    const canEdit = gameState.canEditPlayerScores?.(player) ?? false;
                     
                     return (
                       <td key={`${category.id}-${player.id}`} className="px-4 py-4 text-center">
@@ -409,7 +324,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                 </td>
                 {session.players.map(player => (
                   <td key={`total-${player.id}`} className="px-4 py-4 text-center text-gray-900 dark:text-gray-100">
-                    {calculatePlayerTotal(player.id)}
+                    {calculatePlayerTotal(session, player.id)}
                   </td>
                 ))}
               </tr>
@@ -417,6 +332,8 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
           </table>
         </div>
       </div>
-    </GameLayout>
+        </>
+      )}
+    </BaseScoreSheetMultiplayer>
   );
 }

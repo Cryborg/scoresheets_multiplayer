@@ -220,25 +220,25 @@ src/components/multiplayer/
 
 ## 📋 Architecture de référence
 
-### Code source disponible dans .backup/
-Tout le code source du projet v1 est disponible dans le dossier `.backup/` pour référence et réutilisation.
+### Code source disponible dans /backup/
+Tout le code source du projet v1 est disponible dans le dossier `/backup/` pour référence et réutilisation.
 
 ### Fichiers clés à adapter/réutiliser :
 ```
-.backup/src/components/scoresheets/
+backup/src/components/scoresheets/
 ├── YamsScoreSheet.tsx       → Réutiliser comme base
 ├── TarotScoreSheet.tsx      → Adapter pour vue individuelle  
 ├── BridgeScoreSheet.tsx     → Adapter pour équipes multiplayer
 ├── BeloteScoreSheet.tsx     → Adapter si nécessaire
 ├── MilleBornesScoreSheet.tsx → Adapter pour vue individuelle
 
-.backup/src/components/layout/
+backup/src/components/layout/
 ├── GameLayout.tsx           → Adapter pour StatusBar multiplayer
 ├── GameCard.tsx             → Réutiliser tel quel
 ├── RankingSidebar.tsx       → Adapter pour participants temps réel
 
-.backup/src/components/ui/   → Composants réutilisables tel quel
-.backup/src/lib/
+backup/src/components/ui/   → Composants réutilisables tel quel
+backup/src/lib/
 ├── database.ts              → Base + nouvelles tables multiplayer
 ├── auth.ts                  → Système éprouvé à réutiliser 
 ├── gameComponentLoader.tsx  → Adapter pour vues multiplayer

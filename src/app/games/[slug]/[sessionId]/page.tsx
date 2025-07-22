@@ -1,5 +1,5 @@
 import YamsScoreSheetMultiplayer from '@/components/scoresheets/YamsScoreSheetMultiplayer';
-import TarotScoreSheetMultiplayer from '@/components/scoresheets/TarotScoreSheetRefactored';
+import TarotScoreSheetMultiplayer from '@/components/scoresheets/TarotScoreSheetMultiplayer';
 import BeloteScoreSheetMultiplayer from '@/components/scoresheets/BeloteScoreSheetMultiplayer';
 import BridgeScoreSheetMultiplayer from '@/components/scoresheets/BridgeScoreSheetMultiplayer';
 import MilleBornesScoreSheetMultiplayer from '@/components/scoresheets/MilleBornesScoreSheetMultiplayer';

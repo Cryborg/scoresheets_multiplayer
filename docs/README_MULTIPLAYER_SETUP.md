@@ -33,6 +33,6 @@
 
 ### 💬 Message pour Claude :
 
-*"J'ai créé le dossier .backup avec tout le code v1 et gardé les MD à la racine. Ready pour commencer le multiplayer !"*
+*"J'ai créé le dossier /backup avec tout le code v1 et gardé les MD à la racine. Ready pour commencer le multiplayer !"*
 
 Et c'est parti ! 🎮🚀

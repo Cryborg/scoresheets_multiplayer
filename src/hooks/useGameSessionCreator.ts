@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { authenticatedFetch } from '@/lib/authClient';
+import { notify } from '@/lib/toast';
 
 export interface Player {
   name: string;
@@ -156,7 +157,7 @@ export function useGameSessionCreator(game?: Game | null) {
   const createSession = useCallback(async (apiEndpoint: string, additionalPayload: Record<string, unknown> = {}) => {
     const validationError = validateSession(game);
     if (validationError) {
-      alert(validationError);
+      notify.error(validationError);
       return null;
     }
 
@@ -190,12 +191,12 @@ export function useGameSessionCreator(game?: Game | null) {
         return data;
       } else {
         const data = await response.json();
-        alert(data.error || 'Erreur lors de la création');
+        notify.error(data.error || 'Erreur lors de la création');
         return null;
       }
     } catch (error) {
       console.error('Session creation error:', error);
-      alert('Erreur de connexion');
+      notify.error('Erreur de connexion');
       return null;
     } finally {
       setState(prev => ({ ...prev, loading: false }));
