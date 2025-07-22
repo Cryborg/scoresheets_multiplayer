@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
-export default function FindSessionPage() {
+function FindSession() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const code = searchParams.get('code');
@@ -39,9 +39,10 @@ export default function FindSessionPage() {
   }, [code, router]);
 
   if (isSearching) {
+    const message = code ? `Recherche de la partie ${code}...` : 'Recherche de la partie...';
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <LoadingSpinner message={`Recherche de la partie ${code}...`} />
+        <LoadingSpinner message={message} />
       </div>
     );
   }
@@ -63,5 +64,13 @@ export default function FindSessionPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function FindSessionPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner message="Chargement de la page..." />}>
+      <FindSession />
+    </Suspense>
   );
 }
