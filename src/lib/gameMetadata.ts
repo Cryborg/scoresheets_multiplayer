@@ -10,6 +10,7 @@ export interface GameMetadata {
   difficulty: 'facile' | 'intermédiaire' | 'expert';
   keywords: string[];
   variant?: string;
+  multiplayer?: boolean;
 }
 
 // Mapping slug → métadonnées importées dynamiquement

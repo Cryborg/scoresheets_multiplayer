@@ -12,6 +12,7 @@ export interface Game {
   is_implemented: boolean;
   difficulty: 'facile' | 'intermédiaire' | 'expert';
   variant?: string;
+  multiplayer?: boolean;
 }
 
 export interface GamesAPIResponse {

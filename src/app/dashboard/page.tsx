@@ -41,7 +41,8 @@ export default function DashboardPage() {
             icon: metadata.icon,
             is_implemented: game.is_implemented,
             difficulty: metadata.difficulty,
-            variant: metadata.variant
+            variant: metadata.variant,
+            multiplayer: metadata.multiplayer
           };
         });
         
@@ -150,7 +151,12 @@ export default function DashboardPage() {
               ))
             ) : (
               games.map((game) => (
-              <div key={game.id} className="bg-white dark:bg-gray-800 rounded-lg shadow border dark:border-gray-700 hover:shadow-lg transition-shadow flex flex-col">
+              <div key={game.id} className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow border dark:border-gray-700 hover:shadow-lg transition-shadow flex flex-col">
+                {game.multiplayer && (
+                  <div className="absolute top-0 left-0 transform -translate-x-1/4 translate-y-4 -rotate-45 bg-yellow-400 text-black text-xs font-bold px-8 py-1 shadow-lg">
+                    Multi
+                  </div>
+                )}
                 <div className="p-6 flex-1 flex flex-col">
                   <div className="flex items-center justify-between mb-4">
                     <div className="text-3xl">{game.icon}</div>

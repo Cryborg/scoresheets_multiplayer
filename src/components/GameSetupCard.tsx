@@ -9,6 +9,7 @@ interface GameSetupCardProps {
   icon: LucideIcon;
   children: ReactNode;
   className?: string;
+  multiplayer?: boolean;
 }
 
 export default function GameSetupCard({
@@ -16,10 +17,16 @@ export default function GameSetupCard({
   description,
   icon: Icon,
   children,
-  className = ''
+  className = '',
+  multiplayer = false
 }: GameSetupCardProps) {
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md transition-shadow ${className}`}>
+    <div className={`relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md transition-shadow ${className}`}>
+      {multiplayer && (
+        <div className="absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] bg-yellow-400 text-black text-xs font-bold px-8 py-1 shadow-lg">
+          Multi
+        </div>
+      )}
       <div className="flex items-start space-x-4 mb-6">
         <div className="flex-shrink-0">
           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">

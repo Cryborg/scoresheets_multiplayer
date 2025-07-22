@@ -7,5 +7,6 @@ export const yamsMetadata = {
     accent: 'green'
   },
   difficulty: 'facile',
-  keywords: ['dés', 'combinaisons', 'catégories', 'chance', 'stratégie']
+  keywords: ['dés', 'combinaisons', 'catégories', 'chance', 'stratégie'],
+  multiplayer: true
 } as const;
