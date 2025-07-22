@@ -37,6 +37,18 @@ export default function GameSessionForm({
   submitButtonText = "Créer la partie"
 }: GameSessionFormProps) {
   
+  // Récupérer tous les noms déjà utilisés
+  const usedNames = game?.team_based 
+    ? state.teams.flatMap(team => team.players.filter(name => name.trim() !== ''))
+    : state.players.map(p => p.name).filter(name => name.trim() !== '');
+  
+  // Filtrer les suggestions pour exclure les noms déjà utilisés
+  const getAvailableSuggestions = (currentValue: string) => {
+    return state.suggestedPlayers.filter(suggestion => 
+      !usedNames.includes(suggestion) || suggestion === currentValue
+    );
+  };
+  
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       {/* Session Name */}
@@ -77,7 +89,7 @@ export default function GameSessionForm({
                       value={player}
                       onChange={(name) => onUpdateTeamPlayer(teamIndex, playerIndex, name)}
                       placeholder={`Joueur ${playerIndex + 1}`}
-                      suggestions={state.suggestedPlayers}
+                      suggestions={getAvailableSuggestions(player)}
                       autoFocus={teamIndex === 0 && playerIndex === 0}
                     />
                   ))}
@@ -94,7 +106,7 @@ export default function GameSessionForm({
                 onChange={(name) => onUpdatePlayer(index, name)}
                 onRemove={game && state.players.length > game.min_players ? () => onRemovePlayer(index) : undefined}
                 placeholder={`Joueur ${index + 1}`}
-                suggestions={state.suggestedPlayers}
+                suggestions={getAvailableSuggestions(player.name)}
                 canRemove={game ? state.players.length > game.min_players : state.players.length > 2}
                 autoFocus={index === 0}
               />

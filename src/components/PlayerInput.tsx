@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { User, X, Check } from 'lucide-react';
+import Dropdown from '@/components/ui/Dropdown';
 
 interface PlayerInputProps {
   value: string;
@@ -25,6 +26,7 @@ export default function PlayerInput({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const filteredSuggestions = suggestions.filter(name =>
     name.toLowerCase().includes(value.toLowerCase()) && name !== value
@@ -70,7 +72,7 @@ export default function PlayerInput({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <div className="relative group">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <User className="h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
@@ -82,7 +84,12 @@ export default function PlayerInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => setShowSuggestions(true)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+          onBlur={() => {
+            // Délai court mais suffisant pour permettre le clic
+            setTimeout(() => {
+              setShowSuggestions(false);
+            }, 100);
+          }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="w-full pl-10 pr-12 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm hover:shadow-md focus:shadow-lg"
@@ -106,9 +113,13 @@ export default function PlayerInput({
         </div>
       </div>
 
-      {/* Suggestions dropdown */}
-      {showSuggestions && filteredSuggestions.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+      {/* Suggestions dropdown with portal */}
+      <Dropdown 
+        isOpen={showSuggestions && filteredSuggestions.length > 0} 
+        anchorEl={containerRef.current}
+        className="mt-1"
+      >
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
           {filteredSuggestions.map((suggestion, index) => (
             <button
               key={suggestion}
@@ -125,7 +136,7 @@ export default function PlayerInput({
             </button>
           ))}
         </div>
-      )}
+      </Dropdown>
     </div>
   );
 }
