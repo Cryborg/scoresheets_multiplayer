@@ -411,6 +411,11 @@ function MilleBornesEquipesGameInterface({
   const [gameVariant, setGameVariant] = useState<GameVariant>('moderne');
   const [showOtherTeam, setShowOtherTeam] = useState(false);
   
+  // Store other teams' round data from session events
+  const [otherTeamsRoundData, setOtherTeamsRoundData] = useState<MilleBornesRoundData>({
+    distances: {},
+    primes: {}
+  });
 
   // Variant synchronization: Check session events for host's choice
   const [variantSelected, setVariantSelected] = useState(false);
@@ -486,16 +491,14 @@ function MilleBornesEquipesGameInterface({
       result.primes[player.id] = roundData.primes[player.id] || {};
     });
 
-    // For other team, try to reconstruct from latest round or use placeholder data
+    // For other team, use data from session events (live updates)
     otherTeamPlayers.forEach(player => {
-      // For now, use placeholder data - in real app this would come from latest round
-      // or from live session state if they're currently editing
-      result.distances[player.id] = 0;
-      result.primes[player.id] = {};
+      result.distances[player.id] = otherTeamsRoundData.distances[player.id] || 0;
+      result.primes[player.id] = otherTeamsRoundData.primes[player.id] || {};
     });
 
     return result;
-  }, [roundData, myTeamPlayers, otherTeamPlayers]);
+  }, [roundData, myTeamPlayers, otherTeamPlayers, otherTeamsRoundData]);
 
   const calculatePlayerScore = useCallback((playerId: number) => {
     const distance = Number(globalRoundData.distances[playerId]) || 0;
@@ -542,7 +545,9 @@ function MilleBornesEquipesGameInterface({
       ...prev,
       distances: { ...prev.distances, [playerId]: distance }
     }));
-  }, []);
+    // Broadcast changes to other teams with a small delay
+    setTimeout(broadcastRoundData, 100);
+  }, [broadcastRoundData]);
 
   const updatePlayerPrime = useCallback((playerId: number, primeKey: keyof MilleBornesPrimes, value: boolean) => {
     setRoundData(prev => ({
@@ -555,7 +560,9 @@ function MilleBornesEquipesGameInterface({
         }
       }
     }));
-  }, []);
+    // Broadcast changes to other teams with a small delay
+    setTimeout(broadcastRoundData, 100);
+  }, [broadcastRoundData]);
 
 
   const handleSubmitRound = useCallback(async () => {
@@ -614,6 +621,79 @@ function MilleBornesEquipesGameInterface({
       }
     }
   }, [session, gameState.events, variantSelected]);
+
+  // Listen for round data updates from other teams
+  useEffect(() => {
+    if (session && gameState.events) {
+      // Find the most recent round_data_updated event from each team
+      const roundDataEvents = gameState.events
+        .filter(event => event.event_type === 'round_data_updated')
+        .reverse(); // Most recent first
+
+      if (roundDataEvents.length > 0) {
+        const updatedData: MilleBornesRoundData = { distances: {}, primes: {} };
+        
+        // Process events to get latest data for each player
+        roundDataEvents.forEach(event => {
+          if (event.event_data) {
+            try {
+              const data = JSON.parse(event.event_data);
+              if (data.roundData) {
+                // Only accept data from players not in my team
+                Object.entries(data.roundData.distances || {}).forEach(([playerIdStr, distance]) => {
+                  const playerId = Number(playerIdStr);
+                  if (!myTeamPlayers.find(p => p.id === playerId)) {
+                    updatedData.distances[playerId] = distance as number;
+                  }
+                });
+                
+                Object.entries(data.roundData.primes || {}).forEach(([playerIdStr, primes]) => {
+                  const playerId = Number(playerIdStr);
+                  if (!myTeamPlayers.find(p => p.id === playerId)) {
+                    updatedData.primes[playerId] = primes as MilleBornesPrimes;
+                  }
+                });
+              }
+            } catch (e) {
+              // Ignore parse errors
+            }
+          }
+        });
+        
+        setOtherTeamsRoundData(updatedData);
+      }
+    }
+  }, [session, gameState.events, myTeamPlayers]);
+
+  // Function to broadcast round data changes
+  const broadcastRoundData = useCallback(async () => {
+    if (!session) return;
+    
+    try {
+      await fetch(`/api/sessions/${session.id}/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          event_type: 'round_data_updated',
+          event_data: {
+            roundData: {
+              distances: Object.fromEntries(
+                myTeamPlayers.map(p => [p.id, roundData.distances[p.id] || 0])
+              ),
+              primes: Object.fromEntries(
+                myTeamPlayers.map(p => [p.id, roundData.primes[p.id] || {}])
+              )
+            }
+          }
+        }),
+      });
+    } catch {
+      // Silently fail, sync will happen on next update
+    }
+  }, [session, myTeamPlayers, roundData]);
 
   // Handle variant selection by host
   const handleSaveVariant = useCallback(async () => {
