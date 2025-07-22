@@ -32,7 +32,9 @@ export async function POST(
 
     return NextResponse.json({ 
       success: true, 
-      event_id: result.lastInsertRowId,
+      event_id: typeof result.lastInsertRowId === 'bigint' 
+        ? Number(result.lastInsertRowId) 
+        : result.lastInsertRowId,
       timestamp: new Date().toISOString()
     });
 

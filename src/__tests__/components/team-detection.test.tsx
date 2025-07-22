@@ -37,8 +37,8 @@ const TeamDetectionTest = ({ session, currentUserId }: {
       let displayId = 1;
       if (myTeamId === 1) displayId = 1;
       else if (myTeamId === 2) displayId = 2;
-      else if (myTeamId > 20) displayId = myTeamId - 20; // Convert 21->1, 22->2
-      else displayId = myTeamId <= 2 ? myTeamId : 1;
+      else if (myTeamId >= 21 && myTeamId <= 22) displayId = myTeamId - 20; // Convert 21->1, 22->2
+      else displayId = 1; // Fallback to team 1 for any other ID
       
       return { 
         myTeamPlayers: myPlayers, 
@@ -221,7 +221,8 @@ describe('Team Detection Logic', () => {
       const session = {
         id: 123,
         players: [
-          { id: 1, player_name: 'Alice', user_id: 456, is_connected: 1, is_ready: 1, position: 0 }
+          { id: 1, player_name: 'Alice', user_id: 456, is_connected: 1, is_ready: 1, position: 0 },
+          { id: 2, player_name: 'Bob', user_id: 123, is_connected: 1, is_ready: 1, position: 1 }
         ],
         teams: [
           {

@@ -23,8 +23,16 @@ const mockLocation = {
   reload: jest.fn(),
 };
 
-(global as any).window = {
-  location: mockLocation,
+// Mock window.location assignment
+delete (window as any).location;
+(window as any).location = {
+  ...mockLocation,
+  set href(url: string) {
+    mockLocation.href = url;
+  },
+  get href() {
+    return mockLocation.href;
+  }
 };
 
 describe('BackButton', () => {
@@ -122,7 +130,7 @@ describe('BackButton', () => {
     
     const button = screen.getByRole('link');
     
-    // Should not throw error when window is undefined
+    // Should not throw error when window is undefined (since window is undefined, the function should not run)
     expect(() => fireEvent.click(button)).not.toThrow();
 
     // Restore window

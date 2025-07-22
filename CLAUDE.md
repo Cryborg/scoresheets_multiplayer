@@ -457,17 +457,168 @@ npm run quality       # Both linting + tests
 - **Permission system**: useGamePermissions edge cases
 - **Game components**: Score calculations, state management
 
-### Test Patterns
+### 🧪 TEST PATTERNS & SOLUTIONS (AI CRITICAL REFERENCE)
+
+**⚠️ IMPORTANT**: Ces patterns ont été validés et résolvent des problèmes récurrents. Utilise-les systématiquement.
+
+#### 1. Mock NextRequest pour tests d'API
 ```typescript
-// Mock console.error in tests to avoid noise:
+// PROBLEM: NextRequest.json() not working in test environment
+// SOLUTION: Helper function for all API tests
+function createMockRequest(url: string, body: any) {
+  return {
+    json: jest.fn().mockResolvedValue(body),
+    url,
+    method: 'POST',
+  } as any;
+}
+
+// USAGE in tests:
+const request = createMockRequest(`http://localhost/api/sessions/123/join`, {
+  playerName: 'Alice',
+  player2Name: 'Bob'
+});
+```
+
+#### 2. Mock window.location pour tests de navigation
+```typescript
+// PROBLEM: jsdom throws "navigation not implemented" errors
+// SOLUTION: Proper window.location mock
+const mockLocation = {
+  href: '',
+  assign: jest.fn(),
+  replace: jest.fn(),
+  reload: jest.fn(),
+};
+
+// Mock window.location assignment
+delete (window as any).location;
+(window as any).location = {
+  ...mockLocation,
+  set href(url: string) {
+    mockLocation.href = url;
+  },
+  get href() {
+    return mockLocation.href;
+  }
+};
+```
+
+#### 3. Tests d'ordre SQL précis avec API
+```typescript
+// PROBLEM: Tests failing because SQL calls happen in different order
+// SOLUTION: Use toHaveBeenNthCalledWith for exact call order
+
+// Example for session join API:
+// 1st call: Session lookup
+// 2nd call: Player name check  
+// 3rd call: Position calculation
+// 4th call: Team count check
+// 5th call: Team creation
+expect(mockExecute).toHaveBeenNthCalledWith(5, {
+  sql: 'INSERT INTO teams (session_id, team_name) VALUES (?, ?)',
+  args: [sessionId, 'Alice & Bob']
+});
+```
+
+#### 4. Gestion des BigInt dans API responses
+```typescript
+// PROBLEM: JSON.stringify cannot serialize BigInt values
+// SOLUTION: Convert BigInt to Number in API responses
+return NextResponse.json({ 
+  success: true, 
+  event_id: typeof result.lastInsertRowId === 'bigint' 
+    ? Number(result.lastInsertRowId) 
+    : result.lastInsertRowId,
+  timestamp: new Date().toISOString()
+});
+```
+
+#### 5. Mock console.error pour éviter le bruit
+```typescript
+// Standard pattern pour tous les tests:
 beforeEach(() => {
   jest.spyOn(console, 'error').mockImplementation(() => {});
 });
 
+// Or inline pour tests spécifiques:
+const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+// ... test code ...
+consoleSpy.mockRestore();
+```
+
+#### 6. Tests de logique métier - Fallback patterns
+```typescript
+// PROBLEM: Complex ID conversion logic in team games
+// SOLUTION: Explicit fallback logic for edge cases
+let displayId = 1;
+if (teamId === 1) displayId = 1;
+else if (teamId === 2) displayId = 2;
+else if (teamId >= 21 && teamId <= 22) displayId = teamId - 20;
+else displayId = 1; // Fallback to team 1 for any other ID
+```
+
+#### 7. Suppressions TypeScript pour SQL
+```typescript
 // Use @ts-expect-error for SQL warnings:
 // @ts-expect-error TypeScript doesn't recognize SQL syntax
 const result = await db.execute('SELECT * FROM games');
 ```
+
+### 🚨 PROBLÈMES COURANTS RÉSOLUS
+
+#### Mock NextRequest Failures
+- **Symptôme**: `TypeError: request.json is not a function`
+- **Cause**: Next.js 15 + React 19 compatibility issues
+- **Solution**: Utiliser `createMockRequest()` helper ci-dessus
+
+#### Tests de Navigation jsdom
+- **Symptôme**: `Error: Not implemented: navigation`
+- **Cause**: jsdom ne supporte pas `window.location.href` assignments
+- **Solution**: Mock complet de window.location avec setter/getter
+
+#### Tests SQL Order Dependencies  
+- **Symptôme**: Tests qui passent/échouent selon l'ordre d'exécution
+- **Cause**: Les tests vérifient des appels SQL dans le mauvais ordre
+- **Solution**: Analyser l'API et utiliser `toHaveBeenNthCalledWith(N, ...)`
+
+#### BigInt Serialization Errors
+- **Symptôme**: `TypeError: Do not know how to serialize a BigInt`
+- **Cause**: JSON.stringify ne peut pas sérialiser les BigInt
+- **Solution**: Conversion explicite `Number(bigintValue)` dans les API
+
+### 📋 CHECKLIST AVANT NOUVEAUX TESTS
+
+✅ Utiliser `createMockRequest` pour tous les tests d'API  
+✅ Mock `window.location` si le composant fait de la navigation  
+✅ Vérifier l'ordre exact des appels SQL dans l'API  
+✅ Convertir les BigInt en Number dans les réponses  
+✅ Mocker `console.error` pour éviter le bruit  
+✅ Tester les edge cases avec fallback logic  
+✅ Lancer `npm run quality` avant de marquer comme terminé
+
+### 🔧 CORRECTIONS APPLIQUÉES (HISTORIQUE)
+
+**Session 2024**: Correction complète de la suite de tests (18 tests cassés → 0)
+
+#### Corrections API:
+- **`src/app/api/sessions/[sessionId]/events/route.ts`**: Ajout gestion BigInt → Number
+- **Logique équipes**: Noms d'équipe dynamiques (`playerName & player2Name`)
+
+#### Corrections Tests:
+- **`session-events.test.ts`**: Mock NextRequest + correction args JSON
+- **`session-join-teams.test.ts`**: Mock NextRequest + ordre SQL précis
+- **`BackButton.test.tsx`**: Mock window.location complet
+- **`complete-game-flows.test.tsx`**: Calculs score + parsing JSON  
+- **`team-detection.test.tsx`**: Logique fallback ID équipes
+
+#### Patterns Créés:
+- **`createMockRequest()`**: Helper réutilisable pour tous tests API
+- **BigInt handling**: Pattern pour toutes les API avec lastInsertRowId
+- **SQL order testing**: Méthodologie `toHaveBeenNthCalledWith`
+- **Navigation mocking**: Solution robuste pour jsdom
+
+**Résultat**: 167/167 tests passent ✅
 
 ## 🎮 REAL-TIME MULTIPLAYER ARCHITECTURE (AI DEEP KNOWLEDGE)
 

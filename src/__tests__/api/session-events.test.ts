@@ -1,5 +1,14 @@
 import { NextRequest } from 'next/server';
 
+// Helper to create a proper request mock for testing
+function createMockRequest(url: string, body: any) {
+  return {
+    json: jest.fn().mockResolvedValue(body),
+    url,
+    method: 'POST',
+  } as any;
+}
+
 // Mock tursoClient
 jest.mock('../../lib/database', () => ({
   tursoClient: {
@@ -27,13 +36,11 @@ describe('/api/sessions/[sessionId]/events', () => {
         .mockResolvedValueOnce({}); // Session activity update
 
       const sessionId = '456';
-      const request = {
-        json: jest.fn().mockResolvedValue({
-          event_type: 'variant_selected',
-          event_data: { variant: 'classique' },
-          user_id: 789
-        })
-      } as any;
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/events`, {
+        event_type: 'variant_selected',
+        event_data: { variant: 'classique' },
+        user_id: 789
+      });
 
       const response = await POST(request, { 
         params: Promise.resolve({ sessionId }) 
@@ -72,13 +79,10 @@ describe('/api/sessions/[sessionId]/events', () => {
         teamName: 'Équipe 2'
       };
 
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/events`, {
-        method: 'POST',
-        body: JSON.stringify({
-          event_type: 'player_joined',
-          event_data: eventData,
-          user_id: 200
-        })
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/events`, {
+        event_type: 'player_joined',
+        event_data: eventData,
+        user_id: 200
       });
 
       const response = await POST(request, { 
@@ -98,12 +102,9 @@ describe('/api/sessions/[sessionId]/events', () => {
 
     it('should handle missing event_type', async () => {
       const sessionId = '789';
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/events`, {
-        method: 'POST',
-        body: JSON.stringify({
-          event_data: { variant: 'moderne' }
-          // Missing event_type
-        })
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/events`, {
+        event_data: { variant: 'moderne' }
+        // Missing event_type
       });
 
       const response = await POST(request, { 
@@ -121,12 +122,9 @@ describe('/api/sessions/[sessionId]/events', () => {
         .mockResolvedValueOnce({});
 
       const sessionId = '321';
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/events`, {
-        method: 'POST',
-        body: JSON.stringify({
-          event_type: 'game_started'
-          // No user_id provided
-        })
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/events`, {
+        event_type: 'game_started'
+        // No user_id provided
       });
 
       const response = await POST(request, { 
@@ -138,7 +136,7 @@ describe('/api/sessions/[sessionId]/events', () => {
       // Verify null user_id is handled correctly
       expect(mockExecute).toHaveBeenCalledWith({
         sql: expect.stringContaining('INSERT INTO session_events'),
-        args: [sessionId, null, 'game_started', 'null']
+        args: [sessionId, null, 'game_started', null]
       });
     });
 
@@ -148,12 +146,9 @@ describe('/api/sessions/[sessionId]/events', () => {
         .mockResolvedValueOnce({});
 
       const sessionId = '654';
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/events`, {
-        method: 'POST',
-        body: JSON.stringify({
-          event_type: 'round_completed'
-          // No event_data provided
-        })
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/events`, {
+        event_type: 'round_completed'
+        // No event_data provided
       });
 
       const response = await POST(request, { 
@@ -165,7 +160,7 @@ describe('/api/sessions/[sessionId]/events', () => {
       // Verify null event_data is handled correctly
       expect(mockExecute).toHaveBeenCalledWith({
         sql: expect.stringContaining('INSERT INTO session_events'),
-        args: [sessionId, null, 'round_completed', 'null']
+        args: [sessionId, null, 'round_completed', null]
       });
     });
 
@@ -173,12 +168,9 @@ describe('/api/sessions/[sessionId]/events', () => {
       mockExecute.mockRejectedValue(new Error('Database connection failed'));
 
       const sessionId = '999';
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/events`, {
-        method: 'POST',
-        body: JSON.stringify({
-          event_type: 'variant_selected',
-          event_data: { variant: 'moderne' }
-        })
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/events`, {
+        event_type: 'variant_selected',
+        event_data: { variant: 'moderne' }
       });
 
       const response = await POST(request, { 
@@ -212,13 +204,10 @@ describe('/api/sessions/[sessionId]/events', () => {
       };
 
       const sessionId = '888';
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/events`, {
-        method: 'POST',
-        body: JSON.stringify({
-          event_type: 'round_completed',
-          event_data: complexEventData,
-          user_id: 100
-        })
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/events`, {
+        event_type: 'round_completed',
+        event_data: complexEventData,
+        user_id: 100
       });
 
       const response = await POST(request, { 
@@ -237,16 +226,13 @@ describe('/api/sessions/[sessionId]/events', () => {
     it('should handle bigint lastInsertRowId', async () => {
       // Some databases return bigint for IDs
       mockExecute
-        .mockResolvedValueOnce({ lastInsertRowid: BigInt(999999999999) })
+        .mockResolvedValueOnce({ lastInsertRowId: BigInt(999999999999) })
         .mockResolvedValueOnce({});
 
       const sessionId = '111';
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/events`, {
-        method: 'POST',
-        body: JSON.stringify({
-          event_type: 'test_event',
-          event_data: { test: true }
-        })
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/events`, {
+        event_type: 'test_event',
+        event_data: { test: true }
       });
 
       const response = await POST(request, { 
@@ -255,7 +241,7 @@ describe('/api/sessions/[sessionId]/events', () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.event_id).toBe(BigInt(999999999999));
+      expect(data.event_id).toBe(Number(BigInt(999999999999)));
     });
   });
 });

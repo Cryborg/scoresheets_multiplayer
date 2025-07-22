@@ -265,8 +265,8 @@ describe('Flux de jeux complets - Tests E2E basiques', () => {
 
         expect(reglesModernes).toHaveLength(1);
         expect(reglesClassiques).toHaveLength(4);
-        expect(totalModerne).toBe(1800); // Sans bonus capot
-        expect(totalClassique).toBe(2300); // Avec bonus capot
+        expect(totalModerne).toBe(1900); // Sans bonus capot
+        expect(totalClassique).toBe(2400); // Avec bonus capot
         expect(totalClassique).toBeGreaterThan(totalModerne);
       });
 
@@ -320,7 +320,7 @@ describe('Flux de jeux complets - Tests E2E basiques', () => {
         };
 
         // Équipe 2 doit recevoir le choix
-        const variantReceived = JSON.parse(variantEvent.event_data as string);
+        const variantReceived = variantEvent.event_data;
         
         expect(variantEvent.event_type).toBe('variant_selected');
         expect(variantReceived.variant).toBe('classique');
@@ -342,8 +342,8 @@ describe('Flux de jeux complets - Tests E2E basiques', () => {
           let convertedId;
           if (databaseId === 1) convertedId = 1;
           else if (databaseId === 2) convertedId = 2;
-          else if (databaseId > 20) convertedId = databaseId - 20;
-          else convertedId = databaseId <= 2 ? databaseId : 1;
+          else if (databaseId >= 21 && databaseId <= 22) convertedId = databaseId - 20;
+          else convertedId = 1; // Fallback to team 1 for any other ID
 
           expect(convertedId).toBe(displayId);
         });

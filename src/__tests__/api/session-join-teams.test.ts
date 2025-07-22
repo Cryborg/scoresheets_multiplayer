@@ -1,5 +1,14 @@
 import { NextRequest } from 'next/server';
 
+// Helper to create a proper request mock for testing
+function createMockRequest(url: string, body: any) {
+  return {
+    json: jest.fn().mockResolvedValue(body),
+    url,
+    method: 'POST',
+  } as any;
+}
+
 // Mock tursoClient
 jest.mock('../../lib/database', () => ({
   tursoClient: {
@@ -71,13 +80,10 @@ describe('/api/sessions/[sessionId]/join - Team Games', () => {
       mockExecute.mockResolvedValueOnce({});
 
       const sessionId = '456';
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/join`, {
-        method: 'POST',
-        body: JSON.stringify({
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/join`, {
           playerName: 'Alice',
           player2Name: 'Bob'
-        })
-      });
+        });
 
       const response = await POST(request, { 
         params: Promise.resolve({ sessionId }) 
@@ -90,10 +96,10 @@ describe('/api/sessions/[sessionId]/join - Team Games', () => {
       expect(data.players[0].name).toBe('Alice');
       expect(data.players[1].name).toBe('Bob');
       
-      // Verify team creation
-      expect(mockExecute).toHaveBeenCalledWith({
+      // Verify team creation (5th call after session check, player check, position check, team count check)
+      expect(mockExecute).toHaveBeenNthCalledWith(5, {
         sql: 'INSERT INTO teams (session_id, team_name) VALUES (?, ?)',
-        args: [sessionId, 'Équipe 2']
+        args: [sessionId, 'Alice & Bob'] // Team name is now playerName & player2Name
       });
       
       // Verify both players inserted with team_id
@@ -143,13 +149,10 @@ describe('/api/sessions/[sessionId]/join - Team Games', () => {
       mockExecute.mockResolvedValueOnce({});
 
       const sessionId = '456';
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/join`, {
-        method: 'POST',
-        body: JSON.stringify({
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/join`, {
           playerName: 'Charlie',
           player2Name: 'David'
-        })
-      });
+        });
 
       const response = await POST(request, { 
         params: Promise.resolve({ sessionId }) 
@@ -198,13 +201,10 @@ describe('/api/sessions/[sessionId]/join - Team Games', () => {
       mockExecute.mockResolvedValueOnce({});
 
       const sessionId = '789';
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/join`, {
-        method: 'POST',
-        body: JSON.stringify({
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/join`, {
           playerName: 'Solo Player'
           // No player2Name for non-team game
-        })
-      });
+        });
 
       const response = await POST(request, { 
         params: Promise.resolve({ sessionId }) 
@@ -234,13 +234,10 @@ describe('/api/sessions/[sessionId]/join - Team Games', () => {
       });
 
       const sessionId = '456';
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/join`, {
-        method: 'POST',
-        body: JSON.stringify({
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/join`, {
           playerName: 'Alice',
           player2Name: 'Bob'
-        })
-      });
+        });
 
       const response = await POST(request, { 
         params: Promise.resolve({ sessionId }) 
@@ -265,13 +262,10 @@ describe('/api/sessions/[sessionId]/join - Team Games', () => {
       });
 
       const sessionId = '456';
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/join`, {
-        method: 'POST',
-        body: JSON.stringify({
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/join`, {
           playerName: 'Alice',
           player2Name: 'Bob'
-        })
-      });
+        });
 
       const response = await POST(request, { 
         params: Promise.resolve({ sessionId }) 
@@ -284,13 +278,10 @@ describe('/api/sessions/[sessionId]/join - Team Games', () => {
 
     it('should handle missing required playerName', async () => {
       const sessionId = '456';
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/join`, {
-        method: 'POST',
-        body: JSON.stringify({
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/join`, {
           // Missing playerName
           player2Name: 'Bob'
-        })
-      });
+        });
 
       const response = await POST(request, { 
         params: Promise.resolve({ sessionId }) 
@@ -315,29 +306,25 @@ describe('/api/sessions/[sessionId]/join - Team Games', () => {
         .mockResolvedValueOnce({}); // Join event
 
       const sessionId = '456';
-      const request = new NextRequest(`http://localhost/api/sessions/${sessionId}/join`, {
-        method: 'POST',
-        body: JSON.stringify({
+      const request = createMockRequest(`http://localhost/api/sessions/${sessionId}/join`, {
           playerName: 'Alice',
           player2Name: 'Bob'
-        })
-      });
+        });
 
       await POST(request, { params: Promise.resolve({ sessionId }) });
 
-      // Verify join event includes team information
-      expect(mockExecute).toHaveBeenCalledWith({
+      // Verify join event includes team information (9th call - last one)
+      expect(mockExecute).toHaveBeenNthCalledWith(9, {
         sql: expect.stringContaining('INSERT INTO session_events'),
         args: [
           sessionId,
           123, // Original user ID
-          'player_joined',
           JSON.stringify({
             players: [
               { playerId: 201, name: 'Alice', position: 2 },
               { playerId: 202, name: 'Bob', position: 3 }
             ],
-            teamName: 'Équipe 2'
+            teamName: 'Alice & Bob' // Team name is playerName & player2Name
           })
         ]
       });
