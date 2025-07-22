@@ -1,6 +1,6 @@
-# 🎯 Scoresheets Multiplayer
+# 🎯 Oh Sheet! Score like a pro
 
-**Application web de feuilles de score multiplayer en temps réel** pour jeux de société.
+**The fun way to score your multiplayer card and dice games in real-time!**
 
 Créez des parties, invitez vos amis avec un code de session, et jouez ensemble avec synchronisation automatique des scores !
 

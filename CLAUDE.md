@@ -4,7 +4,7 @@
 
 ## 🚨 CRITICAL CONTEXT FOR AI
 
-**PROJECT**: Scoresheets Multiplayer - Real-time card/dice game scoring web app
+**PROJECT**: Oh Sheet! - Real-time multiplayer game scoring web app ("Score like a pro")
 **CODEBASE SIZE**: ~50 files, 15k+ lines TypeScript/React
 **ARCHITECTURE QUALITY**: B+ (Production-ready, some tech debt)
 **CURRENT STATE**: 5 games implemented, multiplayer system working, active development

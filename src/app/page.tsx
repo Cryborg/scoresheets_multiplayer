@@ -39,10 +39,10 @@ export default function HomePage() {
       <div suppressHydrationWarning className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Scoresheets Multiplayer
+            Oh Sheet!
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Chargement...
+            Score like a pro - Chargement...
           </p>
         </div>
       </div>
@@ -54,10 +54,10 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-          Scoresheets Multiplayer
+          Oh Sheet!
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Redirection en cours...
+          Score like a pro - Redirection en cours...
         </p>
       </div>
     </div>

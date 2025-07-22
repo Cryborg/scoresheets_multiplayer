@@ -1,4 +1,4 @@
-# 🚀 Roadmap & Idées d'évolution - Scoresheets Multiplayer
+# 🚀 Roadmap & Idées d'évolution - Oh Sheet!
 
 ## 📋 Fonctionnalités en attente
 

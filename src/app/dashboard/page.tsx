@@ -229,7 +229,7 @@ export default function DashboardPage() {
         <div className="mt-12 text-center border-t dark:border-gray-700 pt-6">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Gamepad2 className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Multiplayer Edition</span>
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Score like a pro</span>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-500">Next.js 15 + Turso SQLite + Polling temps réel • 🚧 Version de développement</p>
         </div>

@@ -1,8 +1,8 @@
 {
-  "name": "scoresheets-multiplayer",
+  "name": "oh-sheet",
   "version": "1.0.0",
   "private": true,
-  "description": "Multiplayer real-time scoresheets for card and dice games",
+  "description": "Oh Sheet! Score like a pro - Multiplayer real-time game scoring made fun",
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:clean": "rm -rf .next && rm -rf node_modules/.cache && next dev --turbopack",

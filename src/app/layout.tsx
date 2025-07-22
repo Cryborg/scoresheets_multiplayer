@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Scoresheets Multiplayer",
-  description: "Fiches de score multijoueur en temps réel pour jeux de cartes et de dés",
+  title: "Oh Sheet! Score like a pro",
+  description: "Oh Sheet! The fun way to score your multiplayer card and dice games in real-time",
 };
 
 export default function RootLayout({
