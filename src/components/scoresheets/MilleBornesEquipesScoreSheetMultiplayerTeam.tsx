@@ -228,28 +228,168 @@ const PlayerScoreInputModule: React.FC<PlayerScoreInputModuleProps> = React.memo
   }
 );
 
-// Read-only component for opponent team display
+// Read-only component for opponent team display - shows full details but no interactions
 interface ReadOnlyPlayerScoreModuleProps {
   player: Player;
   gameVariant: GameVariant;
+  calculatePlayerScore: (playerId: number) => number;
+  roundData: MilleBornesRoundData;
 }
 
-const ReadOnlyPlayerScoreModule: React.FC<ReadOnlyPlayerScoreModuleProps> = ({ player }) => {
+const ReadOnlyPlayerScoreModule: React.FC<ReadOnlyPlayerScoreModuleProps> = ({ 
+  player, 
+  gameVariant, 
+  calculatePlayerScore, 
+  roundData 
+}) => {
   return (
-    <div key={player.id} className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+    <div key={player.id} className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800 opacity-75">
       <h3 className="font-medium mb-4 flex items-center gap-2">
         <div className={`w-3 h-3 rounded-full ${
           player.is_connected ? 'bg-green-500' : 'bg-gray-400'
         }`}></div>
         {player.player_name}
         <span className="text-sm text-gray-500 ml-auto">
-          Score total: {player.total_score || 0}
+          Total: {calculatePlayerScore(player.id)}
+        </span>
+        <span className="text-xs text-gray-400 bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded">
+          👁️ Lecture seule
         </span>
       </h3>
       
-      <div className="text-sm text-gray-600 dark:text-gray-400 text-center py-8">
-        <p>🔒 Grille en lecture seule</p>
-        <p>Les détails des scores de l&apos;équipe adverse ne sont pas visibles.</p>
+      {/* Distance - Read Only */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2 text-gray-600 dark:text-gray-400">
+          Distance parcourue (km)
+        </label>
+        <div className="bg-gray-100 dark:bg-gray-700 border rounded-lg px-3 py-2 text-gray-600 dark:text-gray-400">
+          {roundData.distances[player.id] || 0} km
+        </div>
+      </div>
+
+      {/* Bottes et Coups Fourrés - Read Only */}
+      <div className="space-y-3">
+        <h4 className="text-sm font-medium flex items-center gap-1 text-gray-600 dark:text-gray-400">
+          <Award className="h-4 w-4" />
+          Bottes & Coups Fourrés
+        </h4>
+        
+        {/* Bottes avec possibilité de coup fourré */}
+        <div className="space-y-3">
+          {[ 
+            { 
+              botteKey: 'as_volant' as const, 
+              coupKey: 'as_volant_coup_fourre' as const, 
+              label: 'As du Volant',
+              description: 'contre Accident'
+            },
+            { 
+              botteKey: 'increvable' as const, 
+              coupKey: 'increvable_coup_fourre' as const, 
+              label: 'Increvable',
+              description: 'contre Crevaison'
+            },
+            { 
+              botteKey: 'citerne' as const, 
+              coupKey: 'citerne_coup_fourre' as const, 
+              label: 'Citerne',
+              description: 'contre Panne d\\'Essence'
+            },
+            { 
+              botteKey: 'prioritaire' as const, 
+              coupKey: 'prioritaire_coup_fourre' as const, 
+              label: 'Prioritaire',
+              description: 'contre Limitation'
+            }
+          ].map(({ botteKey, coupKey, label, description }) => (
+            <div key={botteKey} className="border border-gray-200 dark:border-gray-600 rounded p-3 bg-gray-50 dark:bg-gray-750">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{label}</span>
+                <span className="text-xs text-gray-500">{description}</span>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                    roundData.primes[player.id]?.[botteKey] 
+                      ? 'bg-green-500 border-green-500 text-white' 
+                      : 'bg-gray-200 dark:bg-gray-600 border-gray-300 dark:border-gray-500'
+                  }`}>
+                    {roundData.primes[player.id]?.[botteKey] && '✓'}
+                  </div>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">Botte (+100)</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                    roundData.primes[player.id]?.[coupKey] 
+                      ? 'bg-blue-500 border-blue-500 text-white' 
+                      : 'bg-gray-200 dark:bg-gray-600 border-gray-300 dark:border-gray-500'
+                  }`}>
+                    {roundData.primes[player.id]?.[coupKey] && '✓'}
+                  </div>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">Coup fourré (+300)</span>
+                </div>
+              </div>
+              
+              {/* Affichage du total pour cette botte */}
+              {roundData.primes[player.id]?.[botteKey] && (
+                <div className="mt-2 text-xs text-green-600 dark:text-green-400">
+                  Total: {100 + (roundData.primes[player.id]?.[coupKey] ? 300 : 0)} points
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Fins de manche */}
+        <div className="mt-4">
+          <h5 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Fins de manche</h5>
+          <div className="space-y-2 text-sm">
+            {/* Sans les 200 (commune à toutes versions) */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                  roundData.primes[player.id]?.sans_les_200 
+                    ? 'bg-purple-500 border-purple-500 text-white' 
+                    : 'bg-gray-200 dark:bg-gray-600 border-gray-300 dark:border-gray-500'
+                }`}>
+                  {roundData.primes[player.id]?.sans_les_200 && '✓'}
+                </div>
+                <span className="text-xs text-gray-600 dark:text-gray-400">Sans les 200 (+300)</span>
+              </div>
+            </div>
+            
+            {/* Primes classiques uniquement */}
+            {gameVariant === 'classique' && (
+              <div className="space-y-1">
+                <h6 className="text-xs font-medium text-green-700 dark:text-green-300">Classique uniquement</h6>
+                {[ 
+                  { key: 'allonge' as const, label: 'Allonge (700→1000)', points: 200 },
+                  { key: 'coup_couronnement' as const, label: 'Coup du Couronnement', points: 300 },
+                  { key: 'capot' as const, label: 'Capot', points: 500 }
+                ].map(({ key, label, points }) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                      roundData.primes[player.id]?.[key] 
+                        ? 'bg-orange-500 border-orange-500 text-white' 
+                        : 'bg-gray-200 dark:bg-gray-600 border-gray-300 dark:border-gray-500'
+                    }`}>
+                      {roundData.primes[player.id]?.[key] && '✓'}
+                    </div>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">{label} (+{points})</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+          </div>
+        </div>
+
+        {/* Bonus manche terminée automatique */}
+        <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded text-xs text-green-800 dark:text-green-200">
+          <strong>+400 points</strong> automatiques si 1000 bornes atteintes
+        </div>
       </div>
     </div>
   );
@@ -333,9 +473,33 @@ function MilleBornesEquipesGameInterface({
     return { myTeamPlayers: [], otherTeamPlayers: [], displayTeamId: 1 };
   }, [session?.players, session?.teams, gameState.currentUserId]);
 
+  // Global round data - reconstructed from latest session round or current input
+  const globalRoundData = useMemo((): MilleBornesRoundData => {
+    const result: MilleBornesRoundData = {
+      distances: {},
+      primes: {}
+    };
+
+    // For my team, use current roundData (being edited)
+    myTeamPlayers.forEach(player => {
+      result.distances[player.id] = roundData.distances[player.id] || 0;
+      result.primes[player.id] = roundData.primes[player.id] || {};
+    });
+
+    // For other team, try to reconstruct from latest round or use placeholder data
+    otherTeamPlayers.forEach(player => {
+      // For now, use placeholder data - in real app this would come from latest round
+      // or from live session state if they're currently editing
+      result.distances[player.id] = 0;
+      result.primes[player.id] = {};
+    });
+
+    return result;
+  }, [roundData, myTeamPlayers, otherTeamPlayers]);
+
   const calculatePlayerScore = useCallback((playerId: number) => {
-    const distance = Number(roundData.distances[playerId]) || 0;
-    const primes = roundData.primes[playerId];
+    const distance = Number(globalRoundData.distances[playerId]) || 0;
+    const primes = globalRoundData.primes[playerId];
     
     if (!primes) {
       return distance + (distance >= 1000 ? PRIME_VALUES.manche_terminee : 0);
@@ -371,7 +535,7 @@ function MilleBornesEquipesGameInterface({
     }
 
     return score;
-  }, [roundData.distances, roundData.primes, effectiveVariant]);
+  }, [globalRoundData.distances, globalRoundData.primes, effectiveVariant]);
 
   const updatePlayerDistance = useCallback((playerId: number, distance: number) => {
     setRoundData(prev => ({
@@ -634,6 +798,8 @@ function MilleBornesEquipesGameInterface({
                   key={player.id}
                   player={player}
                   gameVariant={effectiveVariant}
+                  calculatePlayerScore={calculatePlayerScore}
+                  roundData={globalRoundData}
                 />
               ))}
             </div>

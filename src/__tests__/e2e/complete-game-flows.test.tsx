@@ -11,11 +11,17 @@ describe('Flux de jeux complets - Tests E2E basiques', () => {
       // Test basique d'import pour vérifier qu'il n'y a pas d'erreurs de syntaxe
       const { default: YamsScoreSheetMultiplayer } = await import('../../components/scoresheets/YamsScoreSheetMultiplayer');
       const { default: MilleBornesScoreSheetMultiplayer } = await import('../../components/scoresheets/MilleBornesScoreSheetMultiplayer');
+      const { default: MilleBornesEquipesScoreSheetMultiplayerTeam } = await import('../../components/scoresheets/MilleBornesEquipesScoreSheetMultiplayerTeam');
       const { default: TarotScoreSheetMultiplayer } = await import('../../components/scoresheets/TarotScoreSheetMultiplayer');
+      const { default: BeloteScoreSheetMultiplayer } = await import('../../components/scoresheets/BeloteScoreSheetMultiplayer');
+      const { default: BridgeScoreSheetMultiplayer } = await import('../../components/scoresheets/BridgeScoreSheetMultiplayer');
       
       expect(YamsScoreSheetMultiplayer).toBeDefined();
       expect(MilleBornesScoreSheetMultiplayer).toBeDefined();
+      expect(MilleBornesEquipesScoreSheetMultiplayerTeam).toBeDefined();
       expect(TarotScoreSheetMultiplayer).toBeDefined();
+      expect(BeloteScoreSheetMultiplayer).toBeDefined();
+      expect(BridgeScoreSheetMultiplayer).toBeDefined();
     });
   });
 
@@ -233,6 +239,114 @@ describe('Flux de jeux complets - Tests E2E basiques', () => {
         expect(totaux.equipe1).toBe(5100); // Gagnante !
         expect(totaux.equipe2).toBe(3500);
         expect(totaux.equipe1).toBeGreaterThan(5000);
+      });
+    });
+
+    describe('Mille Bornes Équipes - Tests spécifiques multiplayer', () => {
+      it('devrait gérer les variantes de jeu (moderne vs classique)', () => {
+        const reglesModernes = ['Sans les 200']; // +300 points
+        const reglesClassiques = [...reglesModernes, 'Allonge', 'Coup du Couronnement', 'Capot'];
+        
+        // Calcul score avec règles modernes
+        const scoreModerne = {
+          distance: 1000,
+          bottes: 2 * 100, // 2 bottes
+          mancheTerminee: 400,
+          sansLes200: 300
+        };
+        const totalModerne = Object.values(scoreModerne).reduce((sum, val) => sum + val, 0);
+        
+        // Calcul score avec règles classiques (mêmes conditions + capot)
+        const scoreClassique = {
+          ...scoreModerne,
+          capot: 500 // Bonus capot en plus
+        };
+        const totalClassique = Object.values(scoreClassique).reduce((sum, val) => sum + val, 0);
+
+        expect(reglesModernes).toHaveLength(1);
+        expect(reglesClassiques).toHaveLength(4);
+        expect(totalModerne).toBe(1800); // Sans bonus capot
+        expect(totalClassique).toBe(2300); // Avec bonus capot
+        expect(totalClassique).toBeGreaterThan(totalModerne);
+      });
+
+      it('devrait calculer les scores par équipe (2 joueurs par équipe)', () => {
+        // Équipe 1 : Alice + Bob
+        const equipe1Manche = {
+          alice: { distance: 1000, primes: 600 }, // 1600 total
+          bob: { distance: 750, primes: 400 }     // 1150 total
+        };
+        
+        // Équipe 2 : Charlie + David  
+        const equipe2Manche = {
+          charlie: { distance: 500, primes: 200 }, // 700 total
+          david: { distance: 425, primes: 300 }    // 725 total
+        };
+
+        const totalEquipe1 = Object.values(equipe1Manche).reduce((sum, player) => 
+          sum + player.distance + player.primes, 0
+        );
+        const totalEquipe2 = Object.values(equipe2Manche).reduce((sum, player) => 
+          sum + player.distance + player.primes, 0
+        );
+
+        expect(totalEquipe1).toBe(2750); // Alice + Bob
+        expect(totalEquipe2).toBe(1425); // Charlie + David
+        expect(totalEquipe1).toBeGreaterThan(totalEquipe2); // Équipe 1 gagne
+      });
+
+      it('devrait valider les contraintes d\'équipes', () => {
+        const contraintesEquipes = {
+          joueursParEquipe: 2,
+          nombreEquipes: 2,
+          totalJoueurs: 4,
+          minJoueursPartie: 4,
+          maxJoueursPartie: 4
+        };
+
+        expect(contraintesEquipes.joueursParEquipe * contraintesEquipes.nombreEquipes)
+          .toBe(contraintesEquipes.totalJoueurs);
+        expect(contraintesEquipes.totalJoueurs).toBe(contraintesEquipes.minJoueursPartie);
+        expect(contraintesEquipes.totalJoueurs).toBe(contraintesEquipes.maxJoueursPartie);
+      });
+
+      it('devrait synchroniser les choix de variantes entre équipes', () => {
+        // Simulation d'événement de synchronisation  
+        const variantEvent = {
+          event_type: 'variant_selected',
+          event_data: { variant: 'classique' },
+          user_id: 123, // Hôte de l'équipe 1
+          timestamp: new Date().toISOString()
+        };
+
+        // Équipe 2 doit recevoir le choix
+        const variantReceived = JSON.parse(variantEvent.event_data as string);
+        
+        expect(variantEvent.event_type).toBe('variant_selected');
+        expect(variantReceived.variant).toBe('classique');
+        expect(typeof variantEvent.user_id).toBe('number');
+        expect(variantEvent.timestamp).toBeDefined();
+      });
+
+      it('devrait convertir les IDs d\'équipe pour l\'affichage', () => {
+        // Tests de conversion des IDs base de données -> affichage
+        const conversions = [
+          { databaseId: 1, displayId: 1 },
+          { databaseId: 2, displayId: 2 },
+          { databaseId: 21, displayId: 1 }, // 21 - 20 = 1
+          { databaseId: 22, displayId: 2 }, // 22 - 20 = 2
+          { databaseId: 999, displayId: 1 } // Fallback
+        ];
+
+        conversions.forEach(({ databaseId, displayId }) => {
+          let convertedId;
+          if (databaseId === 1) convertedId = 1;
+          else if (databaseId === 2) convertedId = 2;
+          else if (databaseId > 20) convertedId = databaseId - 20;
+          else convertedId = databaseId <= 2 ? databaseId : 1;
+
+          expect(convertedId).toBe(displayId);
+        });
       });
     });
 
