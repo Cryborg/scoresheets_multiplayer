@@ -8,5 +8,6 @@ export const milleBornesEquipesMetadata = {
   },
   difficulty: 'intermédiaire',
   keywords: ['cartes', 'équipes', 'course', 'kilomètres', 'bottes', 'coups fourrés'],
-  variant: 'équipes'
+  variant: 'équipes',
+  multiplayer: true
 } as const;
