@@ -141,18 +141,49 @@ export default function DashboardPage() {
         </div>
 
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
             <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">Jeux Disponibles</h3>
-            <div className="flex items-center gap-2">
-              <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm">
-                {gameCategories.map(cat => <option key={cat} value={cat}>{cat === 'all' ? 'Catégories' : cat}</option>)}
-              </select>
-              <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-md text-sm">
-                <button onClick={() => setMultiplayerFilter('all')} className={`px-2 py-1 rounded-l-md ${multiplayerFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800'}`}>Tous</button>
-                <button onClick={() => setMultiplayerFilter('multi')} className={`px-2 py-1 border-l border-r dark:border-gray-600 ${multiplayerFilter === 'multi' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800'}`}>Multi</button>
-                <button onClick={() => setMultiplayerFilter('solo')} className={`px-2 py-1 rounded-r-md ${multiplayerFilter === 'solo' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800'}`}>Solo</button>
+            
+            {/* Filtres - Responsive stack */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-2">
+              {/* Ligne 1 mobile : Catégorie + Multi/Solo */}
+              <div className="flex items-center gap-2">
+                <select 
+                  value={categoryFilter} 
+                  onChange={e => setCategoryFilter(e.target.value)} 
+                  className="flex-1 sm:flex-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm min-w-0"
+                >
+                  {gameCategories.map(cat => <option key={cat} value={cat}>{cat === 'all' ? 'Catégories' : cat}</option>)}
+                </select>
+                
+                <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-md text-sm">
+                  <button 
+                    onClick={() => setMultiplayerFilter('all')} 
+                    className={`px-2 py-1 rounded-l-md text-xs sm:text-sm ${multiplayerFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800'}`}
+                  >
+                    Tous
+                  </button>
+                  <button 
+                    onClick={() => setMultiplayerFilter('multi')} 
+                    className={`px-2 py-1 border-l border-r dark:border-gray-600 text-xs sm:text-sm ${multiplayerFilter === 'multi' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800'}`}
+                  >
+                    Multi
+                  </button>
+                  <button 
+                    onClick={() => setMultiplayerFilter('solo')} 
+                    className={`px-2 py-1 rounded-r-md text-xs sm:text-sm ${multiplayerFilter === 'solo' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800'}`}
+                  >
+                    Solo
+                  </button>
+                </div>
               </div>
-              <select value={playerCountFilter} onChange={e => setPlayerCountFilter(e.target.value)} className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm">
+              
+              {/* Ligne 2 mobile : Nombre de joueurs */}
+              <select 
+                value={playerCountFilter} 
+                onChange={e => setPlayerCountFilter(e.target.value)} 
+                className="w-full sm:w-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm"
+              >
                 {playerCounts.map(count => <option key={count} value={count}>{count === 'all' ? 'Joueurs' : `${count} joueurs`}</option>)}
               </select>
             </div>
