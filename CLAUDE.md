@@ -175,6 +175,36 @@ export const gameNameMetadata = {
 - New creation pages (`/games/[game]/new/page.tsx`) - USE EXISTING  
 - Custom hooks for basic session management - USE `useMultiplayerGame`
 
+## 🏷️ BRANDING SYSTEM (AI CRITICAL PATTERN)
+
+### NEVER hardcode branding text - USE CONSTANTS
+```typescript
+// ❌ WRONG - Hardcoded strings everywhere
+<h1>Oh Sheet!</h1>
+<title>Oh Sheet! Score like a pro</title>
+
+// ✅ CORRECT - Single source of truth
+import { BRANDING } from '@/lib/branding';
+<h1>{BRANDING.name}</h1>
+<title>{BRANDING.fullTitle}</title>
+```
+
+### Key branding imports for new pages:
+```typescript
+import { BRANDING, getPageTitle, getMetaDescription } from '@/lib/branding';
+
+// Page titles
+export const metadata = {
+  title: getPageTitle("Game Settings"), // → "Game Settings - Oh Sheet!"
+  description: getMetaDescription("Custom description here")
+};
+
+// UI text
+<h1>{BRANDING.name}</h1>
+<p>{BRANDING.tagline}</p>
+<LoadingSpinner text={BRANDING.loading.text} />
+```
+
 ## 🧠 MULTIPLAYER HOOKS ARCHITECTURE (AI CRITICAL KNOWLEDGE)
 
 ### useMultiplayerGame (Master Hook)

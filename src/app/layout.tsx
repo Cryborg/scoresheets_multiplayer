@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import ToastProviderReactHot from "@/components/providers/ToastProvider";
+import { BRANDING } from "@/lib/branding";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,8 +20,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Oh Sheet! Score like a pro",
-  description: "Oh Sheet! The fun way to score your multiplayer card and dice games in real-time",
+  title: BRANDING.fullTitle,
+  description: BRANDING.description.full,
 };
 
 export default function RootLayout({

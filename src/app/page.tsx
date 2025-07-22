@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { BRANDING } from '@/lib/branding';
 
 export default function HomePage() {
   const router = useRouter();
@@ -39,10 +40,10 @@ export default function HomePage() {
       <div suppressHydrationWarning className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Oh Sheet!
+            {BRANDING.name}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Score like a pro - Chargement...
+            {BRANDING.loading.text}
           </p>
         </div>
       </div>
@@ -54,10 +55,10 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-          Oh Sheet!
+          {BRANDING.name}
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Score like a pro - Redirection en cours...
+          {BRANDING.loading.redirect}
         </p>
       </div>
     </div>
