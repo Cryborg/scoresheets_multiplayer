@@ -77,7 +77,7 @@ export function useGameSessionCreator(game?: Game | null) {
       // La deuxième équipe sera créée via le salon
       if (game.slug === 'mille-bornes-equipes') {
         const newTeams = [
-          { name: 'Équipe 1', players: ['', ''] }
+          { name: '', players: ['', ''] } // Le nom sera généré à partir des joueurs
         ];
         setState(prev => ({ ...prev, teams: newTeams, players: [] }));
       } else {

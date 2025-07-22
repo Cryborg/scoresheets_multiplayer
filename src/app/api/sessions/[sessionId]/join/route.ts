@@ -77,10 +77,11 @@ export async function POST(
       const teamCount = Number(teamsResult.rows[0].team_count);
       
       if (teamCount === 1) {
-        // Create the second team (Équipe 2)
+        // Create the second team with player names
+        const teamName = player2Name?.trim() ? `${playerName.trim()} & ${player2Name.trim()}` : playerName.trim();
         const teamResult = await tursoClient.execute({
           sql: 'INSERT INTO teams (session_id, team_name) VALUES (?, ?)',
-          args: [sessionId, 'Équipe 2']
+          args: [sessionId, teamName]
         });
         
         teamId = typeof teamResult.lastInsertRowid === 'bigint' 
@@ -135,6 +136,11 @@ export async function POST(
     });
 
     // Add join event
+    let eventTeamName = undefined;
+    if (session.game_slug === 'mille-bornes-equipes' && teamId) {
+      eventTeamName = player2Name?.trim() ? `${playerName.trim()} & ${player2Name.trim()}` : playerName.trim();
+    }
+    
     await tursoClient.execute({
       sql: `
         INSERT INTO session_events (session_id, user_id, event_type, event_data)
@@ -145,7 +151,7 @@ export async function POST(
         getAuthenticatedUserId(request), // Use original userId for the event
         JSON.stringify({ 
           players: insertedPlayers,
-          teamName: session.game_slug === 'mille-bornes-equipes' ? 'Équipe 2' : undefined
+          teamName: eventTeamName
         })
       ]
     });

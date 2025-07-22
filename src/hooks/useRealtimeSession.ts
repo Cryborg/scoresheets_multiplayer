@@ -21,12 +21,12 @@ interface UseRealtimeSessionReturn<T> {
   connectionStatus: 'connected' | 'connecting' | 'disconnected' | 'error';
 }
 
-// Configuration adaptative du polling selon l'activité (DEBUG: Increased for testing)
+// Configuration adaptative du polling selon l'activité
 const POLLING_CONFIG = {
-  active: 5000,    // Session active : 5s (was 2s)
-  idle: 8000,      // Session idle : 8s (was 5s)
-  background: 15000, // En arrière-plan : 15s (was 10s)
-  error: 45000     // En erreur : 45s (was 30s)
+  active: 2000,    // Session active : 2s
+  idle: 5000,      // Session idle : 5s
+  background: 10000, // En arrière-plan : 10s
+  error: 30000     // En erreur : 30s
 };
 
 const MAX_RETRY_ATTEMPTS = 3;

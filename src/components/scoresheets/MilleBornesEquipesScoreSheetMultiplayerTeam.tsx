@@ -561,7 +561,6 @@ function MilleBornesEquipesGameInterface({
       }
     };
     
-    console.log('📤 Broadcasting round data:', dataToSend);
     
     try {
       await fetch(`/api/sessions/${session.id}/events`, {
@@ -706,7 +705,6 @@ function MilleBornesEquipesGameInterface({
         .filter(event => event.event_type === 'round_data_updated')
         .reverse(); // Most recent first
 
-      console.log(`🔍 Processing ${roundDataEvents.length} events...`);
 
       if (roundDataEvents.length > 0) {
         const updatedData: MilleBornesRoundData = { distances: {}, primes: {} };
@@ -731,7 +729,6 @@ function MilleBornesEquipesGameInterface({
                   if (!isMyPlayer && !processedDistances.has(playerId)) {
                     updatedData.distances[playerId] = distance as number;
                     processedDistances.add(playerId);
-                    console.log(`🏃 Player ${playerId}: ${distance}km ✅`);
                     eventsProcessed++;
                   } else if (!isMyPlayer) {
                     eventsSkipped++;
@@ -753,13 +750,11 @@ function MilleBornesEquipesGameInterface({
                 });
               }
             } catch (e) {
-              console.error('❌ Parse error:', e);
+              // Ignore parse errors
             }
           }
         });
         
-        console.log(`✅ Used ${eventsProcessed} events, skipped ${eventsSkipped} older ones`);
-        console.log('💾 Final data:', updatedData);
         setOtherTeamsRoundData(updatedData);
       }
     }

@@ -198,10 +198,17 @@ export async function POST(
     let position = 0;
     if (game.team_based && teams) {
       for (const team of teams) {
+        // Generate team name from player names for Mille Bornes Équipes
+        let teamName = team.name;
+        if (game.slug === 'mille-bornes-equipes') {
+          const validPlayers = team.players.filter((p: string) => p.trim());
+          teamName = validPlayers.length >= 2 ? `${validPlayers[0]} & ${validPlayers[1]}` : validPlayers[0] || 'Équipe';
+        }
+        
         // Insert team and get its ID
         const teamResult = await db.execute({
           sql: `INSERT INTO teams (session_id, team_name) VALUES (?, ?)`,
-          args: [sessionId, team.name]
+          args: [sessionId, teamName]
         });
         let teamId = teamResult.lastInsertRowid;
         if (typeof teamId === 'bigint') {
