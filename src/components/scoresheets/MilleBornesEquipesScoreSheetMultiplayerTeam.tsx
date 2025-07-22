@@ -544,16 +544,19 @@ function MilleBornesEquipesGameInterface({
   }, [globalRoundData.distances, globalRoundData.primes, effectiveVariant]);
 
   // Function to broadcast round data changes (declared before usage)
-  const broadcastRoundData = useCallback(async () => {
+  const broadcastRoundData = useCallback(async (overrideData?: MilleBornesRoundData) => {
     if (!session) return;
+    
+    // Use override data if provided, otherwise use current state
+    const currentData = overrideData || roundData;
     
     const dataToSend = {
       roundData: {
         distances: Object.fromEntries(
-          myTeamPlayers.map(p => [p.id, roundData.distances[p.id] || 0])
+          myTeamPlayers.map(p => [p.id, currentData.distances[p.id] || 0])
         ),
         primes: Object.fromEntries(
-          myTeamPlayers.map(p => [p.id, roundData.primes[p.id] || {}])
+          myTeamPlayers.map(p => [p.id, currentData.primes[p.id] || {}])
         )
       }
     };
@@ -577,43 +580,50 @@ function MilleBornesEquipesGameInterface({
     }
   }, [session, myTeamPlayers, roundData]);
 
-  // Debounced broadcast function
-  const debouncedBroadcast = useCallback(() => {
-    // Clear any existing timeout
+
+  const updatePlayerDistance = useCallback((playerId: number, distance: number) => {
+    const newRoundData = {
+      distances: { ...roundData.distances, [playerId]: distance },
+      primes: roundData.primes
+    };
+    
+    setRoundData(newRoundData);
+    
+    // Broadcast with the new data immediately, not after state update
     if (broadcastTimeoutRef.current) {
       clearTimeout(broadcastTimeoutRef.current);
     }
     
-    // Set new timeout with shorter delay for better responsiveness
     broadcastTimeoutRef.current = setTimeout(() => {
-      broadcastRoundData();
+      broadcastRoundData(newRoundData);
       broadcastTimeoutRef.current = null;
-    }, 50); // Reduced from 100ms to 50ms
-  }, [broadcastRoundData]);
-
-  const updatePlayerDistance = useCallback((playerId: number, distance: number) => {
-    setRoundData(prev => ({
-      ...prev,
-      distances: { ...prev.distances, [playerId]: distance }
-    }));
-    // Use debounced broadcast
-    debouncedBroadcast();
-  }, [debouncedBroadcast]);
+    }, 50);
+  }, [roundData, broadcastRoundData]);
 
   const updatePlayerPrime = useCallback((playerId: number, primeKey: keyof MilleBornesPrimes, value: boolean) => {
-    setRoundData(prev => ({
-      ...prev,
+    const newRoundData = {
+      distances: roundData.distances,
       primes: {
-        ...prev.primes,
+        ...roundData.primes,
         [playerId]: {
-          ...prev.primes[playerId],
+          ...roundData.primes[playerId],
           [primeKey]: value
         }
       }
-    }));
-    // Use debounced broadcast
-    debouncedBroadcast();
-  }, [debouncedBroadcast]);
+    };
+    
+    setRoundData(newRoundData);
+    
+    // Broadcast with the new data immediately, not after state update
+    if (broadcastTimeoutRef.current) {
+      clearTimeout(broadcastTimeoutRef.current);
+    }
+    
+    broadcastTimeoutRef.current = setTimeout(() => {
+      broadcastRoundData(newRoundData);
+      broadcastTimeoutRef.current = null;
+    }, 50);
+  }, [roundData, broadcastRoundData]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
