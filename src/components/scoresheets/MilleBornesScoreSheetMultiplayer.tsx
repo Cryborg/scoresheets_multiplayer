@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Users, Wifi, WifiOff, Clock, Car, Award } from 'lucide-react';
 import ScoreInput from '@/components/ui/ScoreInput';
@@ -10,6 +10,7 @@ import RankingSidebar from '@/components/layout/RankingSidebar';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import MilleBornesRulesHelper from '@/components/ui/MilleBornesRulesHelper';
 import { useRealtimeSession } from '@/hooks/useRealtimeSession';
+import { TeamRecord } from '@/types/realtime'; // Import TeamRecord
 
 interface Player {
   id: number;
@@ -19,6 +20,7 @@ interface Player {
   is_ready: number;
   user_id?: number;
   total_score?: number;
+  team_id?: number;
 }
 
 interface GameSession {
@@ -31,10 +33,12 @@ interface GameSession {
   current_round: number;
   score_target?: number;
   players: Player[];
+  teams?: TeamRecord[]; // Add teams to GameSession
   rounds: Array<{
     round_number: number;
     scores: { [playerId: number]: number };
   }>;
+  team_based: number; // Add team_based to GameSession
 }
 
 interface MilleBornesRoundData {
@@ -88,13 +92,190 @@ const PRIME_VALUES = {
   capot: 500,              // Adversaire n'a aucune borne
 };
 
+// Nouveau composant pour la saisie des scores d'un joueur
+interface PlayerScoreInputModuleProps {
+  player: Player;
+  roundData: MilleBornesRoundData;
+  gameVariant: GameVariant;
+  calculatePlayerScore: (playerId: number) => number;
+  updatePlayerDistance: (playerId: number, distance: number) => void;
+  updatePlayerPrime: (playerId: number, primeKey: keyof MilleBornesPrimes, value: boolean | number) => void;
+}
+
+const PlayerScoreInputModule: React.FC<PlayerScoreInputModuleProps> = React.memo(
+  ({ player, roundData, gameVariant, calculatePlayerScore, updatePlayerDistance, updatePlayerPrime }) => {
+    return (
+      <div key={player.id} className="border rounded-lg p-4">
+        <h3 className="font-medium mb-4 flex items-center gap-2">
+          <div className={`w-3 h-3 rounded-full ${
+            player.is_connected ? 'bg-green-500' : 'bg-gray-400'
+          }`}></div>
+          {player.player_name}
+          <span className="text-sm text-gray-500 ml-auto">
+            Total aperçu: {calculatePlayerScore(player.id)}
+          </span>
+        </h3>
+        
+        {/* Distance */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">
+            Distance parcourue (km)
+          </label>
+          <ScoreInput
+            value={roundData.distances[player.id] || 0}
+            onChange={(value) => updatePlayerDistance(player.id, value)}
+            min={0}
+            max={1000}
+            step={25}
+          />
+        </div>
+
+        {/* Bottes et Coups Fourrés */}
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium flex items-center gap-1">
+            <Award className="h-4 w-4" />
+            Bottes & Coups Fourrés
+          </h4>
+          
+          {/* Bottes avec possibilité de coup fourré */}
+          <div className="space-y-3">
+            {[ 
+              { 
+                botteKey: 'as_volant' as const, 
+                coupKey: 'as_volant_coup_fourre' as const, 
+                label: 'As du Volant',
+                description: 'contre Accident'
+              },
+              { 
+                botteKey: 'increvable' as const, 
+                coupKey: 'increvable_coup_fourre' as const, 
+                label: 'Increvable',
+                description: 'contre Crevaison'
+              },
+              { 
+                botteKey: 'citerne' as const, 
+                coupKey: 'citerne_coup_fourre' as const, 
+                label: 'Citerne',
+                description: 'contre Panne d\'Essence'
+              },
+              { 
+                botteKey: 'prioritaire' as const, 
+                coupKey: 'prioritaire_coup_fourre' as const, 
+                label: 'Prioritaire',
+                description: 'contre Limitation'
+              }
+            ].map(({ botteKey, coupKey, label, description }) => (
+              <div key={botteKey} className="border border-gray-200 dark:border-gray-600 rounded p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">{label}</span>
+                  <span className="text-xs text-gray-500">{description}</span>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={roundData.primes[player.id]?.[botteKey] || false}
+                      onChange={(e) => updatePlayerPrime(player.id, botteKey, e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-xs">Botte (+100)</span>
+                  </label>
+                  
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={roundData.primes[player.id]?.[coupKey] || false}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          // Si on coche coup fourré, cocher aussi la botte automatiquement
+                          updatePlayerPrime(player.id, botteKey, true);
+                          updatePlayerPrime(player.id, coupKey, true);
+                        } else {
+                          // Si on décoche coup fourré, décocher seulement le coup fourré
+                          updatePlayerPrime(player.id, coupKey, false);
+                        }
+                      }}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-xs">Coup fourré (+300)</span>
+                  </label>
+                </div>
+                
+                {/* Affichage du total pour cette botte */}
+                {roundData.primes[player.id]?.[botteKey] && (
+                  <div className="mt-2 text-xs text-green-600 dark:text-green-400">
+                    Total: {100 + (roundData.primes[player.id]?.[coupKey] ? 300 : 0)} points
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Fins de manche */}
+          <div className="mt-4">
+            <h5 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Fins de manche</h5>
+            <div className="space-y-2 text-sm">
+              {/* Sans les 200 (commune à toutes versions) */}
+              <div className="space-y-1">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={roundData.primes[player.id]?.sans_les_200 || false}
+                    onChange={(e) => updatePlayerPrime(player.id, 'sans_les_200', e.target.checked)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-xs">Sans les 200 (+300)</span>
+                </label>
+              </div>
+              
+              {/* Primes classiques uniquement */}
+              {gameVariant === 'classique' && (
+                <div className="space-y-1">
+                  <h6 className="text-xs font-medium text-green-700 dark:text-green-300">Classique uniquement</h6>
+                  {[ 
+                    { key: 'allonge' as const, label: 'Allonge (700→1000)', points: 200 },
+                    { key: 'coup_couronnement' as const, label: 'Coup du Couronnement', points: 300 },
+                    { key: 'capot' as const, label: 'Capot', points: 500 }
+                  ].map(({ key, label, points }) => (
+                    <label key={key} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={roundData.primes[player.id]?.[key] || false}
+                        onChange={(e) => updatePlayerPrime(player.id, key, e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-xs">{label} (+{points})</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              
+            </div>
+          </div>
+
+          {/* Bonus manche terminée automatique */}
+          <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded text-xs text-green-800 dark:text-green-200">
+            <strong>+400 points</strong> automatiques si 1000 bornes atteintes
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
+
 export default function MilleBornesScoreSheetMultiplayer({ sessionId }: { sessionId: string }) {
+  useEffect(() => {
+        // Any other initialization logic
+    }, []);
   const router = useRouter();
   const { session, events, isConnected, error, addRound } = useRealtimeSession<GameSession>({
     sessionId,
-    gameSlug: 'mille-bornes'
+    gameSlug: 'mille-bornes-equipes'
   });
   
+  
+
   const [roundData, setRoundData] = useState<MilleBornesRoundData>({
     distances: {},
     primes: {}
@@ -442,163 +623,40 @@ export default function MilleBornesScoreSheetMultiplayer({ sessionId }: { sessio
 
           <GameCard title={`Manche ${currentRound}`} icon={<Car className="h-5 w-5" />}>
             <div className="space-y-6">
-              {session?.players.map((player) => (
-                <div key={player.id} className="border rounded-lg p-4">
-                  <h3 className="font-medium mb-4 flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${
-                      player.is_connected ? 'bg-green-500' : 'bg-gray-400'
-                    }`}></div>
-                    {player.player_name}
-                    <span className="text-sm text-gray-500 ml-auto">
-                      Total aperçu: {calculatePlayerScore(player.id)}
-                    </span>
-                  </h3>
-                  
-                  {/* Distance */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">
-                      Distance parcourue (km)
-                    </label>
-                    <ScoreInput
-                      value={roundData.distances[player.id] || 0}
-                      onChange={(value) => updatePlayerDistance(player.id, value)}
-                      min={0}
-                      max={1000}
-                      step={25}
-                    />
-                  </div>
-
-                  {/* Bottes et Coups Fourrés */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-medium flex items-center gap-1">
-                      <Award className="h-4 w-4" />
-                      Bottes & Coups Fourrés
-                    </h4>
-                    
-                    {/* Bottes avec possibilité de coup fourré */}
-                    <div className="space-y-3">
-                      {[
-                        { 
-                          botteKey: 'as_volant' as const, 
-                          coupKey: 'as_volant_coup_fourre' as const, 
-                          label: 'As du Volant',
-                          description: 'contre Accident'
-                        },
-                        { 
-                          botteKey: 'increvable' as const, 
-                          coupKey: 'increvable_coup_fourre' as const, 
-                          label: 'Increvable',
-                          description: 'contre Crevaison'
-                        },
-                        { 
-                          botteKey: 'citerne' as const, 
-                          coupKey: 'citerne_coup_fourre' as const, 
-                          label: 'Citerne',
-                          description: 'contre Panne d\'Essence'
-                        },
-                        { 
-                          botteKey: 'prioritaire' as const, 
-                          coupKey: 'prioritaire_coup_fourre' as const, 
-                          label: 'Prioritaire',
-                          description: 'contre Limitation'
-                        }
-                      ].map(({ botteKey, coupKey, label, description }) => (
-                        <div key={botteKey} className="border border-gray-200 dark:border-gray-600 rounded p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium">{label}</span>
-                            <span className="text-xs text-gray-500">{description}</span>
-                          </div>
-                          
-                          <div className="flex items-center gap-4">
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={roundData.primes[player.id]?.[botteKey] || false}
-                                onChange={(e) => updatePlayerPrime(player.id, botteKey, e.target.checked)}
-                                className="w-4 h-4"
-                              />
-                              <span className="text-xs">Botte (+100)</span>
-                            </label>
-                            
-                            <label className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={roundData.primes[player.id]?.[coupKey] || false}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    // Si on coche coup fourré, cocher aussi la botte automatiquement
-                                    updatePlayerPrime(player.id, botteKey, true);
-                                    updatePlayerPrime(player.id, coupKey, true);
-                                  } else {
-                                    // Si on décoche coup fourré, décocher seulement le coup fourré
-                                    updatePlayerPrime(player.id, coupKey, false);
-                                  }
-                                }}
-                                className="w-4 h-4"
-                              />
-                              <span className="text-xs">Coup fourré (+300)</span>
-                            </label>
-                          </div>
-                          
-                          {/* Affichage du total pour cette botte */}
-                          {roundData.primes[player.id]?.[botteKey] && (
-                            <div className="mt-2 text-xs text-green-600 dark:text-green-400">
-                              Total: {100 + (roundData.primes[player.id]?.[coupKey] ? 300 : 0)} points
-                            </div>
-                          )}
-                        </div>
+              {session?.team_based ? (
+                
+                session.teams?.map(team => (
+                  <div key={team.id} className="border border-blue-300 dark:border-blue-700 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
+                    <h3 className="font-bold text-lg text-blue-800 dark:text-blue-200 mb-4">{team.team_name}</h3>
+                    <div className="space-y-4">
+                      {team.players.map(player => (
+                        <PlayerScoreInputModule
+                          key={player.id}
+                          player={player}
+                          roundData={roundData}
+                          gameVariant={gameVariant}
+                          calculatePlayerScore={calculatePlayerScore}
+                          updatePlayerDistance={updatePlayerDistance}
+                          updatePlayerPrime={updatePlayerPrime}
+                        />
                       ))}
                     </div>
-
-                    {/* Fins de manche */}
-                    <div className="mt-4">
-                      <h5 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Fins de manche</h5>
-                      <div className="space-y-2 text-sm">
-                        {/* Sans les 200 (commune à toutes versions) */}
-                        <div className="space-y-1">
-                          <label className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={roundData.primes[player.id]?.sans_les_200 || false}
-                              onChange={(e) => updatePlayerPrime(player.id, 'sans_les_200', e.target.checked)}
-                              className="w-4 h-4"
-                            />
-                            <span className="text-xs">Sans les 200 (+300)</span>
-                          </label>
-                        </div>
-                        
-                        {/* Primes classiques uniquement */}
-                        {gameVariant === 'classique' && (
-                          <div className="space-y-1">
-                            <h6 className="text-xs font-medium text-green-700 dark:text-green-300">Classique uniquement</h6>
-                            {[
-                              { key: 'allonge' as const, label: 'Allonge (700→1000)', points: 200 },
-                              { key: 'coup_couronnement' as const, label: 'Coup du Couronnement', points: 300 },
-                              { key: 'capot' as const, label: 'Capot', points: 500 }
-                            ].map(({ key, label, points }) => (
-                              <label key={key} className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={roundData.primes[player.id]?.[key] || false}
-                                  onChange={(e) => updatePlayerPrime(player.id, key, e.target.checked)}
-                                  className="w-4 h-4"
-                                />
-                                <span className="text-xs">{label} (+{points})</span>
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                        
-                      </div>
-                    </div>
-
-                    {/* Bonus manche terminée automatique */}
-                    <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded text-xs text-green-800 dark:text-green-200">
-                      <strong>+400 points</strong> automatiques si 1000 bornes atteintes
-                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                
+                session?.players.map((player) => (
+                  <PlayerScoreInputModule
+                    key={player.id}
+                    player={player}
+                    roundData={roundData}
+                    gameVariant={gameVariant}
+                    calculatePlayerScore={calculatePlayerScore}
+                    updatePlayerDistance={updatePlayerDistance}
+                    updatePlayerPrime={updatePlayerPrime}
+                  />
+                ))
+              )}
 
               <button
                 onClick={handleSubmitRound}

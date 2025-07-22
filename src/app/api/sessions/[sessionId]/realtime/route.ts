@@ -74,13 +74,37 @@ export async function GET(
           p.*,
           u.username,
           u.display_name,
-          u.is_online
+          u.is_online,
+          t.team_name
         FROM players p
         LEFT JOIN users u ON p.user_id = u.id
+        LEFT JOIN teams t ON p.team_id = t.id
         WHERE p.session_id = ?
         ORDER BY p.position
       `,
       args: [sessionId]
+    });
+
+    // Get teams
+    const teamsResult = await tursoClient.execute({
+      sql: `
+        SELECT 
+          id,
+          team_name
+        FROM teams
+        WHERE session_id = ?
+        ORDER BY id
+      `,
+      args: [sessionId]
+    });
+
+    const rawPlayers = playersResult.rows as PlayerRecord[];
+    const rawTeams = teamsResult.rows as { id: number; team_name: string }[];
+
+    // Group players by team
+    const teamsMap = new Map<number, TeamRecord>();
+    rawTeams.forEach(team => {
+      teamsMap.set(team.id, { id: team.id, team_name: team.team_name, players: [] });
     });
 
     // Get scores based on game type
@@ -183,10 +207,9 @@ export async function GET(
       console.warn('Failed to update session activity:', updateError);
     }
 
-    // Calculate totals for players
-    const players = playersResult.rows.map(player => {
-      const playerRecord = player as PlayerRecord;
-      const playerId = Number(playerRecord.id);
+    // Calculate totals for players and group them by team
+    const players = rawPlayers.map(player => {
+      const playerId = Number(player.id);
       let totalScore = 0;
 
       if (session.score_type === 'rounds' && 'rounds' in scoresData) {
@@ -199,16 +222,24 @@ export async function GET(
         }, 0);
       }
 
-      return {
-        ...playerRecord,
+      const playerWithScore = {
+        ...player,
         total_score: totalScore
       };
+
+      if (player.team_id && teamsMap.has(player.team_id)) {
+        teamsMap.get(player.team_id)?.players.push(playerWithScore);
+      }
+      return playerWithScore;
     });
+
+    const teams = Array.from(teamsMap.values());
 
     const responseData: RealtimeAPIResponse = {
       session: {
         ...session,
         players,
+        teams, // Include teams in the session object
         ...scoresData
       },
       events: eventsResult.rows.map(event => event as SessionEventRecord).reverse(), // Most recent first

@@ -147,7 +147,9 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
       }
 
       const newData = await response.json();
-      const dataHash = JSON.stringify(newData);
+      // Exclure le timestamp du hash pour éviter les re-renders inutiles
+      const { timestamp, ...sessionDataForHash } = newData;
+      const dataHash = JSON.stringify(sessionDataForHash);
 
       // Mise à jour uniquement si données changées
       if (dataHash !== lastDataHashRef.current) {

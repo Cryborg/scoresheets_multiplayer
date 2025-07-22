@@ -179,22 +179,29 @@ export async function POST(
     
     console.log('[PROD] Session created with ID:', sessionId);
 
-    // Add players
-    // For now, in the initial session creation, we'll associate the host with the first player
-    // TODO: Later we'll implement a proper player selection/joining system
-
+    // Add players and teams
     let position = 0;
     if (game.team_based && teams) {
       for (const team of teams) {
+        // Insert team and get its ID
+        const teamResult = await db.execute({
+          sql: `INSERT INTO teams (session_id, team_name) VALUES (?, ?)`,
+          args: [sessionId, team.name]
+        });
+        let teamId = teamResult.lastInsertRowid;
+        if (typeof teamId === 'bigint') {
+          teamId = Number(teamId);
+        }
+        console.log(`[PROD] Created team: ${team.name}, ID: ${teamId}`);
+
         for (const playerName of team.players) {
           if (playerName.trim()) {
-            // Associate the host with the first player, others will be guest players for now
             const playerUserId = position === 0 ? userId : null;
             await db.execute({
-              sql: `INSERT INTO players (session_id, user_id, player_name, position) VALUES (?, ?, ?, ?)`,
-              args: [sessionId, playerUserId, playerName.trim(), position]
+              sql: `INSERT INTO players (session_id, user_id, player_name, position, team_id) VALUES (?, ?, ?, ?, ?)`,
+              args: [sessionId, playerUserId, playerName.trim(), position, teamId]
             });
-            console.log(`[PROD] Created player: ${playerName.trim()}, position: ${position}, user_id: ${playerUserId}`);
+            console.log(`[PROD] Created player: ${playerName.trim()}, position: ${position}, user_id: ${playerUserId}, team_id: ${teamId}`);
             position++;
           }
         }
@@ -202,7 +209,6 @@ export async function POST(
     } else if (players) {
       for (const playerName of players) {
         if (playerName.trim()) {
-          // Associate the host with the first player, others will be guest players for now
           const playerUserId = position === 0 ? userId : null;
           await db.execute({
             sql: `INSERT INTO players (session_id, user_id, player_name, position) VALUES (?, ?, ?, ?)`,

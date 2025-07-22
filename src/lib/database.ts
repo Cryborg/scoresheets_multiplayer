@@ -126,7 +126,20 @@ async function createTables(): Promise<void> {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (session_id) REFERENCES game_sessions (id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users (id),
+      FOREIGN KEY (team_id) REFERENCES teams (id),
       UNIQUE (session_id, position)
+    )
+  `);
+
+  // New table for teams
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS teams (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL,
+      team_name TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (session_id) REFERENCES game_sessions (id) ON DELETE CASCADE,
+      UNIQUE (session_id, team_name)
     )
   `);
 

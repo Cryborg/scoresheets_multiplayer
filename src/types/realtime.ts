@@ -37,6 +37,13 @@ export interface PlayerRecord {
   username?: string;
   display_name?: string;
   is_online?: number;
+  team_id?: number; // Add team_id to player record
+}
+
+export interface TeamRecord {
+  id: number;
+  team_name: string;
+  players: PlayerRecord[]; // Players belonging to this team
 }
 
 export interface SessionRecord {
@@ -54,6 +61,7 @@ export interface SessionRecord {
   host_username: string;
   current_round?: number;
   access_level: 'host' | 'player' | 'can_join' | 'guest_allowed' | 'denied';
+  teams?: TeamRecord[]; // Add optional teams array to session record
 }
 
 export interface RealtimeAPIResponse {
