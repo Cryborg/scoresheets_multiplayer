@@ -696,7 +696,7 @@ function MilleBornesEquipesGameInterface({
         .filter(event => event.event_type === 'round_data_updated')
         .reverse(); // Most recent first
 
-      console.log('🔍 Round data events found:', roundDataEvents.length);
+      console.log(`🔍 Processing ${roundDataEvents.length} events...`);
 
       if (roundDataEvents.length > 0) {
         const updatedData: MilleBornesRoundData = { distances: {}, primes: {} };
@@ -704,12 +704,13 @@ function MilleBornesEquipesGameInterface({
         // Process only the FIRST event (most recent) that contains data for each player
         const processedDistances = new Set<number>();
         const processedPrimes = new Set<number>();
+        let eventsProcessed = 0;
+        let eventsSkipped = 0;
         
         roundDataEvents.forEach(event => {
           if (event.event_data) {
             try {
               const data = JSON.parse(event.event_data);
-              console.log('📡 Processing event data:', data);
               
               if (data.roundData) {
                 // Process distances - only accept data from players not in my team AND not already processed
@@ -720,9 +721,10 @@ function MilleBornesEquipesGameInterface({
                   if (!isMyPlayer && !processedDistances.has(playerId)) {
                     updatedData.distances[playerId] = distance as number;
                     processedDistances.add(playerId);
-                    console.log(`🏃 Player ${playerId} (OTHER team): ${distance}km ✅ LATEST`);
+                    console.log(`🏃 Player ${playerId}: ${distance}km ✅`);
+                    eventsProcessed++;
                   } else if (!isMyPlayer) {
-                    console.log(`🏃 Player ${playerId} (OTHER team): ${distance}km ⏭️ SKIPPED (older)`);
+                    eventsSkipped++;
                   }
                 });
                 
@@ -734,9 +736,9 @@ function MilleBornesEquipesGameInterface({
                   if (!isMyPlayer && !processedPrimes.has(playerId)) {
                     updatedData.primes[playerId] = primes as MilleBornesPrimes;
                     processedPrimes.add(playerId);
-                    console.log(`⭐ Player ${playerId} primes:`, primes, '✅ LATEST');
+                    eventsProcessed++;
                   } else if (!isMyPlayer) {
-                    console.log(`⭐ Player ${playerId} primes: ⏭️ SKIPPED (older)`);
+                    eventsSkipped++;
                   }
                 });
               }
@@ -746,7 +748,8 @@ function MilleBornesEquipesGameInterface({
           }
         });
         
-        console.log('💾 Setting otherTeamsRoundData:', updatedData);
+        console.log(`✅ Used ${eventsProcessed} events, skipped ${eventsSkipped} older ones`);
+        console.log('💾 Final data:', updatedData);
         setOtherTeamsRoundData(updatedData);
       }
     }
