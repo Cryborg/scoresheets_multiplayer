@@ -92,6 +92,40 @@
 
 ### 🔧 Améliorations techniques
 
+#### 🗄️ Configuration centralisée en base
+**Priorité : Moyenne** - Architecture plus propre et dynamique
+
+**Problème actuel** : Configuration éparpillée dans les fichiers
+- Métadonnées dans `src/games/[slug]/metadata.ts`
+- Rules dans fichiers séparés
+- Configuration UI hardcodée
+
+**Solution** : Tout externaliser en base de données
+```sql
+-- Nouvelle table game_metadata
+CREATE TABLE game_metadata (
+  game_id INTEGER PRIMARY KEY,
+  icon TEXT,
+  duration TEXT,
+  short_description TEXT,
+  primary_color TEXT,
+  accent_color TEXT,
+  difficulty TEXT,
+  keywords JSON,
+  variant TEXT,
+  multiplayer BOOLEAN DEFAULT FALSE,
+  ui_config JSON, -- Configuration interface spécifique
+  rules_config JSON -- Paramètres de règles
+);
+```
+
+**Avantages** :
+- **Configuration dynamique** : modifications sans redéploiement
+- **A/B testing** : variants d'interface faciles
+- **Multilingue** : métadonnées par langue
+- **Admin interface** : modifier jeux sans toucher au code
+- **Backup/restore** : configuration versionnée
+
 #### 📱 Mobile-First
 - **Progressive Web App** (PWA) avec offline support
 - **Notifications push** pour parties en attente

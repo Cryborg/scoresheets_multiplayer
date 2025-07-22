@@ -144,6 +144,30 @@ export default async function Page({ params }: { params: Promise<{ sessionId: st
 'game-slug': dynamic(() => import('@/components/scoresheets/GameNameScoreSheet')),
 ```
 
+### Step 5: Game Metadata (AI MUST CREATE)
+```typescript
+// src/games/game-slug/metadata.ts
+export const gameNameMetadata = {
+  icon: '🎮',
+  duration: '30-45 min',
+  shortDescription: 'Description du jeu',
+  color: {
+    primary: 'blue',
+    accent: 'orange'
+  },
+  difficulty: 'intermédiaire', // 'facile' | 'intermédiaire' | 'expert'
+  keywords: ['mots', 'clés', 'pertinents'],
+  variant: 'optionnel', // Si c'est une variante
+  multiplayer: true // ⚠️ IMPORTANT: Ajoute le bandeau jaune "Multi" sur dashboard
+} as const;
+```
+
+**⚠️ Ensuite ajouter dans gameMetadata.ts** :
+```typescript
+// src/lib/gameMetadata.ts - ADD TO EXISTING MAP
+'game-slug': () => import('@/games/game-slug/metadata').then(m => ({ default: m.gameNameMetadata })),
+```
+
 ### ❌ AI MUST NOT CREATE THESE
 - New API routes (`/api/games/[game]/*`) - USE GENERICS
 - New creation pages (`/games/[game]/new/page.tsx`) - USE EXISTING  
