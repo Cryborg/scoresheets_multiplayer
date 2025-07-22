@@ -544,6 +544,19 @@ function MilleBornesEquipesGameInterface({
   const broadcastRoundData = useCallback(async () => {
     if (!session) return;
     
+    const dataToSend = {
+      roundData: {
+        distances: Object.fromEntries(
+          myTeamPlayers.map(p => [p.id, roundData.distances[p.id] || 0])
+        ),
+        primes: Object.fromEntries(
+          myTeamPlayers.map(p => [p.id, roundData.primes[p.id] || {}])
+        )
+      }
+    };
+    
+    console.log('📤 Broadcasting round data:', dataToSend);
+    
     try {
       await fetch(`/api/sessions/${session.id}/events`, {
         method: 'POST',
@@ -553,16 +566,7 @@ function MilleBornesEquipesGameInterface({
         credentials: 'include',
         body: JSON.stringify({
           event_type: 'round_data_updated',
-          event_data: {
-            roundData: {
-              distances: Object.fromEntries(
-                myTeamPlayers.map(p => [p.id, roundData.distances[p.id] || 0])
-              ),
-              primes: Object.fromEntries(
-                myTeamPlayers.map(p => [p.id, roundData.primes[p.id] || {}])
-              )
-            }
-          }
+          event_data: dataToSend
         }),
       });
     } catch {
@@ -660,6 +664,8 @@ function MilleBornesEquipesGameInterface({
         .filter(event => event.event_type === 'round_data_updated')
         .reverse(); // Most recent first
 
+      console.log('🔍 Round data events found:', roundDataEvents.length);
+
       if (roundDataEvents.length > 0) {
         const updatedData: MilleBornesRoundData = { distances: {}, primes: {} };
         
@@ -668,28 +674,37 @@ function MilleBornesEquipesGameInterface({
           if (event.event_data) {
             try {
               const data = JSON.parse(event.event_data);
+              console.log('📡 Processing event data:', data);
+              
               if (data.roundData) {
                 // Only accept data from players not in my team
                 Object.entries(data.roundData.distances || {}).forEach(([playerIdStr, distance]) => {
                   const playerId = Number(playerIdStr);
-                  if (!myTeamPlayers.find(p => p.id === playerId)) {
+                  const isMyPlayer = myTeamPlayers.find(p => p.id === playerId);
+                  console.log(`🏃 Player ${playerId} (${isMyPlayer ? 'MY' : 'OTHER'} team): ${distance}km`);
+                  
+                  if (!isMyPlayer) {
                     updatedData.distances[playerId] = distance as number;
                   }
                 });
                 
                 Object.entries(data.roundData.primes || {}).forEach(([playerIdStr, primes]) => {
                   const playerId = Number(playerIdStr);
-                  if (!myTeamPlayers.find(p => p.id === playerId)) {
+                  const isMyPlayer = myTeamPlayers.find(p => p.id === playerId);
+                  
+                  if (!isMyPlayer) {
                     updatedData.primes[playerId] = primes as MilleBornesPrimes;
+                    console.log(`⭐ Player ${playerId} primes:`, primes);
                   }
                 });
               }
             } catch (e) {
-              // Ignore parse errors
+              console.error('❌ Parse error:', e);
             }
           }
         });
         
+        console.log('💾 Setting otherTeamsRoundData:', updatedData);
         setOtherTeamsRoundData(updatedData);
       }
     }
