@@ -120,23 +120,56 @@ export default function DashboardPage() {
               </button>
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{BRANDING.ui.dashboard.title}</h1>
             </div>
+            
+            {/* Quick join form in header */}
+            <div className="hidden sm:flex items-center gap-2">
+              <input 
+                type="text" 
+                placeholder="Code partie" 
+                value={sessionId} 
+                onChange={(e) => setSessionId(e.target.value.toUpperCase())} 
+                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 w-32" 
+              />
+              <Link 
+                href={sessionId.trim() ? `/sessions/find?code=${sessionId.trim()}` : '#'} 
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors flex items-center gap-1 ${
+                  sessionId.trim() 
+                    ? 'bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white' 
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <Share2 className="h-4 w-4" />
+                Rejoindre
+              </Link>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">{BRANDING.ui.dashboard.title}</h2>
-          <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">{BRANDING.ui.dashboard.subtitle}</p>
-          <div className="mt-6">
-            <div className="max-w-md mx-auto">
-              <div className="flex items-center gap-2">
-                <input type="text" placeholder="Code de partie (ex: YAMS-123456)" value={sessionId} onChange={(e) => setSessionId(e.target.value.toUpperCase())} className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400" />
-                <Link href={sessionId.trim() ? `/sessions/find?code=${sessionId.trim()}` : '#'} className={`px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2 ${sessionId.trim() ? 'bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-lg' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'}`}>
-                  <Share2 className="h-5 w-5" />
-                  Rejoindre
-                </Link>
-              </div>
+        {/* Mobile quick join - shown on small screens */}
+        <div className="sm:hidden mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Rejoindre une partie</h3>
+            <div className="flex items-center gap-2">
+              <input 
+                type="text" 
+                placeholder="Code de partie" 
+                value={sessionId} 
+                onChange={(e) => setSessionId(e.target.value.toUpperCase())} 
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400" 
+              />
+              <Link 
+                href={sessionId.trim() ? `/sessions/find?code=${sessionId.trim()}` : '#'} 
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors flex items-center gap-1 ${
+                  sessionId.trim() 
+                    ? 'bg-blue-500 hover:bg-blue-600 text-white' 
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <Share2 className="h-4 w-4" />
+                Rejoindre
+              </Link>
             </div>
           </div>
         </div>
