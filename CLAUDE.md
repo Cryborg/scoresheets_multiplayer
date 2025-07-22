@@ -1,5 +1,7 @@
 # CLAUDE.md - AI Assistant Development Guide
 
+> 🤖 **META-INSTRUCTION** : Ce fichier est optimisé pour l'IA Claude. Toute addition doit améliorer la compréhension de Claude et accélérer son développement. Rédigez POUR l'IA, pas pour les humains. Privilégiez les patterns, décisions critiques, et pièges à éviter.
+
 ## 🚨 CRITICAL CONTEXT FOR AI
 
 **PROJECT**: Scoresheets Multiplayer - Real-time card/dice game scoring web app
