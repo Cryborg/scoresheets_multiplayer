@@ -118,7 +118,7 @@ export default function DashboardPage() {
               <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 mr-4">
                 <Menu className="h-6 w-6 text-gray-900 dark:text-gray-300" />
               </button>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{BRANDING.name}</h1>
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{BRANDING.ui.dashboard.title}</h1>
             </div>
           </div>
         </div>
