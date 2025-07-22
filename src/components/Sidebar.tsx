@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { X, ChevronRight, ChevronDown, Home, LogOut } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import { BRANDING } from '@/lib/branding';
 
 interface Game {
   id: number;
@@ -65,7 +66,7 @@ export default function Sidebar({ isOpen, onClose, games, onLogout }: SidebarPro
           <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
             <div className="flex items-center gap-2">
               <span className="text-2xl">🎲</span>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Scoresheets</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{BRANDING.ui.sidebar.title}</h2>
             </div>
             <button
               onClick={onClose}

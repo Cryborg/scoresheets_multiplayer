@@ -21,6 +21,18 @@ export const BRANDING = {
   // Technical info
   tech: {
     subtitle: "Next.js 15 + Turso SQLite + Polling temps réel • 🚧 Version de développement"
+  },
+  
+  // UI labels and headings
+  ui: {
+    dashboard: {
+      title: "Game Scoring Hub",
+      subtitle: "Créez des parties et invitez vos amis à jouer ensemble",
+      gamesAvailable: "Jeux Disponibles"
+    },
+    sidebar: {
+      title: "Oh Sheet!"
+    }
   }
 } as const;
 
