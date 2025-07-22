@@ -540,6 +540,36 @@ function MilleBornesEquipesGameInterface({
     return score;
   }, [globalRoundData.distances, globalRoundData.primes, effectiveVariant]);
 
+  // Function to broadcast round data changes (declared before usage)
+  const broadcastRoundData = useCallback(async () => {
+    if (!session) return;
+    
+    try {
+      await fetch(`/api/sessions/${session.id}/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          event_type: 'round_data_updated',
+          event_data: {
+            roundData: {
+              distances: Object.fromEntries(
+                myTeamPlayers.map(p => [p.id, roundData.distances[p.id] || 0])
+              ),
+              primes: Object.fromEntries(
+                myTeamPlayers.map(p => [p.id, roundData.primes[p.id] || {}])
+              )
+            }
+          }
+        }),
+      });
+    } catch {
+      // Silently fail, sync will happen on next update
+    }
+  }, [session, myTeamPlayers, roundData]);
+
   const updatePlayerDistance = useCallback((playerId: number, distance: number) => {
     setRoundData(prev => ({
       ...prev,
@@ -664,36 +694,6 @@ function MilleBornesEquipesGameInterface({
       }
     }
   }, [session, gameState.events, myTeamPlayers]);
-
-  // Function to broadcast round data changes
-  const broadcastRoundData = useCallback(async () => {
-    if (!session) return;
-    
-    try {
-      await fetch(`/api/sessions/${session.id}/events`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          event_type: 'round_data_updated',
-          event_data: {
-            roundData: {
-              distances: Object.fromEntries(
-                myTeamPlayers.map(p => [p.id, roundData.distances[p.id] || 0])
-              ),
-              primes: Object.fromEntries(
-                myTeamPlayers.map(p => [p.id, roundData.primes[p.id] || {}])
-              )
-            }
-          }
-        }),
-      });
-    } catch {
-      // Silently fail, sync will happen on next update
-    }
-  }, [session, myTeamPlayers, roundData]);
 
   // Handle variant selection by host
   const handleSaveVariant = useCallback(async () => {
