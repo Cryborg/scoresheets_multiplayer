@@ -231,7 +231,7 @@ export default function DashboardPage() {
               filteredGames.map((game) => {
                 console.log(`[DEBUG DashboardPage] Rendering game: ${game.name}, Slug: ${game.slug}, is_implemented: ${game.is_implemented}, Link Href: /games/${game.slug}/new`);
                 return (
-                  <div key={game.id} className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl border dark:border-gray-700 transition-all duration-200 flex flex-col">
+                  <div key={game.id} className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:shadow-2xl dark:drop-shadow-[0_0_10px_rgba(255,255,255,0.2)] dark:hover:drop-shadow-[0_0_14px_rgba(255,255,255,0.35)] border dark:border-gray-600 dark:hover:border-gray-500 transition-all duration-200 flex flex-col">
                     {game.multiplayer && (
                       <div className="absolute top-0 left-0 transform -translate-x-1/4 translate-y-4 -rotate-45 bg-yellow-400 text-black text-xs font-bold px-8 py-1 shadow-lg">
                         Multi
