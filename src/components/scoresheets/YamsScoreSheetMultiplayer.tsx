@@ -46,11 +46,8 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
     handleScoreBlur, 
     clearOptimisticScore 
   } = useOptimisticScores();
-  
-  const scoreActions = useScoreActions({ 
-    sessionId,
-    onScoreUpdate: clearOptimisticScore
-  });
+
+  const scoreActions = useScoreActions({ sessionId });
 
   // Handle score submission with error handling
   const handleScoreSubmit = useCallback(async (categoryId: string, playerId: number, score: string) => {
@@ -232,7 +229,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                 </td>
                 {session.players.map(player => (
                   <td key={`subtotal-${player.id}`} className="px-4 py-3 text-center text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {calculateUpperSectionTotal(player.id)}
+                    {calculateUpperSectionTotal(session, player.id)}
                   </td>
                 ))}
               </tr>
@@ -247,7 +244,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                 </td>
                 {session.players.map(player => (
                   <td key={`bonus-${player.id}`} className="px-4 py-3 text-center text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {calculateUpperSectionTotal(player.id) >= 63 ? 35 : 0}
+                    {calculateUpperSectionTotal(session, player.id) >= 63 ? 35 : 0}
                   </td>
                 ))}
               </tr>

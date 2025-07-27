@@ -46,9 +46,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
   const optimizedPollInterval = useMemo(() => {
     // Pour les sessions locales, utiliser un polling beaucoup plus lent
     // mais pas complètement arrêté pour détecter quand de nouveaux joueurs rejoignent
-    const interval = shouldPausePolling ? 30000 : undefined; // 30s pour sessions locales vs 2s par défaut
-    console.log('🔧 DEBUG: optimizedPollInterval calculé:', interval, 'shouldPausePolling:', shouldPausePolling);
-    return interval;
+    return shouldPausePolling ? 30000 : undefined; // 30s pour sessions locales vs 2s par défaut
   }, [shouldPausePolling]);
 
   // Use realtime session hook
@@ -60,7 +58,8 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     lastUpdate,
     currentUserId,
     connectionStatus,
-    addRound
+    addRound,
+    forceRefresh
   } = useRealtimeSession<T>({
     sessionId,
     gameSlug,
@@ -77,23 +76,10 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
   useEffect(() => {
     if (!session) return;
 
-    // Vérifier si la session est locale et ajuster le polling
-    console.log('🔧 DEBUG: useEffect session locale appelé avec:', {
-      players: session?.players?.map(p => ({ user_id: p.user_id, player_name: p.player_name })),
-      currentUserId
-    });
-    
     const isLocal = isLocalSession(session, currentUserId);
-    console.log('🔧 DEBUG: isLocalSession retourne:', isLocal, 'shouldPausePolling actuel:', shouldPausePolling);
     
     if (isLocal !== shouldPausePolling) {
-      console.log('🔧 DEBUG: Changement détecté, mise à jour shouldPausePolling vers:', isLocal);
       setShouldPausePolling(isLocal);
-      if (isLocal) {
-        console.log('🎯 Session détectée comme locale - polling réduit à 30s pour optimiser les performances');
-      } else {
-        console.log('🌐 Session multijoueur détectée - polling normal activé (2s)');
-      }
     }
   }, [session, currentUserId, shouldPausePolling]);
   
@@ -228,6 +214,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     handleStartGame,
     handleLeaveSession,
     addRound,
+    forceRefresh,
     
     // Navigation
     goToDashboard

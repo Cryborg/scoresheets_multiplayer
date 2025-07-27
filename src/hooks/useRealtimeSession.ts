@@ -19,6 +19,7 @@ interface UseRealtimeSessionReturn<T> {
   currentUserId: number | null;
   addRound: (scores: Array<{ playerId: number; score: number }>, details?: Record<string, unknown>) => Promise<void>;
   connectionStatus: 'connected' | 'connecting' | 'disconnected' | 'error';
+  forceRefresh: () => Promise<void>;
 }
 
 // Configuration adaptative du polling selon l'activité
@@ -328,6 +329,14 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
     }
   }, [connectionStatus]);
 
+  // Force un refresh immédiat 
+  const forceRefresh = useCallback(async () => {
+    if (fetchSessionDataRef.current) {
+      updateActivity();
+      await fetchSessionDataRef.current();
+    }
+  }, [updateActivity]);
+
   return {
     session,
     events,
@@ -336,6 +345,7 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
     lastUpdate,
     currentUserId,
     addRound,
-    connectionStatus
+    connectionStatus,
+    forceRefresh
   };
 }

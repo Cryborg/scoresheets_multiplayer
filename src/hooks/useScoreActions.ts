@@ -5,9 +5,10 @@ import { useState, useCallback } from 'react';
 interface UseScoreActionsProps {
   sessionId: string;
   onScoreUpdate?: (categoryId: string, playerId: number, score: number) => void;
+  forceRefresh?: () => Promise<void>;
 }
 
-export function useScoreActions({ sessionId, onScoreUpdate }: UseScoreActionsProps) {
+export function useScoreActions({ sessionId, onScoreUpdate, forceRefresh }: UseScoreActionsProps) {
   const [savingScores, setSavingScores] = useState<{ [key: string]: boolean }>({});
 
   // Submit a score for a specific category and player
@@ -42,6 +43,11 @@ export function useScoreActions({ sessionId, onScoreUpdate }: UseScoreActionsPro
       // Notify parent of successful update
       onScoreUpdate?.(categoryId, playerId, numericScore);
 
+      // Force immediate refresh to get updated data
+      if (forceRefresh) {
+        await forceRefresh();
+      }
+
       // Send event for other players
       await fetch(`/api/sessions/${sessionId}/events`, {
         method: 'POST',
@@ -65,10 +71,10 @@ export function useScoreActions({ sessionId, onScoreUpdate }: UseScoreActionsPro
     } finally {
       setSavingScores(prev => ({ ...prev, [saveKey]: false }));
     }
-  }, [sessionId, onScoreUpdate]);
+  }, [sessionId, onScoreUpdate, forceRefresh]);
 
   // Submit a round for round-based games
-  const submitRound = useCallback(async (scores: Array<{ playerId: number; score: number }>, details?: Record<string, any>) => {
+  const submitRound = useCallback(async (scores: Array<{ playerId: number; score: number }>, details?: Record<string, unknown>) => {
     const roundKey = `round-${Date.now()}`;
     setSavingScores(prev => ({ ...prev, [roundKey]: true }));
 
