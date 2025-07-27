@@ -8,12 +8,10 @@ export function useGamePermissions(currentUserId: number | null) {
       return !player.user_id;
     }
     
-    // If user is the host, they can edit all players' scores (multiplayer local game)
-    if (session && session.host_user_id === currentUserId) {
-      return true;
-    }
-    
-    // Otherwise, authenticated user can only edit own scores
+    // User can edit players they created (their user_id)
+    // This includes:
+    // - Their own scores in online multiplayer
+    // - All local players they added when creating the session (host scenario)
     return player.user_id === currentUserId;
   };
 
