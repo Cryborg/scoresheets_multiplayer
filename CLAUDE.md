@@ -393,7 +393,7 @@ const { session } = useMultiplayerGame({ sessionId, gameSlug: 'tarot' });
 games: slug, score_type, team_based, min/max_players
 
 -- Sessions (parties)
-game_sessions: id, game_id, host_user_id, status, session_name
+sessions: id, game_id, host_user_id, status, session_name
 
 -- Players in sessions
 players: session_id, user_id, player_name, position, team_id
@@ -407,9 +407,9 @@ teams: session_id, team_name
 
 ### Critical Relationships
 ```sql
-players.session_id → game_sessions.id  
+players.session_id → sessions.id  
 players.team_id → teams.id (nullable)
-scores.session_id → game_sessions.id
+scores.session_id → sessions.id
 scores.player_id → players.id
 ```
 

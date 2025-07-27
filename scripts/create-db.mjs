@@ -62,7 +62,7 @@ async function initDB() {
     `);
 
     await tursoClient.execute(`
-      CREATE TABLE IF NOT EXISTS game_sessions (
+      CREATE TABLE IF NOT EXISTS sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         game_id INTEGER NOT NULL,
         session_name TEXT NOT NULL,
@@ -99,7 +99,7 @@ async function initDB() {
         is_connected INTEGER DEFAULT 1,
         last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (session_id) REFERENCES game_sessions (id) ON DELETE CASCADE,
+        FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE,
         FOREIGN KEY (user_id) REFERENCES users (id),
         UNIQUE (session_id, position)
       )
@@ -117,7 +117,7 @@ async function initDB() {
         created_by_user_id INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (session_id) REFERENCES game_sessions (id) ON DELETE CASCADE,
+        FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE,
         FOREIGN KEY (player_id) REFERENCES players (id) ON DELETE CASCADE,
         FOREIGN KEY (created_by_user_id) REFERENCES users (id)
       )
@@ -131,7 +131,7 @@ async function initDB() {
         event_type TEXT NOT NULL,
         event_data TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (session_id) REFERENCES game_sessions (id) ON DELETE CASCADE,
+        FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE,
         FOREIGN KEY (user_id) REFERENCES users (id)
       )
     `);
@@ -144,16 +144,16 @@ async function initDB() {
         joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         left_at DATETIME,
         is_spectator INTEGER DEFAULT 0,
-        FOREIGN KEY (session_id) REFERENCES game_sessions (id) ON DELETE CASCADE,
+        FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE,
         FOREIGN KEY (user_id) REFERENCES users (id),
         UNIQUE (session_id, user_id)
       )
     `);
 
     // Create indexes
-    await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_code ON game_sessions (session_code)`);
-    await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_status ON game_sessions (status)`);
-    await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_activity ON game_sessions (last_activity)`);
+    await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_code ON sessions (session_code)`);
+    await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_status ON sessions (status)`);
+    await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_activity ON sessions (last_activity)`);
 
     // Insert test data
     console.log('📝 Inserting test data...');
@@ -184,7 +184,7 @@ async function initDB() {
 
     // Test session
     await tursoClient.execute(`
-      INSERT OR IGNORE INTO game_sessions (id, game_id, session_name, host_user_id, session_code, status) VALUES 
+      INSERT OR IGNORE INTO sessions (id, game_id, session_name, host_user_id, session_code, status) VALUES 
       (1, 1, 'Partie de test Yams', 1, 'TEST01', 'active')
     `);
 
