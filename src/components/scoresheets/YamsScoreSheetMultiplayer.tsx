@@ -39,10 +39,17 @@ interface YamsScoreSheetMultiplayerProps {
 }
 
 export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetMultiplayerProps) {
-  const optimisticScores = useOptimisticScores();
+  const { 
+    currentScores, 
+    handleScoreChange, 
+    handleScoreFocus, 
+    handleScoreBlur, 
+    clearOptimisticScore 
+  } = useOptimisticScores();
+  
   const scoreActions = useScoreActions({ 
     sessionId,
-    onScoreUpdate: optimisticScores.clearOptimisticScore
+    onScoreUpdate: clearOptimisticScore
   });
 
   // Handle score submission with error handling
@@ -57,6 +64,8 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
 
   // Memoized calculations to prevent re-renders
   const calculateUpperSectionTotal = useCallback((session: GameSessionWithCategories, playerId: number): number => {
+    if (!session.scores) return 0;
+    
     let total = 0;
     ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'].forEach(categoryId => {
       const score = session.scores[categoryId]?.[playerId];
@@ -68,6 +77,8 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
   }, []);
 
   const calculatePlayerTotal = useCallback((session: GameSessionWithCategories, playerId: number): number => {
+    if (!session.scores) return 0;
+    
     let total = 0;
     
     // Calculate base total
@@ -175,7 +186,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                   {session.players.map(player => {
                     const saveKey = `${category.id}-${player.id}`;
                     const isSaving = scoreActions.isSaving(saveKey);
-                    const existingScore = session.scores[category.id]?.[player.id];
+                    const existingScore = session.scores?.[category.id]?.[player.id];
                     const canEdit = gameState.canEditPlayerScores?.(player) ?? false;
                     
                     return (
@@ -187,7 +198,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                         ) : canEdit ? (
                           <div className="relative">
                             <ScoreInput
-                              value={currentScores[category.id]?.[player.id] || sessionScores[category.id]?.[player.id] || ''}
+                              value={currentScores[category.id]?.[player.id] || session.scores?.[category.id]?.[player.id] || ''}
                               onChange={(value) => handleScoreChange(category.id, player.id, value)}
                               onSave={(value) => handleScoreSubmit(category.id, player.id, value || '')}
                               onFocus={() => handleScoreFocus(category.id, player.id)}
@@ -257,7 +268,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                   {session.players.map(player => {
                     const saveKey = `${category.id}-${player.id}`;
                     const isSaving = scoreActions.isSaving(saveKey);
-                    const existingScore = session.scores[category.id]?.[player.id];
+                    const existingScore = session.scores?.[category.id]?.[player.id];
                     const canEdit = gameState.canEditPlayerScores?.(player) ?? false;
                     
                     return (
@@ -292,7 +303,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                             ) : (
                               <>
                                 <ScoreInput
-                                  value={currentScores[category.id]?.[player.id] || sessionScores[category.id]?.[player.id] || ''}
+                                  value={currentScores[category.id]?.[player.id] || session.scores?.[category.id]?.[player.id] || ''}
                                   onChange={(value) => handleScoreChange(category.id, player.id, value)}
                                   onSave={(value) => handleScoreSubmit(category.id, player.id, value || '')}
                                   onFocus={() => handleScoreFocus(category.id, player.id)}
