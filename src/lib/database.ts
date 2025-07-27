@@ -248,6 +248,19 @@ async function createTables(): Promise<void> {
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_participants_session ON session_participants (session_id)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_players ON user_players (user_id, last_played)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_players_session ON players (session_id)`);
+
+  // App settings table for configuration
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT NOT NULL UNIQUE,
+      value TEXT NOT NULL,
+      type TEXT CHECK (type IN ('string', 'number', 'boolean', 'json')) DEFAULT 'string',
+      description TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 }
 
 async function seedInitialData(): Promise<void> {
@@ -513,6 +526,30 @@ Atteindre **5000 points** en premier (et non 1000 bornes comme souvent cru).
         args: ['Franck', 'cryborg.live@gmail.com', passwordHash, 1, 0]
       });
       console.log('✅ Default admin user created');
+    }
+  }
+
+  // Initialize default app settings
+  const defaultSettings = [
+    { key: 'siteName', value: 'Oh Sheet!', type: 'string', description: 'Nom du site' },
+    { key: 'siteDescription', value: 'Score like a pro', type: 'string', description: 'Description du site' },
+    { key: 'maintenanceMode', value: 'false', type: 'boolean', description: 'Mode maintenance' },
+    { key: 'allowRegistration', value: 'true', type: 'boolean', description: 'Autoriser les inscriptions' },
+    { key: 'defaultTheme', value: 'system', type: 'string', description: 'Thème par défaut' },
+    { key: 'sessionTimeout', value: '3600', type: 'number', description: 'Timeout de session en secondes' },
+    { key: 'autoCleanupOldSessions', value: 'true', type: 'boolean', description: 'Nettoyage automatique des anciennes sessions' }
+  ];
+
+  for (const setting of defaultSettings) {
+    const existing = await tursoClient.execute({
+      sql: 'SELECT id FROM app_settings WHERE key = ?',
+      args: [setting.key]
+    });
+    if (existing.rows.length === 0) {
+      await tursoClient.execute({
+        sql: 'INSERT INTO app_settings (key, value, type, description) VALUES (?, ?, ?, ?)',
+        args: [setting.key, setting.value, setting.type, setting.description]
+      });
     }
   }
 

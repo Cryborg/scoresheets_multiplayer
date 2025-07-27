@@ -66,7 +66,7 @@ export default function AdminLayout({
   return (
     <AuthGuard>
       <AdminGuard>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 lg:flex">
           {/* Mobile sidebar overlay */}
           {sidebarOpen && (
             <div 
@@ -76,11 +76,11 @@ export default function AdminLayout({
           )}
 
           {/* Sidebar */}
-          <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+          <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:relative lg:flex lg:flex-col lg:w-64 ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}>
             {/* Sidebar header */}
-            <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                 Administration
               </h1>
@@ -93,38 +93,40 @@ export default function AdminLayout({
             </div>
 
             {/* Navigation */}
-            <nav className="mt-6 px-3 space-y-1">
-              {adminSections.map((section) => {
-                const isActive = pathname === section.href;
-                const Icon = section.icon;
-                
-                return (
-                  <Link
-                    key={section.href}
-                    href={section.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-r-2 border-blue-500'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <Icon className={`mr-3 h-5 w-5 ${
-                      isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'
-                    }`} />
-                    <div>
-                      <div className="font-medium">{section.name}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {section.description}
+            <nav className="flex-1 px-3 py-6 overflow-y-auto">
+              <div className="space-y-1">
+                {adminSections.map((section) => {
+                  const isActive = pathname === section.href;
+                  const Icon = section.icon;
+                  
+                  return (
+                    <Link
+                      key={section.href}
+                      href={section.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`group flex items-start px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-r-2 border-blue-500'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <Icon className={`mr-3 h-5 w-5 flex-shrink-0 mt-0.5 ${
+                        isActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'
+                      }`} />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium">{section.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                          {section.description}
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                );
-              })}
+                    </Link>
+                  );
+                })}
+              </div>
             </nav>
-
+            
             {/* Back to app link */}
-            <div className="absolute bottom-6 left-0 right-0 px-3">
+            <div className="p-3 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
               <Link
                 href="/dashboard"
                 className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -136,7 +138,7 @@ export default function AdminLayout({
           </div>
 
           {/* Main content */}
-          <div className="lg:pl-64">
+          <div className="flex-1 flex flex-col lg:min-w-0">
             {/* Mobile header */}
             <div className="lg:hidden flex items-center justify-between h-16 px-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
               <button
@@ -152,7 +154,7 @@ export default function AdminLayout({
             </div>
 
             {/* Page content */}
-            <main className="p-6">
+            <main className="flex-1 p-6">
               {children}
             </main>
           </div>

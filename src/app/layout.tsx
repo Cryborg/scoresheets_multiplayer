@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import ToastProviderReactHot from "@/components/providers/ToastProvider";
+import MaintenanceCheck from "@/components/MaintenanceCheck";
 import { BRANDING } from "@/lib/branding";
 
 const geistSans = Geist({
@@ -40,7 +41,9 @@ export default function RootLayout({
           <AuthProvider>
             <ToastProvider>
               <ToastProviderReactHot />
-              {children}
+              <MaintenanceCheck>
+                {children}
+              </MaintenanceCheck>
             </ToastProvider>
           </AuthProvider>
         </ThemeProvider>

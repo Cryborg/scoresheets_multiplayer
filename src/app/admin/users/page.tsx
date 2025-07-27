@@ -2,14 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { 
-  Shield, Lock, Unlock, Trash2, KeyRound, Search, 
-  ArrowLeft, AlertCircle, User, Calendar, Clock
+  Lock, Unlock, Trash2, KeyRound, Search, 
+  AlertCircle, User, Calendar, Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -187,136 +183,139 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => router.push('/dashboard')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour
-            </Button>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Shield className="h-8 w-8" />
-              Administration des utilisateurs
-            </h1>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Utilisateurs
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Gestion des comptes utilisateurs
+          </p>
         </div>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Utilisateurs inscrits</CardTitle>
-            <CardDescription>
-              Gérez les comptes utilisateurs de la plateforme
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher par nom ou email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+      {/* Users List */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">
+        <div className="p-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            Utilisateurs inscrits
+          </h2>
+          <div className="mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher par nom ou email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
+          </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-4">Utilisateur</th>
-                    <th className="text-left p-4">Email</th>
-                    <th className="text-left p-4">Statut</th>
-                    <th className="text-left p-4">Inscrit le</th>
-                    <th className="text-left p-4">Dernière visite</th>
-                    <th className="text-right p-4">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map(user => (
-                    <tr key={user.id} className="border-b hover:bg-muted/50">
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <div>
-                            <div className="font-medium">{user.username}</div>
-                            {user.display_name && (
-                              <div className="text-sm text-muted-foreground">{user.display_name}</div>
-                            )}
-                          </div>
-                          {user.is_admin === 1 && (
-                            <Badge variant="default" className="ml-2">Admin</Badge>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-600">
+                  <th className="text-left p-4 text-gray-700 dark:text-gray-300 font-medium">Utilisateur</th>
+                  <th className="text-left p-4 text-gray-700 dark:text-gray-300 font-medium">Email</th>
+                  <th className="text-left p-4 text-gray-700 dark:text-gray-300 font-medium">Statut</th>
+                  <th className="text-left p-4 text-gray-700 dark:text-gray-300 font-medium">Inscrit le</th>
+                  <th className="text-left p-4 text-gray-700 dark:text-gray-300 font-medium">Dernière visite</th>
+                  <th className="text-right p-4 text-gray-700 dark:text-gray-300 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map(user => (
+                  <tr key={user.id} className="border-b border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-gray-400" />
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{user.username}</div>
+                          {user.display_name && (
+                            <div className="text-sm text-gray-600 dark:text-gray-400">{user.display_name}</div>
                           )}
                         </div>
-                      </td>
-                      <td className="p-4 text-sm">{user.email}</td>
-                      <td className="p-4">
-                        {user.is_blocked === 1 ? (
-                          <Badge variant="destructive" className="flex items-center gap-1 w-fit">
-                            <Lock className="h-3 w-3" />
-                            Bloqué
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="flex items-center gap-1 w-fit">
-                            <Unlock className="h-3 w-3" />
-                            Actif
-                          </Badge>
+                        {user.is_admin === 1 && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 ml-2">
+                            Admin
+                          </span>
                         )}
-                      </td>
-                      <td className="p-4 text-sm flex items-center gap-1">
-                        <Calendar className="h-3 w-3 text-muted-foreground" />
+                      </div>
+                    </td>
+                    <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{user.email}</td>
+                    <td className="p-4">
+                      {user.is_blocked === 1 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
+                          <Lock className="h-3 w-3" />
+                          Bloqué
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
+                          <Unlock className="h-3 w-3" />
+                          Actif
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3 text-gray-400" />
                         {formatDate(user.created_at)}
-                      </td>
-                      <td className="p-4 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
-                          {formatDate(user.last_seen)}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setActionType('reset');
-                            }}
-                          >
-                            <KeyRound className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setActionType(user.is_blocked ? 'unblock' : 'block');
-                            }}
-                          >
-                            {user.is_blocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-destructive"
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setActionType('delete');
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
+                      </div>
+                    </td>
+                    <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-gray-400" />
+                        {formatDate(user.last_seen)}
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setActionType('reset');
+                          }}
+                          className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                          title="Réinitialiser le mot de passe"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setActionType(user.is_blocked ? 'unblock' : 'block');
+                          }}
+                          className={`p-2 rounded transition-colors ${
+                            user.is_blocked 
+                              ? 'text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20' 
+                              : 'text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                          }`}
+                          title={user.is_blocked ? 'Débloquer' : 'Bloquer'}
+                        >
+                          {user.is_blocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setActionType('delete');
+                          }}
+                          className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       {/* Dialog pour réinitialiser le mot de passe */}
@@ -330,11 +329,12 @@ export default function AdminUsersPage() {
           </AlertDialogHeader>
           <div className="py-4">
             <Label>Nouveau mot de passe</Label>
-            <Input
+            <input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Minimum 6 caractères"
+              className="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <AlertDialogFooter>
@@ -357,10 +357,12 @@ export default function AdminUsersPage() {
           </AlertDialogHeader>
           <div className="py-4">
             <Label>Raison du blocage (optionnel)</Label>
-            <Input
+            <input
+              type="text"
               value={blockReason}
               onChange={(e) => setBlockReason(e.target.value)}
               placeholder="Ex: Comportement inapproprié"
+              className="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <AlertDialogFooter>
