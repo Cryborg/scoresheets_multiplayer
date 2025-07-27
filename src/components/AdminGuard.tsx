@@ -31,8 +31,8 @@ export default function AdminGuard({ children }: AdminGuardProps) {
           return;
         }
 
-        const user = await response.json();
-        if (!user.is_admin) {
+        const data = await response.json();
+        if (!data.user || !data.user.is_admin) {
           router.push('/dashboard');
           return;
         }

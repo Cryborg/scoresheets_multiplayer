@@ -114,7 +114,7 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
       fallback={
         <ErrorState 
           error="Erreur dans le composant de jeu"
-          onGoToDashboard={goToDashboard}
+          onBack={goToDashboard}
         />
       }
     >

@@ -90,8 +90,9 @@ export function useGameSessionCreator(game?: Game | null) {
         setState(prev => ({ ...prev, teams: newTeams, players: [] }));
       }
     } else {
-      // Start with minimum required players for the game
-      const newPlayers = Array.from({ length: game.min_players }, () => ({ name: '' }));
+      // Start with 1 player for multiplayer games (others can join later)
+      const initialPlayerCount = 1;
+      const newPlayers = Array.from({ length: initialPlayerCount }, () => ({ name: '' }));
       setState(prev => ({ ...prev, players: newPlayers, teams: [] }));
     }
   };
@@ -133,31 +134,31 @@ export function useGameSessionCreator(game?: Game | null) {
 
   const removePlayer = useCallback((index: number) => {
     setState(prev => {
-      // Prevent removing players below minimum required
-      if (!game || prev.players.length <= game.min_players) return prev;
+      // Prevent removing the last player (must have at least 1)
+      if (prev.players.length <= 1) return prev;
       return {
         ...prev,
         players: prev.players.filter((_, i) => i !== index)
       };
     });
-  }, [game]);
+  }, []);
 
   const validateSession = useCallback((game?: Game | null) => {
     const validPlayers = game?.team_based 
       ? state.teams.flatMap(team => team.players).filter(p => p.trim())
       : state.players.map(p => p.name).filter(p => p.trim());
     
-    // Pour les jeux d'équipes multiplayer, permettre de créer avec une équipe complète (2 joueurs minimum)
-    // L'autre équipe sera ajoutée via le salon
+    // Pour les jeux multijoueurs, permettre de créer avec 1 joueur minimum
+    // Les autres joueurs peuvent rejoindre via le salon
     const minPlayersRequired = game?.team_based && game?.slug === 'mille-bornes-equipes'
-      ? 2  // Permettre de créer avec juste la première équipe
-      : game?.min_players || 2;
+      ? 2  // Jeu d'équipes spécial : il faut au moins une équipe complète
+      : 1; // Autres jeux : 1 joueur suffit pour créer, les autres rejoignent ensuite
     
     // Enforce minimum players requirement
     if (game && validPlayers.length < minPlayersRequired) {
       const message = game?.team_based && game?.slug === 'mille-bornes-equipes'
         ? 'Il faut au moins 2 joueurs pour créer la première équipe'
-        : `Il faut au moins ${minPlayersRequired} joueurs pour créer une partie de ${game.name}`;
+        : `Il faut au moins 1 joueur pour créer une partie de ${game.name}`;
       return message;
     }
 
