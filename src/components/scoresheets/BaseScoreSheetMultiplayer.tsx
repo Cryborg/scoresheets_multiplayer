@@ -47,6 +47,7 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
     currentUserId,
     canStartGame,
     canJoinSession,
+    canViewSession,
     handleStartGame,
     handleLeaveSession,
     goToDashboard
@@ -62,13 +63,22 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
     return (
       <ErrorState 
         error={error}
-        onRetry={() => window.location.reload()}
-        onGoToDashboard={goToDashboard}
+        onBack={goToDashboard}
       />
     );
   }
 
-  // Join session state (user can join but isn't in session yet)
+  // Check if user has access to this session
+  if (session && !canViewSession) {
+    return (
+      <ErrorState 
+        error="Accès refusé à cette session"
+        onBack={goToDashboard}
+      />
+    );
+  }
+
+  // Join session state (user can view session but can still join as new player)
   if (canJoinSession && session) {
     return (
       <JoinSessionForm
@@ -90,7 +100,7 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
     return (
       <ErrorState 
         error="Session non trouvée"
-        onGoToDashboard={goToDashboard}
+        onBack={goToDashboard}
       />
     );
   }
@@ -107,6 +117,7 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
       />
     );
   }
+
 
   // Game active - render the actual scoresheet with error boundary
   return (

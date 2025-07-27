@@ -37,6 +37,9 @@ const specificComponents: Record<string, ComponentType<ScoreSheetProps>> = {
   'rami': dynamic(() => import('@/components/scoresheets/RamiScoreSheet'), {
     loading: LoadingComponent
   }),
+  'jeu-libre': dynamic(() => import('@/components/scoresheets/GenericScoreSheet'), {
+    loading: LoadingComponent
+  }),
 };
 
 /**

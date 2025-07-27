@@ -22,6 +22,7 @@ export interface BaseGameSession {
   host_user_id: number;
   current_round: number;
   score_target?: number;
+  score_direction: 'higher' | 'lower';
   min_players: number;
   max_players: number;
   players: Player[];

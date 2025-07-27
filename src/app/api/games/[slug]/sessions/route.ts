@@ -28,7 +28,7 @@ export async function POST(
 
     const body = await request.json();
     console.log('[PROD] Request body:', JSON.stringify(body, null, 2));
-    const { sessionName, players, teams, hasScoreTarget, scoreTarget, finishCurrentRound } = body;
+    const { sessionName, players, teams, hasScoreTarget, scoreTarget, finishCurrentRound, scoreDirection } = body;
     const { slug } = await params;
     console.log('[PROD] Slug:', slug);
     
@@ -145,7 +145,7 @@ export async function POST(
     });
     
     const sessionResult = await db.execute({
-      sql: `INSERT INTO game_sessions (host_user_id, game_id, session_name, session_code, status, has_score_target, score_target, finish_current_round)
+      sql: `INSERT INTO sessions (host_user_id, game_id, name, session_code, status, has_score_target, score_target, score_direction)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         userId, 
@@ -155,7 +155,7 @@ export async function POST(
         'waiting',  // Start sessions in waiting state
         hasScoreTarget ? 1 : 0,  // Convert boolean to 0/1 for SQLite
         safeScoreTarget,
-        finishCurrentRound ? 1 : 0
+        scoreDirection || 'higher'  // Default to 'higher' if not specified
       ]
     });
     
@@ -171,8 +171,8 @@ export async function POST(
     if (!sessionId || sessionId === null || isNaN(sessionId)) {
       console.log('[PROD] Turso returned null lastInsertRowid, fetching ID manually');
       const lastSessionResult = await db.execute({
-        sql: `SELECT id FROM game_sessions 
-              WHERE host_user_id = ? AND session_name = ? 
+        sql: `SELECT id FROM sessions 
+              WHERE host_user_id = ? AND name = ? 
               ORDER BY created_at DESC 
               LIMIT 1`,
         args: [userId, sessionName || `Partie de ${game.name}`]
@@ -194,6 +194,8 @@ export async function POST(
     
     console.log('[PROD] Session created with ID:', sessionId);
 
+    // No need for separate session_participants table - using session_player pivot instead
+
     // Add players and teams
     let position = 0;
     if (game.team_based && teams) {
@@ -205,25 +207,48 @@ export async function POST(
           teamName = validPlayers.length >= 2 ? `${validPlayers[0]} & ${validPlayers[1]}` : validPlayers[0] || 'Équipe';
         }
         
-        // Insert team and get its ID
+        // Create team
         const teamResult = await db.execute({
-          sql: `INSERT INTO teams (session_id, team_name) VALUES (?, ?)`,
-          args: [sessionId, teamName]
+          sql: `INSERT INTO teams (name) VALUES (?)`,
+          args: [teamName]
         });
         let teamId = teamResult.lastInsertRowid;
         if (typeof teamId === 'bigint') {
           teamId = Number(teamId);
         }
-        console.log(`[PROD] Created team: ${team.name}, ID: ${teamId}`);
+        console.log(`[PROD] Created team: ${teamName}, ID: ${teamId}`);
+
+        // Link team to session
+        await db.execute({
+          sql: `INSERT INTO session_team (session_id, team_id) VALUES (?, ?)`,
+          args: [sessionId, teamId]
+        });
 
         for (const playerName of team.players) {
           if (playerName.trim()) {
-            const playerUserId = position === 0 ? userId : null;
-            await db.execute({
-              sql: `INSERT INTO players (session_id, user_id, player_name, position, team_id) VALUES (?, ?, ?, ?, ?)`,
-              args: [sessionId, playerUserId, playerName.trim(), position, teamId]
+            // Create player in catalog
+            const playerResult = await db.execute({
+              sql: `INSERT INTO players (name, user_id) VALUES (?, ?)`,
+              args: [playerName.trim(), userId]
             });
-            console.log(`[PROD] Created player: ${playerName.trim()}, position: ${position}, user_id: ${playerUserId}, team_id: ${teamId}`);
+            let playerId = playerResult.lastInsertRowid;
+            if (typeof playerId === 'bigint') {
+              playerId = Number(playerId);
+            }
+            
+            // Link player to session
+            await db.execute({
+              sql: `INSERT INTO session_player (session_id, player_id, position) VALUES (?, ?, ?)`,
+              args: [sessionId, playerId, position]
+            });
+            
+            // Link player to team in this session
+            await db.execute({
+              sql: `INSERT INTO team_player (team_id, player_id, session_id) VALUES (?, ?, ?)`,
+              args: [teamId, playerId, sessionId]
+            });
+            
+            console.log(`[PROD] Created player: ${playerName.trim()}, position: ${position}, user_id: ${userId}, team_id: ${teamId}`);
             position++;
           }
         }
@@ -231,12 +256,23 @@ export async function POST(
     } else if (players) {
       for (const playerName of players) {
         if (playerName.trim()) {
-          const playerUserId = position === 0 ? userId : null;
-          await db.execute({
-            sql: `INSERT INTO players (session_id, user_id, player_name, position) VALUES (?, ?, ?, ?)`,
-            args: [sessionId, playerUserId, playerName.trim(), position]
+          // Create player in catalog
+          const playerResult = await db.execute({
+            sql: `INSERT INTO players (name, user_id) VALUES (?, ?)`,
+            args: [playerName.trim(), userId]
           });
-          console.log(`[PROD] Created player: ${playerName.trim()}, position: ${position}, user_id: ${playerUserId}`);
+          let playerId = playerResult.lastInsertRowid;
+          if (typeof playerId === 'bigint') {
+            playerId = Number(playerId);
+          }
+          
+          // Link player to session
+          await db.execute({
+            sql: `INSERT INTO session_player (session_id, player_id, position) VALUES (?, ?, ?)`,
+            args: [sessionId, playerId, position]
+          });
+          
+          console.log(`[PROD] Created player: ${playerName.trim()}, position: ${position}, user_id: ${userId}`);
           position++;
         }
       }
@@ -255,6 +291,8 @@ export async function POST(
         });
       }
     }
+
+    // No need to update current_players - we'll calculate dynamically from session_player
 
     return NextResponse.json({
       message: 'Partie créée avec succès',

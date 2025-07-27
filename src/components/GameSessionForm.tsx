@@ -133,6 +133,50 @@ export default function GameSessionForm({
         icon={Settings}
       >
         <div className="space-y-4">
+          {/* Score Direction for Generic Game */}
+          {game?.slug === 'jeu-libre' && (
+            <div className="flex items-start space-x-3">
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">
+                  Type de score
+                </label>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  Choisissez si le meilleur score est le plus haut ou le plus bas
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex items-center space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <input
+                      type="radio"
+                      name="scoreDirection"
+                      value="higher"
+                      checked={state.scoreDirection === 'higher'}
+                      onChange={(e) => onUpdateState({ scoreDirection: e.target.value as 'higher' | 'lower' })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">Score élevé gagne</span>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Plus on a de points, mieux c'est</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <input
+                      type="radio"
+                      name="scoreDirection"
+                      value="lower"
+                      checked={state.scoreDirection === 'lower'}
+                      onChange={(e) => onUpdateState({ scoreDirection: e.target.value as 'higher' | 'lower' })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">Score faible gagne</span>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Moins on a de points, mieux c'est</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Score Target */}
           <div className="flex items-start space-x-3">
             <input

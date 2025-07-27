@@ -23,7 +23,7 @@ export function useGamePermissions(currentUserId: number | null) {
     return userId === hostUserId;
   };
 
-  // Check if current user can join this session
+  // Check if current user can join this session (add new player)
   const canJoinSession = (session: any): boolean => {
     if (!session) return false;
     
@@ -77,11 +77,28 @@ export function useGamePermissions(currentUserId: number | null) {
     return connectedPlayers.length >= (session.min_players || 2);
   };
 
+  // Check if current user can view/participate in this session
+  const canViewSession = (session: any): boolean => {
+    if (!session) return false;
+    
+    // Host can always view their sessions
+    if (currentUserId && isHost(session.host_user_id, currentUserId)) return true;
+    
+    // Players can view sessions they're in
+    if (currentUserId && isUserInSession(session.players || [], currentUserId)) return true;
+    
+    // Anyone can view waiting sessions (to potentially join)
+    if (session.status === 'waiting') return true;
+    
+    return false;
+  };
+
   return {
     canEditPlayerScores,
     isUserInSession,
     isHost,
     canJoinSession,
-    canStartGame
+    canStartGame,
+    canViewSession
   };
 }

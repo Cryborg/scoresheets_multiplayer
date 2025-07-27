@@ -22,6 +22,7 @@ const metadataLoaders: Record<string, () => Promise<{ default?: GameMetadata } |
   'mille-bornes': () => import('@/games/mille-bornes/metadata').then(m => ({ default: m.milleBornesMetadata })),
   'mille-bornes-equipes': () => import('@/games/mille-bornes-equipes/metadata').then(m => ({ default: m.milleBornesEquipesMetadata })),
   'rami': () => import('@/games/rami/metadata').then(m => ({ default: m.ramiMetadata })),
+  'jeu-libre': () => import('@/games/jeu-libre/metadata').then(m => ({ default: m.jeuLibreMetadata })),
 };
 
 // Cache des métadonnées chargées
@@ -44,8 +45,8 @@ export async function loadGameMetadata(slug: string): Promise<GameMetadata | nul
   }
 
   try {
-    const module = await loader();
-    const metadata = 'default' in module ? module.default! : module as GameMetadata;
+    const moduleResult = await loader();
+    const metadata = 'default' in moduleResult ? moduleResult.default! : moduleResult as GameMetadata;
     
     // Mettre en cache
     metadataCache.set(slug, metadata);

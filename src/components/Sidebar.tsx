@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { X, ChevronRight, ChevronDown, Home, LogOut, Shield } from 'lucide-react';
+import { X, ChevronRight, ChevronDown, Home, LogOut, Shield, Calendar } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import { BRANDING } from '@/lib/branding';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -87,6 +87,15 @@ export default function Sidebar({ isOpen, onClose, games, onLogout }: SidebarPro
             >
               <Home className="h-5 w-5 mr-3" />
               Accueil
+            </Link>
+
+            <Link
+              href="/sessions"
+              onClick={onClose}
+              className="flex items-center px-4 py-2 mb-2 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
+            >
+              <Calendar className="h-5 w-5 mr-3" />
+              Mes Parties
             </Link>
 
             <div className="mt-6">

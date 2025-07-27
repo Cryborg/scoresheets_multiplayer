@@ -56,74 +56,32 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
 
     // Récupérer tous les autres joueurs pour le transfert d'hôte potentiel
     const otherPlayersResult = await tursoClient.execute({
-      sql: 'SELECT user_id FROM players WHERE session_id = ? AND user_id != ? ORDER BY id ASC',
+      sql: 'SELECT user_id FROM players WHERE session_id = ? AND user_id != ? AND user_id IS NOT NULL ORDER BY id ASC',
       args: [sessionId, currentUserId]
     });
 
+    // Compter le nombre total de joueurs (pas d'utilisateurs uniques)
+    const totalPlayersResult = await tursoClient.execute({
+      sql: 'SELECT COUNT(*) as count FROM players WHERE session_id = ?',
+      args: [sessionId]
+    });
+
     const otherPlayers = otherPlayersResult.rows;
+    const totalPlayerCount = Number(totalPlayersResult.rows[0].count);
 
     // Commencer une transaction
     await tursoClient.execute('BEGIN TRANSACTION');
 
     try {
-      // Supprimer le joueur de la session
+      // Mark user as having left in session_participants
       await tursoClient.execute({
-        sql: 'DELETE FROM players WHERE session_id = ? AND user_id = ?',
+        sql: 'UPDATE session_participants SET left_at = CURRENT_TIMESTAMP WHERE session_id = ? AND user_id = ? AND left_at IS NULL',
         args: [sessionId, currentUserId]
       });
 
-      // Si plus personne dans la session, la supprimer complètement
-      if (otherPlayers.length === 0) {
-        // Supprimer tous les scores
-        await tursoClient.execute({
-          sql: 'DELETE FROM scores WHERE session_id = ?',
-          args: [sessionId]
-        });
+      // DON'T change session status - let user decide when to end the session
 
-        // Supprimer tous les événements
-        await tursoClient.execute({
-          sql: 'DELETE FROM session_events WHERE session_id = ?',
-          args: [sessionId]
-        });
-
-        // Supprimer la session
-        await tursoClient.execute({
-          sql: 'DELETE FROM game_sessions WHERE id = ?',
-          args: [sessionId]
-        });
-
-        await tursoClient.execute('COMMIT');
-
-        return NextResponse.json({
-          message: 'Vous avez quitté la session. Session supprimée (plus de joueurs).',
-          sessionDeleted: true
-        });
-      }
-
-      // Si l'utilisateur qui quitte était l'hôte, transférer à quelqu'un d'autre
-      if (currentUserId === hostUserId && otherPlayers.length > 0) {
-        const newHostUserId = otherPlayers[0].user_id as number;
-        
-        await tursoClient.execute({
-          sql: 'UPDATE game_sessions SET host_user_id = ? WHERE id = ?',
-          args: [newHostUserId, sessionId]
-        });
-
-        // Créer un événement pour notifier le transfert d'hôte
-        await tursoClient.execute({
-          sql: `INSERT INTO session_events (session_id, user_id, event_type, event_data, created_at)
-                VALUES (?, ?, ?, ?, datetime('now'))`,
-          args: [
-            sessionId,
-            newHostUserId,
-            'host_transferred',
-            JSON.stringify({
-              previous_host: currentUserId,
-              new_host: newHostUserId
-            })
-          ]
-        });
-      }
+      // NEVER delete sessions, players, scores, or events - preserve game history!
 
       // Créer un événement pour notifier que quelqu'un a quitté
       await tursoClient.execute({
@@ -143,9 +101,9 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
       await tursoClient.execute('COMMIT');
 
       return NextResponse.json({
-        message: 'Vous avez quitté la session avec succès.',
+        message: 'Vous avez quitté la session. La partie reste active.',
         sessionDeleted: false,
-        hostTransferred: currentUserId === hostUserId && otherPlayers.length > 0
+        sessionCompleted: false
       });
 
     } catch (error) {

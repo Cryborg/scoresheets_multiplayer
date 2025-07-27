@@ -41,6 +41,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
   
   // Calculate permissions with session context
   const canJoinSession = permissions.canJoinSession(session);
+  const canViewSession = permissions.canViewSession(session);
   const canStartGame = permissions.canStartGame(session);
   const isHost = session ? permissions.isHost(session.host_user_id, currentUserId) : false;
 
@@ -152,6 +153,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     
     // Permissions
     canJoinSession,
+    canViewSession,
     canStartGame,
     isHost,
     

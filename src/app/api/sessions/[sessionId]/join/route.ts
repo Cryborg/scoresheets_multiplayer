@@ -129,6 +129,19 @@ export async function POST(
       userId = null; // Subsequent players won't be linked to user account
     }
 
+    // Add authenticated user to session_participants if not already there
+    const originalUserId = getAuthenticatedUserId(request);
+    if (originalUserId) {
+      try {
+        await tursoClient.execute({
+          sql: `INSERT OR IGNORE INTO session_participants (session_id, user_id, joined_at, is_spectator) VALUES (?, ?, CURRENT_TIMESTAMP, 0)`,
+          args: [sessionId, originalUserId]
+        });
+      } catch (participantError) {
+        console.error('Error adding user to session_participants:', participantError);
+      }
+    }
+
     // Update current_players count
     await tursoClient.execute({
       sql: 'UPDATE game_sessions SET current_players = current_players + ? WHERE id = ?',

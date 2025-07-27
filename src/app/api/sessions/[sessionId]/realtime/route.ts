@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { tursoClient } from '@/lib/database';
+import { db } from '@/lib/database';
 import { getAuthenticatedUserId } from '@/lib/auth';
 import { 
   ScoreRecord, 
@@ -23,10 +23,10 @@ export async function GET(
     const currentUserId = getAuthenticatedUserId(request);
 
     // Get session with access control in a single optimized query
-    const sessionWithAccessResult = await tursoClient.execute({
+    const sessionWithAccessResult = await db.execute({
       sql: `
         SELECT 
-          gs.*,
+          s.*,
           g.name as game_name,
           g.slug as game_slug,
           g.score_type,
@@ -35,18 +35,19 @@ export async function GET(
           g.max_players,
           u.username as host_username,
           CASE 
-            WHEN gs.host_user_id = ? THEN 'host'
+            WHEN s.host_user_id = ? THEN 'host'
             WHEN p.user_id = ? THEN 'player'
-            WHEN gs.status = 'waiting' THEN 'can_join'
-            WHEN EXISTS(SELECT 1 FROM players p2 WHERE p2.session_id = gs.id AND p2.user_id IS NULL) AND ? IS NULL THEN 'guest_allowed'
+            WHEN s.status = 'waiting' THEN 'can_join'
+            WHEN EXISTS(SELECT 1 FROM session_player sp JOIN players p2 ON sp.player_id = p2.id WHERE sp.session_id = s.id AND p2.user_id IS NULL) AND ? IS NULL THEN 'guest_allowed'
             ELSE 'denied'
           END as access_level
-        FROM game_sessions gs
-        JOIN games g ON gs.game_id = g.id
-        JOIN users u ON gs.host_user_id = u.id
-        LEFT JOIN players p ON p.session_id = gs.id AND p.user_id = ?
-        WHERE gs.id = ?
-        GROUP BY gs.id
+        FROM sessions s
+        JOIN games g ON s.game_id = g.id
+        JOIN users u ON s.host_user_id = u.id
+        LEFT JOIN session_player sp ON sp.session_id = s.id
+        LEFT JOIN players p ON sp.player_id = p.id AND p.user_id = ?
+        WHERE s.id = ?
+        GROUP BY s.id
       `,
       args: [currentUserId, currentUserId, currentUserId, currentUserId, sessionId]
     });
@@ -68,32 +69,42 @@ export async function GET(
     }
 
     // Get players
-    const playersResult = await tursoClient.execute({
+    const playersResult = await db.execute({
       sql: `
         SELECT 
-          p.*,
+          p.id,
+          p.name as player_name,
+          p.user_id,
           u.username,
           u.display_name,
           u.is_online,
-          t.team_name
-        FROM players p
+          sp.position,
+          sp.is_ready,
+          sp.joined_at,
+          sp.left_at,
+          CASE WHEN tp.team_id IS NOT NULL THEN t.name ELSE NULL END as team_name,
+          tp.team_id
+        FROM session_player sp
+        JOIN players p ON sp.player_id = p.id
         LEFT JOIN users u ON p.user_id = u.id
-        LEFT JOIN teams t ON p.team_id = t.id
-        WHERE p.session_id = ?
-        ORDER BY p.position
+        LEFT JOIN team_player tp ON tp.player_id = p.id AND tp.session_id = ?
+        LEFT JOIN teams t ON tp.team_id = t.id
+        WHERE sp.session_id = ? AND sp.left_at IS NULL
+        ORDER BY sp.position
       `,
-      args: [sessionId]
+      args: [sessionId, sessionId]
     });
 
     // Get teams
-    const teamsResult = await tursoClient.execute({
+    const teamsResult = await db.execute({
       sql: `
         SELECT 
-          id,
-          team_name
-        FROM teams
-        WHERE session_id = ?
-        ORDER BY id
+          t.id,
+          t.name as team_name
+        FROM session_team st
+        JOIN teams t ON st.team_id = t.id
+        WHERE st.session_id = ?
+        ORDER BY t.id
       `,
       args: [sessionId]
     });
@@ -114,7 +125,7 @@ export async function GET(
     
     if (session.score_type === 'rounds') {
       // Round-based scoring (like Tarot, Belote)
-      const scoresResult = await tursoClient.execute({
+      const scoresResult = await db.execute({
         sql: `
           SELECT 
             round_number,
@@ -151,7 +162,7 @@ export async function GET(
 
     } else {
       // Category-based scoring (like Yams)
-      const scoresResult = await tursoClient.execute({
+      const scoresResult = await db.execute({
         sql: `
           SELECT 
             category_id,
@@ -183,7 +194,7 @@ export async function GET(
     }
 
     // Get recent events (last 50)
-    const eventsResult = await tursoClient.execute({
+    const eventsResult = await db.execute({
       sql: `
         SELECT 
           se.*,
@@ -199,8 +210,8 @@ export async function GET(
 
     // Update session activity (non-critical, don't fail if it errors)
     try {
-      await tursoClient.execute({
-        sql: 'UPDATE game_sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = ?',
+      await db.execute({
+        sql: 'UPDATE sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         args: [sessionId]
       });
     } catch (updateError) {

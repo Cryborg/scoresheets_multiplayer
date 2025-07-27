@@ -29,6 +29,7 @@ export interface GameSessionCreatorState {
   hasScoreTarget: boolean;
   scoreTarget: string;
   finishCurrentRound: boolean;
+  scoreDirection: 'higher' | 'lower';
   loading: boolean;
   suggestedPlayers: string[];
 }
@@ -42,6 +43,7 @@ export function useGameSessionCreator(game?: Game | null) {
     hasScoreTarget: false,
     scoreTarget: '',
     finishCurrentRound: false,
+    scoreDirection: 'higher',
     loading: false,
     suggestedPlayers: []
   });
@@ -187,6 +189,7 @@ export function useGameSessionCreator(game?: Game | null) {
         hasScoreTarget: state.hasScoreTarget,
         scoreTarget: state.hasScoreTarget ? parseInt(state.scoreTarget) : null,
         finishCurrentRound: state.hasScoreTarget ? state.finishCurrentRound : false,
+        scoreDirection: state.scoreDirection,
         ...additionalPayload
       };
 
@@ -218,7 +221,7 @@ export function useGameSessionCreator(game?: Game | null) {
     } finally {
       setState(prev => ({ ...prev, loading: false }));
     }
-  }, [game, state.sessionName, state.players, state.teams, state.hasScoreTarget, state.scoreTarget, state.finishCurrentRound, validateSession]);
+  }, [game, state.sessionName, state.players, state.teams, state.hasScoreTarget, state.scoreTarget, state.finishCurrentRound, state.scoreDirection, validateSession]);
 
   const updateState = useCallback((updates: Partial<GameSessionCreatorState>) => {
     setState(prev => ({ ...prev, ...updates }));
