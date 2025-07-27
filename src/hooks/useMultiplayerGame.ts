@@ -1,11 +1,32 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRealtimeSession } from './useRealtimeSession';
 import { useGamePermissions } from './useGamePermissions';
 import { GameSession } from '@/types/multiplayer';
 import { notify } from '@/lib/toast';
+
+/**
+ * Détermine si une session est "locale" (un seul utilisateur connecté)
+ * Une session est locale quand tous les joueurs appartiennent au même user_id
+ * ou quand il n'y a qu'un seul user_id unique non-null
+ */
+function isLocalSession(session: GameSession | null, currentUserId: number | null): boolean {
+  if (!session?.players || session.players.length === 0) {
+    return false;
+  }
+
+  // Collecter tous les user_id uniques non-null
+  const uniqueUserIds = new Set(
+    session.players
+      .map(player => player.user_id)
+      .filter(userId => userId !== null)
+  );
+
+  // Si aucun user_id (tous les joueurs sont guests), ou un seul user_id
+  return uniqueUserIds.size <= 1;
+}
 
 interface UseMultiplayerGameProps {
   sessionId: string;
@@ -17,6 +38,18 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
   const [playerName, setPlayerName] = useState('');
   const [player2Name, setPlayer2Name] = useState('');
   const [joiningSession, setJoiningSession] = useState(false);
+
+  // Calculer si on doit pauser le polling pour les sessions locales
+  const [shouldPausePolling, setShouldPausePolling] = useState(false);
+
+  // Calculer l'intervalle de polling optimisé
+  const optimizedPollInterval = useMemo(() => {
+    // Pour les sessions locales, utiliser un polling beaucoup plus lent
+    // mais pas complètement arrêté pour détecter quand de nouveaux joueurs rejoignent
+    const interval = shouldPausePolling ? 30000 : undefined; // 30s pour sessions locales vs 2s par défaut
+    console.log('🔧 DEBUG: optimizedPollInterval calculé:', interval, 'shouldPausePolling:', shouldPausePolling);
+    return interval;
+  }, [shouldPausePolling]);
 
   // Use realtime session hook
   const {
@@ -31,9 +64,30 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
   } = useRealtimeSession<T>({
     sessionId,
     gameSlug,
+    pollInterval: optimizedPollInterval,
     onError: useCallback(() => {
       // Silent error handling
-    }, [])
+    }, []),
+    onUpdate: useCallback((sessionData: T) => {
+      // Vérifier si la session est locale et ajuster le polling
+      console.log('🔧 DEBUG: onUpdate appelé avec sessionData:', {
+        players: sessionData?.players?.map(p => ({ user_id: p.user_id, player_name: p.player_name })),
+        currentUserId
+      });
+      
+      const isLocal = isLocalSession(sessionData, currentUserId);
+      console.log('🔧 DEBUG: isLocalSession retourne:', isLocal, 'shouldPausePolling actuel:', shouldPausePolling);
+      
+      if (isLocal !== shouldPausePolling) {
+        console.log('🔧 DEBUG: Changement détecté, mise à jour shouldPausePolling vers:', isLocal);
+        setShouldPausePolling(isLocal);
+        if (isLocal) {
+          console.log('🎯 Session détectée comme locale - polling réduit à 30s pour optimiser les performances');
+        } else {
+          console.log('🌐 Session multijoueur détectée - polling normal activé (2s)');
+        }
+      }
+    }, [currentUserId, shouldPausePolling])
   });
 
   const session = realtimeSession;

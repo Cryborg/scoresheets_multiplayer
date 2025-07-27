@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
           g.name as game_name,
           g.max_players,
           (SELECT COUNT(*) FROM players WHERE session_id = gs.id) as current_players
-        FROM sessions gs
+        FROM game_sessions gs
         JOIN games g ON gs.game_id = g.id
         WHERE gs.session_code = ? AND gs.status IN ('waiting', 'active')
       `,

@@ -16,7 +16,7 @@ export async function DELETE(
 
     // Vérifier que l'utilisateur est l'hôte de la session
     const session = await db.execute({
-      sql: 'SELECT host_user_id, status FROM sessions WHERE id = ?',
+      sql: 'SELECT host_user_id, status FROM game_sessions WHERE id = ?',
       args: [sessionId]
     });
 
@@ -31,15 +31,12 @@ export async function DELETE(
 
     // NEVER DELETE - just mark as cancelled to hide from active lists
     await db.execute({
-      sql: 'UPDATE sessions SET status = ?, ended_at = CURRENT_TIMESTAMP, last_activity = CURRENT_TIMESTAMP WHERE id = ?',
+      sql: 'UPDATE game_sessions SET status = ?, ended_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       args: ['cancelled', sessionId]
     });
 
-    // Mark user as having left in session_participants
-    await db.execute({
-      sql: 'UPDATE session_participants SET left_at = CURRENT_TIMESTAMP WHERE session_id = ? AND user_id = ? AND left_at IS NULL',
-      args: [sessionId, userId]
-    });
+    // Note: Dans la nouvelle architecture, on ne track plus les participants séparément
+    // Les players sont directement dans la table players avec session_id
 
     return NextResponse.json({ 
       success: true, 

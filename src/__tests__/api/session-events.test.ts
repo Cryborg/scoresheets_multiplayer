@@ -13,9 +13,6 @@ function createMockRequest(url: string, body: unknown) {
 jest.mock('../../lib/database', () => ({
   db: {
     execute: jest.fn()
-  },
-  tursoClient: {
-    execute: jest.fn()
   }
 }));
 

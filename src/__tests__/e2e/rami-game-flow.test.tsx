@@ -6,10 +6,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { jest } from '@jest/globals';
 import RamiScoreSheet from '@/components/scoresheets/RamiScoreSheet';
 
-// Mock des hooks et composants
-jest.mock('@/hooks/useMultiplayerGame');
+// Mock BaseScoreSheetMultiplayer pour simuler l'état complet
 jest.mock('@/components/scoresheets/BaseScoreSheetMultiplayer', () => {
-  return function MockBaseScoreSheetMultiplayer({ children }: any) {
+  return function MockBaseScoreSheetMultiplayer({ children }: { children: (props: unknown) => React.ReactNode }) {
+    console.log('MOCK APPELÉ - BaseScoreSheetMultiplayer');
     const mockSession = {
       id: 1,
       session_name: 'Test Rami',
@@ -38,9 +38,14 @@ jest.mock('@/components/scoresheets/BaseScoreSheetMultiplayer', () => {
       lastUpdate: new Date().toISOString()
     };
 
-    return children({ session: mockSession, gameState: mockGameState });
+    return <div data-testid="mock-base-component">{children({ session: mockSession, gameState: mockGameState })}</div>;
   };
 });
+
+// Mock useToast
+jest.mock('@/hooks/use-toast', () => ({
+  useToast: () => ({ toast: jest.fn() })
+}));
 
 // Mock fetch pour les API calls
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
