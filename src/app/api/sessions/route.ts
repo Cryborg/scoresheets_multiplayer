@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
           s.id,
           s.name as session_name,
           s.status,
-          0 as current_players,
+          (SELECT COUNT(*) FROM session_player sp WHERE sp.session_id = s.id AND sp.left_at IS NULL) as current_players,
           g.max_players,
           s.created_at,
           s.updated_at as last_activity,

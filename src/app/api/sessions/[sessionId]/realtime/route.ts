@@ -233,6 +233,7 @@ export async function GET(
         ...session,
         players,
         teams, // Include teams in the session object
+        current_players: players.length, // Add current player count
         ...scoresData
       },
       events: eventsResult.rows.map(event => event as SessionEventRecord).reverse(), // Most recent first
