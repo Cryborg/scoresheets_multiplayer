@@ -10,11 +10,11 @@ function createMockRequest(url: string, body: unknown) {
 }
 
 // Mock database for new Laravel architecture
-jest.mock('../../lib/database', () => ({
-  tursoClient: {
+jest.mock("../../lib/database", () => ({
+  db: {
     execute: jest.fn()
   },
-  db: {
+  tursoClient: {
     execute: jest.fn()
   }
 }));

@@ -39,7 +39,7 @@ export async function getSettingEdge(key: string, defaultValue: any = null): Pro
     if (!client) {
       // In development, return default values
       const devDefaults: Record<string, any> = {
-        maintenanceMode: true,
+        maintenanceMode: false,
         allowRegistration: true,
         sessionTimeout: 3600,
         siteName: 'Oh Sheet!',

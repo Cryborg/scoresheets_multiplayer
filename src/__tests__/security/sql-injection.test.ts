@@ -4,7 +4,10 @@
  */
 
 // Mock the database module
-jest.mock('@/lib/database', () => ({
+jest.mock("../../lib/database", () => ({
+  db: {
+    execute: jest.fn()
+  },
   tursoClient: {
     execute: jest.fn()
   }

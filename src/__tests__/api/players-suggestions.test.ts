@@ -1,7 +1,10 @@
 import { NextRequest } from 'next/server';
 
-// Mock tursoClient
-jest.mock('../../lib/database', () => ({
+// Mock db
+jest.mock("../../lib/database", () => ({
+  db: {
+    execute: jest.fn()
+  },
   tursoClient: {
     execute: jest.fn()
   }
@@ -14,9 +17,9 @@ jest.mock('../../lib/auth', () => ({
 
 import { GET } from '../../app/api/players/suggestions/route';
 import { getAuthenticatedUserId } from '../../lib/auth';
-import { tursoClient } from '../../lib/database';
+import { db } from '../../lib/database';
 
-const mockExecute = tursoClient.execute as jest.MockedFunction<typeof tursoClient.execute>;
+const mockExecute = db.execute as jest.MockedFunction<typeof db.execute>;
 
 describe('/api/players/suggestions', () => {
   beforeEach(() => {

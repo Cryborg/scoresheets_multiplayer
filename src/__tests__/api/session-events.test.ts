@@ -9,17 +9,20 @@ function createMockRequest(url: string, body: unknown) {
   } as NextRequest;
 }
 
-// Mock tursoClient
+// Mock db
 jest.mock('../../lib/database', () => ({
+  db: {
+    execute: jest.fn()
+  },
   tursoClient: {
     execute: jest.fn()
   }
 }));
 
 import { POST } from '../../app/api/sessions/[sessionId]/events/route';
-import { tursoClient } from '../../lib/database';
+import { db } from '../../lib/database';
 
-const mockExecute = tursoClient.execute as jest.MockedFunction<typeof tursoClient.execute>;
+const mockExecute = db.execute as jest.MockedFunction<typeof db.execute>;
 
 describe('/api/sessions/[sessionId]/events', () => {
   beforeEach(() => {
@@ -60,7 +63,7 @@ describe('/api/sessions/[sessionId]/events', () => {
       
       // Verify session activity update
       expect(mockExecute).toHaveBeenCalledWith({
-        sql: 'UPDATE game_sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = ?',
+        sql: 'UPDATE sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         args: [sessionId]
       });
     });
