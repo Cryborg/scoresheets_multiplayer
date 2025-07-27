@@ -47,6 +47,16 @@ export default function MaintenancePage() {
           <p className="text-xs text-gray-400 dark:text-gray-500">
             Merci pour votre patience
           </p>
+          
+          {/* Admin login link - discrete */}
+          <div className="mt-4">
+            <a 
+              href="/login" 
+              className="text-xs text-gray-300 dark:text-gray-600 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+            >
+              Connexion administrateur
+            </a>
+          </div>
         </div>
       </div>
     </div>

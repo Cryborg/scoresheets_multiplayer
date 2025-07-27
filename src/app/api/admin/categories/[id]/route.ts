@@ -3,7 +3,7 @@ import { getAuthenticatedUserId } from '@/lib/auth';
 import { db } from '@/lib/database';
 
 async function verifyAdmin(request: NextRequest) {
-  const userId = await getAuthenticatedUserId(request);
+  const userId = getAuthenticatedUserId(request);
   
   if (!userId) {
     return null;

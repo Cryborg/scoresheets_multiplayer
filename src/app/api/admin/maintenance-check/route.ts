@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     
     // Check if user is admin
     let isAdmin = false;
-    const userId = await getAuthenticatedUserId(request);
+    const userId = getAuthenticatedUserId(request);
     
     if (userId) {
       // Use edge-compatible client

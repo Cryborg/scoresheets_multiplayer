@@ -4,7 +4,7 @@ import { db } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getAuthenticatedUserId(request);
+    const userId = getAuthenticatedUserId(request);
     
     if (!userId) {
       return NextResponse.json({ isAdmin: false }, { status: 401 });
