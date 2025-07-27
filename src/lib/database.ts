@@ -430,6 +430,17 @@ Atteindre **5000 points** en premier (et non 1000 bornes comme souvent cru).
       min_players: 4,
       max_players: 4,
       estimated_duration: 60
+    },
+    {
+      name: 'Rami',
+      slug: 'rami',
+      category: 'Jeux de défausse',
+      rules: 'Formez des combinaisons (suites et brelans) pour vous débarrasser de toutes vos cartes. Le premier à poser toutes ses cartes gagne la manche.',
+      score_type: 'rounds',
+      team_based: 0,
+      min_players: 2,
+      max_players: 6,
+      estimated_duration: 45
     }
   ];
 

@@ -21,6 +21,7 @@ const metadataLoaders: Record<string, () => Promise<{ default?: GameMetadata } |
   'bridge': () => import('@/games/bridge/metadata').then(m => ({ default: m.bridgeMetadata })),
   'mille-bornes': () => import('@/games/mille-bornes/metadata').then(m => ({ default: m.milleBornesMetadata })),
   'mille-bornes-equipes': () => import('@/games/mille-bornes-equipes/metadata').then(m => ({ default: m.milleBornesEquipesMetadata })),
+  'rami': () => import('@/games/rami/metadata').then(m => ({ default: m.ramiMetadata })),
 };
 
 // Cache des métadonnées chargées
