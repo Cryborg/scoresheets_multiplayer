@@ -24,7 +24,12 @@ export async function POST(
     
     // Verify the player can be modified by this user
     const playerResult = await db.execute({
-      sql: 'SELECT user_id FROM players WHERE id = ? AND session_id = ?',
+      sql: `
+        SELECT p.user_id 
+        FROM players p
+        JOIN session_player sp ON p.id = sp.player_id
+        WHERE p.id = ? AND sp.session_id = ? AND sp.left_at IS NULL
+      `,
       args: [playerId, sessionId]
     });
     
