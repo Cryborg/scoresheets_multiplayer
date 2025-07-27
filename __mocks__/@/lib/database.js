@@ -5,4 +5,5 @@ const tursoClient = {
 
 module.exports = {
   tursoClient,
+  db: tursoClient, // New export for Laravel architecture
 };

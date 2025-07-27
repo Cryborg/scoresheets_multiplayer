@@ -9,9 +9,12 @@ function createMockRequest(url: string, body: unknown) {
   } as NextRequest;
 }
 
-// Mock tursoClient
+// Mock database for new Laravel architecture
 jest.mock('../../lib/database', () => ({
   tursoClient: {
+    execute: jest.fn()
+  },
+  db: {
     execute: jest.fn()
   }
 }));
@@ -23,9 +26,9 @@ jest.mock('../../lib/auth', () => ({
 
 import { POST } from '../../app/api/sessions/[sessionId]/join/route';
 import { getAuthenticatedUserId } from '../../lib/auth';
-import { tursoClient } from '../../lib/database';
+import { db } from '../../lib/database';
 
-const mockExecute = tursoClient.execute as jest.MockedFunction<typeof tursoClient.execute>;
+const mockExecute = db.execute as jest.MockedFunction<typeof db.execute>;
 
 describe('/api/sessions/[sessionId]/join - Team Games', () => {
   beforeEach(() => {

@@ -1,181 +1,105 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { tursoClient } from '@/lib/database';
 import { getAuthenticatedUserId } from '@/lib/auth';
+import { db } from '@/lib/database';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ sessionId: string }> }
-) {
+interface JoinSessionParams {
+  params: Promise<{ sessionId: string }>;
+}
+
+export async function POST(request: NextRequest, context: JoinSessionParams) {
   try {
-    const { sessionId } = await params;
+    const { sessionId } = await context.params;
     const body = await request.json();
     const { playerName, player2Name } = body;
 
-    if (!playerName || !playerName.trim()) {
+    if (!playerName?.trim()) {
       return NextResponse.json({ error: 'Nom du joueur requis' }, { status: 400 });
     }
 
     // Get user ID if authenticated
-    let userId = getAuthenticatedUserId(request);
+    const userId = getAuthenticatedUserId(request);
 
     // Check if session exists and is joinable
-    const sessionResult = await tursoClient.execute({
+    const sessionResult = await db.execute({
       sql: `
         SELECT 
-          gs.*,
+          s.id,
+          s.status,
           g.max_players,
           g.slug as game_slug,
-          g.team_based,
-          (SELECT COUNT(*) FROM players WHERE session_id = gs.id) as current_players
-        FROM game_sessions gs
-        JOIN games g ON gs.game_id = g.id
-        WHERE gs.id = ? AND gs.status IN ('waiting', 'active')
+          g.team_based
+        FROM sessions s
+        JOIN games g ON s.game_id = g.id
+        WHERE s.id = ? AND s.status IN ('waiting', 'active')
       `,
       args: [sessionId]
     });
 
     if (sessionResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Session introuvable ou terminée' }, { status: 404 });
+      return NextResponse.json({ error: 'Session non trouvée ou non ouverte' }, { status: 404 });
     }
 
-    const session = sessionResult.rows[0];
+    const session = sessionResult.rows[0] as any;
+
+    // Simple implementation: Just create one player for now
+    // TODO: Add team support back later
     
-    // Check if session is full
-    if (Number(session.current_players) >= Number(session.max_players)) {
-      return NextResponse.json({ error: 'La partie est complète' }, { status: 400 });
-    }
-
-    // Check if player names already exist in session
-    const existingPlayerResult = await tursoClient.execute({
-      sql: 'SELECT player_name FROM players WHERE session_id = ? AND player_name IN (?, ?)',
-      args: [sessionId, playerName.trim(), player2Name?.trim() || '']
+    // Create player in catalog
+    const playerResult = await db.execute({
+      sql: `INSERT INTO players (name, user_id) VALUES (?, ?)`,
+      args: [playerName.trim(), userId]
     });
-
-    if (existingPlayerResult.rows.length > 0) {
-      const takenNames = existingPlayerResult.rows.map(row => row.player_name).join(', ');
-      return NextResponse.json({ error: `Ces noms sont déjà pris dans cette partie: ${takenNames}` }, { status: 400 });
+    
+    let playerId = playerResult.lastInsertRowid;
+    if (typeof playerId === 'bigint') {
+      playerId = Number(playerId);
     }
 
     // Get next position
-    const positionResult = await tursoClient.execute({
-      sql: 'SELECT COALESCE(MAX(position), -1) + 1 as next_position FROM players WHERE session_id = ?',
+    const positionResult = await db.execute({
+      sql: 'SELECT COALESCE(MAX(position), 0) + 1 as next_position FROM session_player WHERE session_id = ?',
+      args: [sessionId]
+    });
+    const nextPosition = Number(positionResult.rows[0]?.next_position || 1);
+
+    // Link player to session
+    await db.execute({
+      sql: `INSERT INTO session_player (session_id, player_id, position) VALUES (?, ?, ?)`,
+      args: [sessionId, playerId, nextPosition]
+    });
+
+    // Update session timestamp
+    await db.execute({
+      sql: 'UPDATE sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       args: [sessionId]
     });
 
-    const nextPosition = Number(positionResult.rows[0].next_position);
-
-    let teamId = null;
-    
-    // Special handling for Mille Bornes Équipes
-    if (session.game_slug === 'mille-bornes-equipes' && session.team_based) {
-      // Check if we need to create a second team
-      const teamsResult = await tursoClient.execute({
-        sql: 'SELECT COUNT(*) as team_count FROM teams WHERE session_id = ?',
-        args: [sessionId]
-      });
-      
-      const teamCount = Number(teamsResult.rows[0].team_count);
-      
-      if (teamCount === 1) {
-        // Create the second team with player names
-        const teamName = player2Name?.trim() ? `${playerName.trim()} & ${player2Name.trim()}` : playerName.trim();
-        const teamResult = await tursoClient.execute({
-          sql: 'INSERT INTO teams (session_id, team_name) VALUES (?, ?)',
-          args: [sessionId, teamName]
-        });
-        
-        teamId = typeof teamResult.lastInsertRowid === 'bigint' 
-          ? Number(teamResult.lastInsertRowid) 
-          : teamResult.lastInsertRowid;
-      } else if (teamCount >= 2) {
-        // Get the second team ID
-        const secondTeamResult = await tursoClient.execute({
-          sql: 'SELECT id FROM teams WHERE session_id = ? ORDER BY id LIMIT 1 OFFSET 1',
-          args: [sessionId]
-        });
-        
-        if (secondTeamResult.rows.length > 0) {
-          teamId = Number(secondTeamResult.rows[0].id);
-        }
-      }
-    }
-
-    // For Mille Bornes Équipes, add two players if player2Name is provided
-    const playersToAdd = [{ name: playerName.trim(), position: nextPosition }];
-    if (session.game_slug === 'mille-bornes-equipes' && player2Name?.trim()) {
-      playersToAdd.push({ name: player2Name.trim(), position: nextPosition + 1 });
-    }
-
-    const insertedPlayers = [];
-    let playersAdded = 0;
-
-    for (const player of playersToAdd) {
-      const insertResult = await tursoClient.execute({
-        sql: `
-          INSERT INTO players (session_id, user_id, player_name, position, team_id, is_ready, is_connected, last_seen)
-          VALUES (?, ?, ?, ?, ?, 0, 1, CURRENT_TIMESTAMP)
-        `,
-        args: [sessionId, userId, player.name, player.position, teamId]
-      });
-
-      const playerId = typeof insertResult.lastInsertRowid === 'bigint' 
-        ? Number(insertResult.lastInsertRowid) 
-        : insertResult.lastInsertRowid;
-
-      insertedPlayers.push({ playerId, name: player.name, position: player.position });
-      playersAdded++;
-
-      // Only the first player gets linked to the user_id for authentication
-      userId = null; // Subsequent players won't be linked to user account
-    }
-
-    // Add authenticated user to session_participants if not already there
-    const originalUserId = getAuthenticatedUserId(request);
-    if (originalUserId) {
-      try {
-        await tursoClient.execute({
-          sql: `INSERT OR IGNORE INTO session_participants (session_id, user_id, joined_at, is_spectator) VALUES (?, ?, CURRENT_TIMESTAMP, 0)`,
-          args: [sessionId, originalUserId]
-        });
-      } catch (participantError) {
-        console.error('Error adding user to session_participants:', participantError);
-      }
-    }
-
-    // Update current_players count
-    await tursoClient.execute({
-      sql: 'UPDATE game_sessions SET current_players = current_players + ? WHERE id = ?',
-      args: [playersAdded, sessionId]
-    });
-
     // Add join event
-    let eventTeamName = undefined;
-    if (session.game_slug === 'mille-bornes-equipes' && teamId) {
-      eventTeamName = player2Name?.trim() ? `${playerName.trim()} & ${player2Name.trim()}` : playerName.trim();
-    }
-    
-    await tursoClient.execute({
+    await db.execute({
       sql: `
         INSERT INTO session_events (session_id, user_id, event_type, event_data)
         VALUES (?, ?, 'player_joined', ?)
       `,
       args: [
         sessionId,
-        getAuthenticatedUserId(request), // Use original userId for the event
-        JSON.stringify({ 
-          players: insertedPlayers,
-          teamName: eventTeamName
+        userId,
+        JSON.stringify({
+          playerId: playerId,
+          playerName: playerName.trim()
         })
       ]
     });
 
-    return NextResponse.json({ 
-      success: true,
-      players: insertedPlayers
+    return NextResponse.json({
+      message: 'Joueur ajouté avec succès',
+      playerId: playerId,
+      playerName: playerName.trim()
     });
 
   } catch (error) {
-    console.error('Join session error:', error);
-    return NextResponse.json({ error: 'Erreur lors de la connexion à la partie' }, { status: 500 });
+    console.error('Erreur lors de l\'ajout du joueur:', error);
+    return NextResponse.json({ 
+      error: 'Erreur serveur lors de l\'ajout du joueur' 
+    }, { status: 500 });
   }
 }
