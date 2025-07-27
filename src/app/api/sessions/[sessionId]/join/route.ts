@@ -29,7 +29,7 @@ export async function POST(request: NextRequest, context: JoinSessionParams) {
           g.max_players,
           g.slug as game_slug,
           g.team_based
-        FROM game_sessions s
+        FROM sessions s
         JOIN games g ON s.game_id = g.id
         WHERE s.id = ? AND s.status IN ('waiting', 'active')
       `,
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest, context: JoinSessionParams) {
 
     // Update session player count
     await db.execute({
-      sql: 'UPDATE game_sessions SET current_players = current_players + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      sql: 'UPDATE sessions SET current_players = current_players + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       args: [playersToAdd.length, sessionId]
     });
 

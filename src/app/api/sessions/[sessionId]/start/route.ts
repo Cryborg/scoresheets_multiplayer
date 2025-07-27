@@ -22,7 +22,7 @@ export async function POST(
           g.min_players,
           g.max_players,
           (SELECT COUNT(*) FROM players p WHERE p.session_id = s.id) as connected_players
-        FROM game_sessions s
+        FROM sessions s
         JOIN games g ON s.game_id = g.id
         WHERE s.id = ?
       `,
@@ -57,7 +57,7 @@ export async function POST(
 
     // Start the game by updating status to 'active'
     await db.execute({
-      sql: 'UPDATE game_sessions SET status = ?, started_at = CURRENT_TIMESTAMP WHERE id = ?',
+      sql: 'UPDATE sessions SET status = ?, started_at = CURRENT_TIMESTAMP WHERE id = ?',
       args: ['active', sessionId]
     });
 

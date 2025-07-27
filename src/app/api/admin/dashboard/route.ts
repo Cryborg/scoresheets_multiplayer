@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     const recentSessions = await db.execute(`
       SELECT 
         gs.id,
-        gs.session_name,
+        gs.name,
         gs.status,
         gs.created_at,
         g.name as game_name,
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       FROM sessions gs
       JOIN games g ON gs.game_id = g.id
       LEFT JOIN players p ON gs.id = p.session_id
-      GROUP BY gs.id, gs.session_name, gs.status, gs.created_at, g.name
+      GROUP BY gs.id, gs.name, gs.status, gs.created_at, g.name
       ORDER BY gs.created_at DESC
       LIMIT 10
     `);
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       recentSessions: recentSessions.rows.map(row => ({
         id: row.id,
         game_name: row.game_name,
-        session_name: row.session_name,
+        name: row.name,
         status: row.status,
         created_at: row.created_at,
         players_count: row.players_count

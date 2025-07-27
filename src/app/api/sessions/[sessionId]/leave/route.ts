@@ -17,7 +17,7 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
 
     // Check if session exists
     const sessionResult = await db.execute({
-      sql: 'SELECT id, host_user_id, status FROM game_sessions WHERE id = ?',
+      sql: 'SELECT id, host_user_id, status FROM sessions WHERE id = ?',
       args: [sessionId]
     });
 
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
 
     // Update session player count
     await db.execute({
-      sql: 'UPDATE game_sessions SET current_players = current_players - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      sql: 'UPDATE sessions SET current_players = current_players - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       args: [playerResult.rows.length, sessionId]
     });
 
@@ -59,13 +59,13 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
       if (remainingPlayersResult.rows.length > 0) {
         const newHostId = remainingPlayersResult.rows[0].user_id;
         await db.execute({
-          sql: 'UPDATE game_sessions SET host_user_id = ? WHERE id = ?',
+          sql: 'UPDATE sessions SET host_user_id = ? WHERE id = ?',
           args: [newHostId, sessionId]
         });
       } else {
         // No players left, cancel the session
         await db.execute({
-          sql: 'UPDATE game_sessions SET status = ?, ended_at = CURRENT_TIMESTAMP WHERE id = ?',
+          sql: 'UPDATE sessions SET status = ?, ended_at = CURRENT_TIMESTAMP WHERE id = ?',
           args: ['cancelled', sessionId]
         });
       }

@@ -39,7 +39,7 @@ export async function GET(
             WHEN s.status = 'waiting' THEN 'can_join'
             ELSE 'denied'
           END as access_level
-        FROM game_sessions s
+        FROM sessions s
         JOIN games g ON s.game_id = g.id
         JOIN users u ON s.host_user_id = u.id
         WHERE s.id = ?
@@ -193,7 +193,7 @@ export async function GET(
     // Update session activity (non-critical, don't fail if it errors)
     try {
       await db.execute({
-        sql: 'UPDATE game_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        sql: 'UPDATE sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         args: [sessionId]
       });
     } catch (updateError) {

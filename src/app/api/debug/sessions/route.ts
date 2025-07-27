@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       sql: `
         SELECT 
           gs.id,
-          gs.session_name,
+          gs.name,
           gs.status,
           gs.host_user_id,
           g.name as game_name
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
           p.user_id,
           p.player_name,
           p.position,
-          gs.session_name
+          gs.name
         FROM players p
         JOIN sessions gs ON p.session_id = gs.id
         WHERE p.user_id = ?

@@ -145,7 +145,7 @@ export async function POST(
     });
     
     const sessionResult = await db.execute({
-      sql: `INSERT INTO game_sessions (host_user_id, game_id, session_name, session_code, status, has_score_target, score_target, score_direction)
+      sql: `INSERT INTO sessions (host_user_id, game_id, name, session_code, status, has_score_target, score_target, score_direction)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         userId, 
@@ -171,8 +171,8 @@ export async function POST(
     if (!sessionId || sessionId === null || isNaN(sessionId)) {
       console.log('[PROD] Turso returned null lastInsertRowid, fetching ID manually');
       const lastSessionResult = await db.execute({
-        sql: `SELECT id FROM game_sessions 
-              WHERE host_user_id = ? AND session_name = ? 
+        sql: `SELECT id FROM sessions 
+              WHERE host_user_id = ? AND name = ? 
               ORDER BY created_at DESC 
               LIMIT 1`,
         args: [userId, sessionName || `Partie de ${game.name}`]

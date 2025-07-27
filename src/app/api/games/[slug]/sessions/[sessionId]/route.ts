@@ -94,7 +94,7 @@ export async function GET(
     const responseData = {
       session: {
         id: session.id,
-        session_name: session.session_name,
+        name: session.name,
         session_code: session.session_code,
         game_name: session.game_name,
         game_slug: session.game_slug,
