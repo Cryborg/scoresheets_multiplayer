@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
           g.max_players,
           s.created_at,
           s.updated_at as last_activity,
+          s.ended_at,
           s.host_user_id,
           g.name as game_name,
           g.slug as game_slug,
@@ -46,6 +47,7 @@ export async function GET(request: NextRequest) {
         max_players: row.max_players,
         created_at: row.created_at,
         last_activity: row.last_activity,
+        ended_at: row.ended_at,
         is_host: Boolean(row.is_host)
       }))
     });

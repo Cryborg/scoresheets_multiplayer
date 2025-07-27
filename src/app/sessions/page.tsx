@@ -2,12 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Users, Clock, Play, Trash2, Square, Calendar } from 'lucide-react';
+import { ArrowLeft, Users, Clock, Play, Trash2, Square, Calendar, RotateCcw, Loader2 } from 'lucide-react';
 import { authenticatedFetch } from '@/lib/authClient';
 import AuthGuard from '@/components/AuthGuard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 
 interface Session {
   id: number;
@@ -19,6 +29,7 @@ interface Session {
   max_players: number;
   created_at: string;
   last_activity: string;
+  ended_at?: string;
   is_host: boolean;
 }
 
@@ -26,6 +37,9 @@ export default function SessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'waiting' | 'active' | 'completed'>('all');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   const fetchSessions = async () => {
@@ -77,13 +91,18 @@ export default function SessionsPage() {
     }
   };
 
-  const handleDeleteSession = async (sessionId: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette partie ? Cette action est irréversible.')) {
-      return;
-    }
+  const handleDeleteClick = (sessionId: number) => {
+    setSessionToDelete(sessionId);
+    setDeleteDialogOpen(true);
+  };
 
+  const handleDeleteConfirm = async () => {
+    if (!sessionToDelete) return;
+    
+    setIsDeleting(true);
+    
     try {
-      const response = await authenticatedFetch(`/api/sessions/${sessionId}`, {
+      const response = await authenticatedFetch(`/api/sessions/${sessionToDelete}`, {
         method: 'DELETE'
       });
 
@@ -107,6 +126,10 @@ export default function SessionsPage() {
         description: "Erreur de connexion",
         variant: "destructive"
       });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+      setSessionToDelete(null);
     }
   };
 
@@ -144,6 +167,9 @@ export default function SessionsPage() {
 
   const filteredSessions = sessions.filter(session => {
     if (filter === 'all') return true;
+    if (filter === 'completed') {
+      return session.status === 'completed' || session.status === 'cancelled';
+    }
     return session.status === filter;
   });
 
@@ -196,7 +222,7 @@ export default function SessionsPage() {
                 { key: 'all', label: 'Toutes', count: sessions.length },
                 { key: 'waiting', label: 'En attente', count: sessions.filter(s => s.status === 'waiting').length },
                 { key: 'active', label: 'En cours', count: sessions.filter(s => s.status === 'active').length },
-                { key: 'completed', label: 'Terminées', count: sessions.filter(s => s.status === 'completed').length }
+                { key: 'completed', label: 'Terminées', count: sessions.filter(s => s.status === 'completed' || s.status === 'cancelled').length }
               ].map(({ key, label, count }) => (
                 <button
                   key={key}
@@ -304,10 +330,15 @@ export default function SessionsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDeleteSession(session.id)}
+                            onClick={() => handleDeleteClick(session.id)}
+                            disabled={isDeleting && sessionToDelete === session.id}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {isDeleting && sessionToDelete === session.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
                           </Button>
                         )}
                       </div>
@@ -318,6 +349,43 @@ export default function SessionsPage() {
             </div>
           )}
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-gray-900 dark:text-white">
+                Supprimer la partie
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
+                Êtes-vous sûr de vouloir supprimer cette partie ? Cette action est irréversible et toutes les données associées seront perdues.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel 
+                onClick={() => setDeleteDialogOpen(false)}
+                disabled={isDeleting}
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              >
+                Annuler
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Suppression...
+                  </>
+                ) : (
+                  'Supprimer'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AuthGuard>
   );
