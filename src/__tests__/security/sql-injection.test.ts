@@ -16,7 +16,7 @@ describe('SQL Injection Prevention', () => {
 
   describe('Session ID Parameters', () => {
     const maliciousSessionIds = [
-      "1'; DROP TABLE game_sessions; --",
+      "1'; DROP TABLE sessions; --",
       "1 OR 1=1",
       "'; SELECT * FROM users; --",
       "1 UNION SELECT 1,username,password FROM users",
@@ -28,7 +28,7 @@ describe('SQL Injection Prevention', () => {
       for (const maliciousId of maliciousSessionIds) {
         // Simulate how our realtime API would use this
         const query = {
-          sql: `SELECT * FROM game_sessions WHERE id = ?`,
+          sql: `SELECT * FROM sessions WHERE id = ?`,
           args: [maliciousId]
         };
 
@@ -37,7 +37,7 @@ describe('SQL Injection Prevention', () => {
         expect(query.args).toContain(maliciousId);
         
         // Args should be properly separated from SQL
-        expect(query.sql).toBe(`SELECT * FROM game_sessions WHERE id = ?`);
+        expect(query.sql).toBe(`SELECT * FROM sessions WHERE id = ?`);
       }
     });
 
@@ -48,7 +48,7 @@ describe('SQL Injection Prevention', () => {
       const query = {
         sql: `
           SELECT gs.*, p.player_name 
-          FROM game_sessions gs
+          FROM sessions gs
           LEFT JOIN players p ON p.session_id = gs.id 
           WHERE gs.id = ? AND p.user_id = ?
         `,
@@ -98,7 +98,7 @@ describe('SQL Injection Prevention', () => {
 
   describe('Real Query Patterns from Codebase', () => {
     it('should verify realtime API query is injection-safe', () => {
-      const maliciousSessionId = "1'; DROP TABLE game_sessions; --";
+      const maliciousSessionId = "1'; DROP TABLE sessions; --";
       const maliciousUserId = "1 OR 1=1";
       
       // This matches the actual query pattern from realtime route
@@ -115,7 +115,7 @@ describe('SQL Injection Prevention', () => {
               WHEN gs.status = 'waiting' THEN 'can_join'
               ELSE 'denied'
             END as access_level
-          FROM game_sessions gs
+          FROM sessions gs
           JOIN games g ON gs.game_id = g.id
           JOIN users u ON gs.host_user_id = u.id
           LEFT JOIN players p ON p.session_id = gs.id AND p.user_id = ?
@@ -136,7 +136,7 @@ describe('SQL Injection Prevention', () => {
         categoryId: "ones'; DROP TABLE scores; --",
         playerId: "1 OR 1=1",
         score: "999'; UPDATE users SET is_admin=1; --",
-        sessionId: "1'; DELETE FROM game_sessions; --"
+        sessionId: "1'; DELETE FROM sessions; --"
       };
       
       // Pattern from score update APIs
@@ -168,14 +168,14 @@ describe('SQL Injection Prevention', () => {
     it('should detect if we were improperly concatenating SQL (this should fail)', () => {
       // This is an EXAMPLE of what NOT to do - vulnerable code
       const sessionId = "1'; DROP TABLE users; --";
-      const vulnerableQuery = `SELECT * FROM game_sessions WHERE id = ${sessionId}`;
+      const vulnerableQuery = `SELECT * FROM sessions WHERE id = ${sessionId}`;
       
       // This WOULD be vulnerable if we did it (we don't!)
       expect(vulnerableQuery).toContain("DROP TABLE users");
       
       // But our actual parameterized approach is safe
       const safeQuery = {
-        sql: `SELECT * FROM game_sessions WHERE id = ?`,
+        sql: `SELECT * FROM sessions WHERE id = ?`,
         args: [sessionId]
       };
       
@@ -245,7 +245,7 @@ describe('SQL Injection Prevention', () => {
 
       for (const probe of schemaProbes) {
         const query = {
-          sql: `SELECT * FROM game_sessions WHERE id = ?`,
+          sql: `SELECT * FROM sessions WHERE id = ?`,
           args: [probe]
         };
 
@@ -262,7 +262,7 @@ describe('SQL Injection Prevention', () => {
       const examples = [
         {
           description: 'Session creation',
-          sql: 'INSERT INTO game_sessions (game_id, host_user_id, session_name) VALUES (?, ?, ?)',
+          sql: 'INSERT INTO sessions (game_id, host_user_id, session_name) VALUES (?, ?, ?)',
           args: [1, 123, 'Test Game']
         },
         {

@@ -150,8 +150,8 @@ describe.skip('/api/admin/dashboard', () => {
 
     expect(mockExecute).toHaveBeenCalledWith('SELECT COUNT(*) as count FROM users');
     expect(mockExecute).toHaveBeenCalledWith('SELECT COUNT(*) as count FROM games WHERE is_implemented = 1');
-    expect(mockExecute).toHaveBeenCalledWith('SELECT COUNT(*) as count FROM game_sessions');
-    expect(mockExecute).toHaveBeenCalledWith("SELECT COUNT(*) as count FROM game_sessions WHERE status IN ('waiting', 'active')");
+    expect(mockExecute).toHaveBeenCalledWith('SELECT COUNT(*) as count FROM sessions');
+    expect(mockExecute).toHaveBeenCalledWith("SELECT COUNT(*) as count FROM sessions WHERE status IN ('waiting', 'active')");
   });
 
   test('requête SQL pour sessions récentes est correcte', async () => {
@@ -172,7 +172,7 @@ describe.skip('/api/admin/dashboard', () => {
         gs.created_at,
         g.name as game_name,
         COUNT(p.id) as players_count
-      FROM game_sessions gs
+      FROM sessions gs
       JOIN games g ON gs.game_id = g.id
       LEFT JOIN players p ON gs.id = p.session_id
       GROUP BY gs.id, gs.session_name, gs.status, gs.created_at, g.name

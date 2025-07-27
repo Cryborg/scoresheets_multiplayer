@@ -39,14 +39,14 @@ export async function initializeDatabase(): Promise<void> {
     console.log('🔧 Tables created, checking existing data...');
     
     // Check existing data before seeding
-    const existingSessions = await tursoClient.execute('SELECT COUNT(*) as count FROM game_sessions');
+    const existingSessions = await tursoClient.execute('SELECT COUNT(*) as count FROM sessions');
     const existingParticipants = await tursoClient.execute('SELECT COUNT(*) as count FROM session_participants');
     console.log(`📊 Before seeding: ${existingSessions.rows[0].count} sessions, ${existingParticipants.rows[0].count} participants`);
     
     await seedInitialData();
     
     // Check data after seeding
-    const afterSessions = await tursoClient.execute('SELECT COUNT(*) as count FROM game_sessions');
+    const afterSessions = await tursoClient.execute('SELECT COUNT(*) as count FROM sessions');
     const afterParticipants = await tursoClient.execute('SELECT COUNT(*) as count FROM session_participants');
     console.log(`📊 After seeding: ${afterSessions.rows[0].count} sessions, ${afterParticipants.rows[0].count} participants`);
     
@@ -113,7 +113,7 @@ async function createTables(): Promise<void> {
 
   // Enhanced game sessions with multiplayer fields
   await tursoClient.execute(`
-    CREATE TABLE IF NOT EXISTS game_sessions (
+    CREATE TABLE IF NOT EXISTS sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       game_id INTEGER NOT NULL,
       session_name TEXT NOT NULL,
@@ -152,7 +152,7 @@ async function createTables(): Promise<void> {
       is_connected INTEGER DEFAULT 1,
       last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (session_id) REFERENCES game_sessions (id) ON DELETE CASCADE,
+      FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users (id),
       FOREIGN KEY (team_id) REFERENCES teams (id),
       UNIQUE (session_id, position)
@@ -166,7 +166,7 @@ async function createTables(): Promise<void> {
       session_id INTEGER NOT NULL,
       team_name TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (session_id) REFERENCES game_sessions (id) ON DELETE CASCADE,
+      FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE,
       UNIQUE (session_id, team_name)
     )
   `);
@@ -184,7 +184,7 @@ async function createTables(): Promise<void> {
       created_by_user_id INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (session_id) REFERENCES game_sessions (id) ON DELETE CASCADE,
+      FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE,
       FOREIGN KEY (player_id) REFERENCES players (id) ON DELETE CASCADE,
       FOREIGN KEY (created_by_user_id) REFERENCES users (id)
     )
@@ -199,7 +199,7 @@ async function createTables(): Promise<void> {
       event_type TEXT NOT NULL,
       event_data TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (session_id) REFERENCES game_sessions (id) ON DELETE CASCADE,
+      FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users (id)
     )
   `);
@@ -213,7 +213,7 @@ async function createTables(): Promise<void> {
       joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       left_at DATETIME,
       is_spectator INTEGER DEFAULT 0,
-      FOREIGN KEY (session_id) REFERENCES game_sessions (id) ON DELETE CASCADE,
+      FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users (id),
       UNIQUE (session_id, user_id)
     )
@@ -330,8 +330,8 @@ async function createTables(): Promise<void> {
   }
 
   try {
-    await tursoClient.execute(`ALTER TABLE game_sessions ADD COLUMN finish_current_round INTEGER DEFAULT 0`);
-    console.log('✅ Added finish_current_round column to game_sessions');
+    await tursoClient.execute(`ALTER TABLE sessions ADD COLUMN finish_current_round INTEGER DEFAULT 0`);
+    console.log('✅ Added finish_current_round column to sessions');
   } catch (error: any) {
     if (!error.message?.includes('duplicate column name')) {
       console.log('ℹ️ finish_current_round column already exists or table is new');
@@ -339,8 +339,8 @@ async function createTables(): Promise<void> {
   }
 
   try {
-    await tursoClient.execute(`ALTER TABLE game_sessions ADD COLUMN score_direction TEXT CHECK (score_direction IN ('higher', 'lower')) DEFAULT 'higher'`);
-    console.log('✅ Added score_direction column to game_sessions');
+    await tursoClient.execute(`ALTER TABLE sessions ADD COLUMN score_direction TEXT CHECK (score_direction IN ('higher', 'lower')) DEFAULT 'higher'`);
+    console.log('✅ Added score_direction column to sessions');
   } catch (error: any) {
     if (!error.message?.includes('duplicate column name')) {
       console.log('ℹ️ score_direction column already exists or table is new');
@@ -348,9 +348,9 @@ async function createTables(): Promise<void> {
   }
 
   // Indexes for performance
-  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_code ON game_sessions (session_code)`);
-  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_status ON game_sessions (status)`);
-  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_activity ON game_sessions (last_activity)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_code ON sessions (session_code)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_status ON sessions (status)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_activity ON sessions (last_activity)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_scores_session ON scores (session_id)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_events_session ON session_events (session_id, created_at)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_participants_session ON session_participants (session_id)`);
@@ -725,7 +725,7 @@ export async function generateUniqueSessionCode(): Promise<string> {
     try {
       // Check if code already exists
       const existing = await tursoClient.execute({
-        sql: 'SELECT id FROM game_sessions WHERE session_code = ?',
+        sql: 'SELECT id FROM sessions WHERE session_code = ?',
         args: [code]
       });
       

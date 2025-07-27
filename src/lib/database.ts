@@ -71,7 +71,7 @@ async function createTables(): Promise<void> {
     
     // Drop old tables if they exist (ignore errors)
     const oldTables = [
-      'game_sessions', 'players', 'teams', 'scores', 'session_events', 
+      'sessions', 'players', 'teams', 'scores', 'session_events', 
       'session_participants', 'user_players', 'password_resets', 'game_migrations'
     ];
     
