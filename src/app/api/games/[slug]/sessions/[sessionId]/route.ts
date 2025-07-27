@@ -33,7 +33,11 @@ export async function GET(
 
     // Get players
     const playersResult = await db.execute({
-      sql: 'SELECT * FROM players WHERE session_id = ? ORDER BY position',
+      sql: `SELECT p.*, sp.position 
+             FROM players p 
+             JOIN session_player sp ON p.id = sp.player_id 
+             WHERE sp.session_id = ? 
+             ORDER BY sp.position`,
       args: [sessionId]
     });
 
