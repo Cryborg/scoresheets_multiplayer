@@ -5,7 +5,7 @@ import { db } from '@/lib/database';
 // GET - Récupérer les sessions de l'utilisateur
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getAuthenticatedUserId(request);
+    const userId = getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
@@ -16,9 +16,9 @@ export async function GET(request: NextRequest) {
       sql: `
         SELECT DISTINCT
           s.id,
-          s.name as session_name,
+          s.session_name,
           s.status,
-          (SELECT COUNT(*) FROM session_player sp WHERE sp.session_id = s.id AND sp.left_at IS NULL) as current_players,
+          s.current_players,
           g.max_players,
           s.created_at,
           s.updated_at as last_activity,
