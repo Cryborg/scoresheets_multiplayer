@@ -29,7 +29,10 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
 
     // Check if user has players in session
     const playerResult = await db.execute({
-      sql: 'SELECT id, player_name FROM players WHERE session_id = ? AND user_id = ?',
+      sql: `SELECT p.id, p.name as player_name 
+            FROM players p 
+            JOIN session_player sp ON p.id = sp.player_id 
+            WHERE sp.session_id = ? AND p.user_id = ?`,
       args: [sessionId, currentUserId]
     });
 
@@ -38,10 +41,20 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
     }
 
     // Remove all players belonging to this user from the session
-    await db.execute({
-      sql: 'DELETE FROM players WHERE session_id = ? AND user_id = ?',
-      args: [sessionId, currentUserId]
-    });
+    // First get the player IDs to delete from session_player
+    const playerIds = playerResult.rows.map(row => row.id);
+    
+    // Delete from session_player pivot table
+    if (playerIds.length > 0) {
+      const placeholders = playerIds.map(() => '?').join(',');
+      await db.execute({
+        sql: `DELETE FROM session_player WHERE session_id = ? AND player_id IN (${placeholders})`,
+        args: [sessionId, ...playerIds]
+      });
+      
+      // Optionally delete players from players table if they're not used elsewhere
+      // For now, keep them for historical data
+    }
 
     // Update session player count
     await db.execute({
@@ -52,7 +65,11 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
     // If user was the host and there are other players, transfer host to first remaining player
     if (Number(session.host_user_id) === currentUserId) {
       const remainingPlayersResult = await db.execute({
-        sql: 'SELECT user_id FROM players WHERE session_id = ? AND user_id IS NOT NULL LIMIT 1',
+        sql: `SELECT p.user_id 
+              FROM players p 
+              JOIN session_player sp ON p.id = sp.player_id 
+              WHERE sp.session_id = ? AND p.user_id IS NOT NULL 
+              LIMIT 1`,
         args: [sessionId]
       });
 

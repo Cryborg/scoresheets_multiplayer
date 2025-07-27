@@ -49,7 +49,10 @@ export async function POST(request: NextRequest, context: JoinSessionParams) {
 
     // Check for existing player names
     const nameCheck = await db.execute({
-      sql: `SELECT player_name FROM players WHERE session_id = ? AND player_name IN (${player2Name ? '?, ?' : '?'})`,
+      sql: `SELECT p.name as player_name 
+            FROM players p 
+            JOIN session_player sp ON p.id = sp.player_id 
+            WHERE sp.session_id = ? AND p.name IN (${player2Name ? '?, ?' : '?'})`,
       args: player2Name ? [sessionId, playerName.trim(), player2Name.trim()] : [sessionId, playerName.trim()]
     });
 
@@ -62,7 +65,7 @@ export async function POST(request: NextRequest, context: JoinSessionParams) {
 
     // Get next position
     const positionResult = await db.execute({
-      sql: 'SELECT COALESCE(MAX(position), -1) + 1 as next_position FROM players WHERE session_id = ?',
+      sql: 'SELECT COALESCE(MAX(position), -1) + 1 as next_position FROM session_player WHERE session_id = ?',
       args: [sessionId]
     });
     const nextPosition = Number(positionResult.rows[0]?.next_position || 0);
@@ -115,14 +118,21 @@ export async function POST(request: NextRequest, context: JoinSessionParams) {
     // Insert players
     const insertedPlayers = [];
     for (const player of playersToAdd) {
+      // 1. Create player in players table
       const playerResult = await db.execute({
-        sql: `INSERT INTO players (session_id, user_id, player_name, position, team_id) VALUES (?, ?, ?, ?, ?)`,
-        args: [sessionId, player.userId, player.name, player.position, player.teamId]
+        sql: `INSERT INTO players (name, user_id) VALUES (?, ?)`,
+        args: [player.name, player.userId]
       });
       
       const playerId = typeof playerResult.lastInsertRowid === 'bigint' 
         ? Number(playerResult.lastInsertRowid) 
         : playerResult.lastInsertRowid;
+
+      // 2. Associate player with session via session_player pivot
+      await db.execute({
+        sql: `INSERT INTO session_player (session_id, player_id, position) VALUES (?, ?, ?)`,
+        args: [sessionId, playerId, player.position]
+      });
         
       insertedPlayers.push({
         id: playerId,
