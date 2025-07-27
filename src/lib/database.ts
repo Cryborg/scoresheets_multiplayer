@@ -296,6 +296,15 @@ async function createTables(): Promise<void> {
   }
 
   try {
+    await tursoClient.execute(`ALTER TABLE users ADD COLUMN last_seen DATETIME DEFAULT CURRENT_TIMESTAMP`);
+    console.log('✅ Added last_seen column to users');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ last_seen column already exists or table is new');
+    }
+  }
+
+  try {
     await tursoClient.execute(`ALTER TABLE game_sessions ADD COLUMN finish_current_round INTEGER DEFAULT 0`);
     console.log('✅ Added finish_current_round column to game_sessions');
   } catch (error: any) {

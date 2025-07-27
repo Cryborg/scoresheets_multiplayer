@@ -606,6 +606,35 @@ else displayId = 1; // Fallback to team 1 for any other ID
 const result = await db.execute('SELECT * FROM games');
 ```
 
+## 🔄 MIGRATIONS DE BASE DE DONNÉES
+
+### 🚨 IMPORTANT : Gestion des migrations
+
+Quand tu ajoutes de nouvelles colonnes à des tables existantes, tu DOIS ajouter des migrations dans `src/lib/database.ts` dans la fonction `createTables()` après la création des tables, dans la section "Add missing columns to existing tables via ALTER TABLE".
+
+#### Pattern de migration à utiliser :
+```typescript
+try {
+  await tursoClient.execute(`ALTER TABLE nom_table ADD COLUMN nom_colonne TYPE DEFAULT valeur`);
+  console.log('✅ Added nom_colonne column to nom_table');
+} catch (error: any) {
+  if (!error.message?.includes('duplicate column name')) {
+    console.log('ℹ️ nom_colonne column already exists or table is new');
+  }
+}
+```
+
+#### Migrations appliquées récemment :
+- **Users table** : is_blocked, blocked_at, blocked_reason, avatar_url, display_name, is_online, updated_at, last_seen
+- **Game sessions** : finish_current_round
+- **App settings** : Table complète ajoutée avec structure flexible
+
+#### ⚠️ Rappel pour les nouvelles features :
+1. Modifie la table dans la définition CREATE TABLE
+2. Ajoute TOUJOURS la migration ALTER TABLE correspondante
+3. Teste en local avec `npm run dev:setup`
+4. Commit et push pour déclencher les migrations en prod
+
 ### 🚨 PROBLÈMES COURANTS RÉSOLUS
 
 #### Mock NextRequest Failures

@@ -23,6 +23,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Update last_seen timestamp
+    await db.execute({
+      sql: 'UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE id = ?',
+      args: [user.id]
+    });
+
     const token = jwt.sign(
       { userId: user.id, email: user.email, isAdmin: user.is_admin },
       JWT_SECRET,

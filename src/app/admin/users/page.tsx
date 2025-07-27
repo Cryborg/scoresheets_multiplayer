@@ -28,7 +28,7 @@ interface User {
   blocked_at: string | null;
   blocked_reason: string | null;
   created_at: string;
-  last_seen: string;
+  last_seen: string | null;
   display_name: string | null;
 }
 
@@ -166,8 +166,17 @@ export default function AdminUsersPage() {
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) {
+      return 'Jamais';
+    }
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return 'Jamais';
+    }
+    
+    return date.toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'short',
       year: 'numeric'
@@ -274,40 +283,48 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="p-4">
                       <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setActionType('reset');
-                          }}
-                          className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                          title="Réinitialiser le mot de passe"
-                        >
-                          <KeyRound className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setActionType(user.is_blocked ? 'unblock' : 'block');
-                          }}
-                          className={`p-2 rounded transition-colors ${
-                            user.is_blocked 
-                              ? 'text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20' 
-                              : 'text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20'
-                          }`}
-                          title={user.is_blocked ? 'Débloquer' : 'Bloquer'}
-                        >
-                          {user.is_blocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setActionType('delete');
-                          }}
-                          className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {user.is_admin === 1 ? (
+                          <span className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1">
+                            Administrateur
+                          </span>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setActionType('reset');
+                              }}
+                              className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                              title="Réinitialiser le mot de passe"
+                            >
+                              <KeyRound className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setActionType(user.is_blocked ? 'unblock' : 'block');
+                              }}
+                              className={`p-2 rounded transition-colors ${
+                                user.is_blocked 
+                                  ? 'text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20' 
+                                  : 'text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                              }`}
+                              title={user.is_blocked ? 'Débloquer' : 'Bloquer'}
+                            >
+                              {user.is_blocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setActionType('delete');
+                              }}
+                              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                     </tr>
