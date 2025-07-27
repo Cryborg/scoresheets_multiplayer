@@ -3,11 +3,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, Zap, Users, Clock, Gamepad2, Share2 } from 'lucide-react';
+import { Menu, Zap, Users, Clock, Gamepad2, Share2, RotateCcw, Save } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 import Sidebar from '@/components/Sidebar';
 import { loadMultipleGameMetadata, defaultGameMetadata } from '@/lib/gameMetadata';
 import { Game, GamesAPIResponse } from '@/types/dashboard';
+import { useDashboardFilters } from '@/hooks/useDashboardFilters';
 import { BRANDING } from '@/lib/branding';
 
 export default function DashboardPage() {
@@ -17,10 +18,17 @@ export default function DashboardPage() {
   const [allGames, setAllGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filter states
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [multiplayerFilter, setMultiplayerFilter] = useState('all'); // 'all', 'multi', 'solo'
-  const [playerCountFilter, setPlayerCountFilter] = useState('all');
+  // Filter states with localStorage persistence
+  const {
+    categoryFilter,
+    multiplayerFilter,
+    playerCountFilter,
+    setCategoryFilter,
+    setMultiplayerFilter,
+    setPlayerCountFilter,
+    resetFilters,
+    initialized: filtersInitialized
+  } = useDashboardFilters();
 
   // Chargement des jeux depuis l'API avec métadonnées
   useEffect(() => {
@@ -213,13 +221,35 @@ export default function DashboardPage() {
               </div>
               
               {/* Ligne 2 mobile : Nombre de joueurs */}
-              <select 
-                value={playerCountFilter} 
-                onChange={e => setPlayerCountFilter(e.target.value)} 
-                className="w-full sm:w-auto bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm"
-              >
-                {playerCounts.map(count => <option key={count} value={count}>{count === 'all' ? 'Joueurs' : `${count} joueurs`}</option>)}
-              </select>
+              <div className="flex items-center gap-2">
+                <select 
+                  value={playerCountFilter} 
+                  onChange={e => setPlayerCountFilter(e.target.value)} 
+                  className="flex-1 sm:flex-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm"
+                >
+                  {playerCounts.map(count => <option key={count} value={count}>{count === 'all' ? 'Joueurs' : `${count} joueurs`}</option>)}
+                </select>
+                
+                {/* Indicateur de sauvegarde + bouton reset */}
+                <div className="flex items-center gap-1">
+                  {filtersInitialized && (categoryFilter !== 'all' || multiplayerFilter !== 'all' || playerCountFilter !== 'all') && (
+                    <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                      <Save className="h-3 w-3" />
+                      <span className="hidden sm:inline">Sauvé</span>
+                    </div>
+                  )}
+                  
+                  {filtersInitialized && (categoryFilter !== 'all' || multiplayerFilter !== 'all' || playerCountFilter !== 'all') && (
+                    <button
+                      onClick={resetFilters}
+                      className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      title="Réinitialiser les filtres"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
