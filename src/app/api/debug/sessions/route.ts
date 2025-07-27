@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
           gs.status,
           gs.host_user_id,
           g.name as game_name
-        FROM game_sessions gs
+        FROM sessions gs
         JOIN games g ON gs.game_id = g.id
         WHERE gs.host_user_id = ?
         ORDER BY gs.created_at DESC
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
           p.position,
           gs.session_name
         FROM players p
-        JOIN game_sessions gs ON p.session_id = gs.id
+        JOIN sessions gs ON p.session_id = gs.id
         WHERE p.user_id = ?
         ORDER BY p.session_id DESC
       `,
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     // Vérifier le nombre total de sessions et de joueurs
     const totalSessions = await db.execute({
-      sql: 'SELECT COUNT(*) as count FROM game_sessions',
+      sql: 'SELECT COUNT(*) as count FROM sessions',
       args: []
     });
 

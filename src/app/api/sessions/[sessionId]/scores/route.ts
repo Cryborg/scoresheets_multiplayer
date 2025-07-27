@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { tursoClient } from '@/lib/database';
+import { db } from '@/lib/database';
 import { getAuthenticatedUserId } from '@/lib/auth';
 
 export async function POST(
@@ -23,7 +23,7 @@ export async function POST(
     }
     
     // Verify the player can be modified by this user
-    const playerResult = await tursoClient.execute({
+    const playerResult = await db.execute({
       sql: 'SELECT user_id FROM players WHERE id = ? AND session_id = ?',
       args: [playerId, sessionId]
     });
@@ -47,7 +47,7 @@ export async function POST(
     }
 
     // Check if score already exists
-    const existingScore = await tursoClient.execute({
+    const existingScore = await db.execute({
       sql: `
         SELECT id FROM scores 
         WHERE session_id = ? AND player_id = ? AND category_id = ?
@@ -59,7 +59,7 @@ export async function POST(
     
     if (existingScore.rows.length > 0) {
       // Update existing score
-      result = await tursoClient.execute({
+      result = await db.execute({
         sql: `
           UPDATE scores 
           SET score = ?, updated_at = CURRENT_TIMESTAMP
@@ -69,7 +69,7 @@ export async function POST(
       });
     } else {
       // Insert new score
-      result = await tursoClient.execute({
+      result = await db.execute({
         sql: `
           INSERT INTO scores (session_id, player_id, category_id, score)
           VALUES (?, ?, ?, ?)
@@ -79,8 +79,8 @@ export async function POST(
     }
 
     // Update session activity
-    await tursoClient.execute({
-      sql: 'UPDATE game_sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = ?',
+    await db.execute({
+      sql: 'UPDATE sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       args: [sessionId]
     });
 

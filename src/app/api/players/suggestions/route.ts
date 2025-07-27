@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { tursoClient } from '@/lib/database';
+import { db } from '@/lib/database';
 import { getAuthenticatedUserId } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get frequently used player names for this user
-    const result = await tursoClient.execute({
+    const result = await db.execute({
       sql: `SELECT player_name, games_played 
             FROM user_players 
             WHERE user_id = ? 

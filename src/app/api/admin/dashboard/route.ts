@@ -30,10 +30,10 @@ export async function GET(request: NextRequest) {
       db.execute('SELECT COUNT(*) as count FROM games WHERE is_implemented = 1'),
       
       // Total sessions
-      db.execute('SELECT COUNT(*) as count FROM game_sessions'),
+      db.execute('SELECT COUNT(*) as count FROM sessions'),
       
       // Sessions actives
-      db.execute("SELECT COUNT(*) as count FROM game_sessions WHERE status IN ('waiting', 'active')")
+      db.execute("SELECT COUNT(*) as count FROM sessions WHERE status IN ('waiting', 'active')")
     ]);
 
     // Sessions récentes avec détails
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
         gs.created_at,
         g.name as game_name,
         COUNT(p.id) as players_count
-      FROM game_sessions gs
+      FROM sessions gs
       JOIN games g ON gs.game_id = g.id
       LEFT JOIN players p ON gs.id = p.session_id
       GROUP BY gs.id, gs.session_name, gs.status, gs.created_at, g.name

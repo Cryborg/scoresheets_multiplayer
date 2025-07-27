@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { tursoClient } from '@/lib/database';
+import { db } from '@/lib/database';
 import { getAuthenticatedUserId } from '@/lib/auth';
 
 export async function POST(
@@ -15,16 +15,16 @@ export async function POST(
     }
 
     // Get session details
-    const sessionResult = await tursoClient.execute({
+    const sessionResult = await db.execute({
       sql: `
         SELECT 
-          gs.*,
+          s.*,
           g.min_players,
           g.max_players,
-          (SELECT COUNT(*) FROM players WHERE session_id = gs.id AND is_connected = 1) as connected_players
-        FROM game_sessions gs
-        JOIN games g ON gs.game_id = g.id
-        WHERE gs.id = ?
+          (SELECT COUNT(*) FROM session_player sp WHERE sp.session_id = s.id AND sp.left_at IS NULL) as connected_players
+        FROM sessions s
+        JOIN games g ON s.game_id = g.id
+        WHERE s.id = ?
       `,
       args: [sessionId]
     });
@@ -56,13 +56,13 @@ export async function POST(
     }
 
     // Start the game by updating status to 'active'
-    await tursoClient.execute({
-      sql: 'UPDATE game_sessions SET status = ?, started_at = CURRENT_TIMESTAMP WHERE id = ?',
+    await db.execute({
+      sql: 'UPDATE sessions SET status = ?, started_at = CURRENT_TIMESTAMP WHERE id = ?',
       args: ['active', sessionId]
     });
 
     // Log the event
-    await tursoClient.execute({
+    await db.execute({
       sql: `
         INSERT INTO session_events (session_id, user_id, event_type, event_data)
         VALUES (?, ?, 'game_started', ?)

@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
           -- Calcul du jeu le plus joué
           (
             SELECT g.name 
-            FROM game_sessions gs2 
+            FROM sessions gs2 
             JOIN games g ON gs2.game_id = g.id 
             WHERE gs2.id IN (
               SELECT session_id 
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
           SUM(COALESCE(s.score, 0)) as total_score
         FROM players p
         LEFT JOIN users u ON p.user_id = u.id
-        LEFT JOIN game_sessions gs ON p.session_id = gs.id
+        LEFT JOIN sessions gs ON p.session_id = gs.id
         LEFT JOIN scores s ON p.id = s.player_id
         GROUP BY p.id, p.user_id, p.player_name, u.username, u.email
         HAVING games_played > 0

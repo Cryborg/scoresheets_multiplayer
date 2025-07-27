@@ -167,7 +167,7 @@ export async function DELETE(
 
     // Vérifier s'il y a des sessions associées à ce jeu
     const sessionsInGame = await db.execute({
-      sql: 'SELECT COUNT(*) as count FROM game_sessions WHERE game_id = ?',
+      sql: 'SELECT COUNT(*) as count FROM sessions WHERE game_id = ?',
       args: [id]
     });
 

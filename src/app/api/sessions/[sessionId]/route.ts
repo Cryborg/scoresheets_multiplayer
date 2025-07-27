@@ -16,7 +16,7 @@ export async function DELETE(
 
     // Vérifier que l'utilisateur est l'hôte de la session
     const session = await db.execute({
-      sql: 'SELECT host_user_id, status FROM game_sessions WHERE id = ?',
+      sql: 'SELECT host_user_id, status FROM sessions WHERE id = ?',
       args: [sessionId]
     });
 
@@ -31,7 +31,7 @@ export async function DELETE(
 
     // NEVER DELETE - just mark as cancelled to hide from active lists
     await db.execute({
-      sql: 'UPDATE game_sessions SET status = ?, ended_at = CURRENT_TIMESTAMP, last_activity = CURRENT_TIMESTAMP WHERE id = ?',
+      sql: 'UPDATE sessions SET status = ?, ended_at = CURRENT_TIMESTAMP, last_activity = CURRENT_TIMESTAMP WHERE id = ?',
       args: ['cancelled', sessionId]
     });
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { tursoClient } from '@/lib/database';
+import { db } from '@/lib/database';
 
 export async function POST(
   request: NextRequest,
@@ -16,7 +16,7 @@ export async function POST(
     }
 
     // Insert event
-    const result = await tursoClient.execute({
+    const result = await db.execute({
       sql: `
         INSERT INTO session_events (session_id, user_id, event_type, event_data)
         VALUES (?, ?, ?, ?)
@@ -25,8 +25,8 @@ export async function POST(
     });
 
     // Update session activity
-    await tursoClient.execute({
-      sql: 'UPDATE game_sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = ?',
+    await db.execute({
+      sql: 'UPDATE sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       args: [sessionId]
     });
 

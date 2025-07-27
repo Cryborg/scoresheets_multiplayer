@@ -16,7 +16,7 @@ export async function GET(
     const sessionResult = await db.execute({
       sql: `
         SELECT gs.*, g.name as game_name, g.slug as game_slug, g.score_type, g.team_based
-        FROM game_sessions gs
+        FROM sessions gs
         JOIN games g ON gs.game_id = g.id  
         WHERE gs.id = ? AND g.slug = ?
       `,

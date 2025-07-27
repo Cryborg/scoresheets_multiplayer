@@ -24,7 +24,7 @@ export async function POST(
     const sessionResult = await db.execute({
       sql: `
         SELECT gs.id, gs.current_round, g.slug
-        FROM game_sessions gs
+        FROM sessions gs
         JOIN games g ON gs.game_id = g.id  
         WHERE gs.id = ? AND g.slug = ?
       `,
@@ -53,7 +53,7 @@ export async function POST(
 
     // Update current round and last activity
     await db.execute({
-      sql: `UPDATE game_sessions 
+      sql: `UPDATE sessions 
             SET current_round = current_round + 1, 
                 last_activity = CURRENT_TIMESTAMP 
             WHERE id = ?`,
