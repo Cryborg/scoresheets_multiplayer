@@ -43,6 +43,9 @@ async function createTables(): Promise<void> {
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       is_admin INTEGER DEFAULT 0,
+      is_blocked INTEGER DEFAULT 0,
+      blocked_at DATETIME,
+      blocked_reason TEXT,
       avatar_url TEXT,
       display_name TEXT,
       last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -188,6 +191,19 @@ async function createTables(): Promise<void> {
       FOREIGN KEY (session_id) REFERENCES game_sessions (id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users (id),
       UNIQUE (session_id, user_id)
+    )
+  `);
+
+  // Password reset tokens table
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS password_resets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      token TEXT NOT NULL UNIQUE,
+      expires_at DATETIME NOT NULL,
+      used INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     )
   `);
 
@@ -434,7 +450,7 @@ Atteindre **5000 points** en premier (et non 1000 bornes comme souvent cru).
     {
       name: 'Rami',
       slug: 'rami',
-      category: 'Jeux de défausse',
+      category: 'Cartes',
       rules: 'Formez des combinaisons (suites et brelans) pour vous débarrasser de toutes vos cartes. Le premier à poser toutes ses cartes gagne la manche.',
       score_type: 'rounds',
       team_based: 0,
@@ -477,6 +493,26 @@ Atteindre **5000 points** en premier (et non 1000 bornes comme souvent cru).
           1
         ]
       });
+    }
+  }
+
+  // Create default admin user if not exists (dev only)
+  if (!isProduction) {
+    const existingUser = await tursoClient.execute({
+      sql: 'SELECT id FROM users WHERE email = ?',
+      args: ['cryborg.live@gmail.com']
+    });
+
+    if (existingUser.rows.length === 0) {
+      // Import bcrypt here to avoid loading it in production unnecessarily
+      const bcrypt = await import('bcrypt');
+      const passwordHash = await bcrypt.hash('Célibataire1979$', 10);
+      
+      await tursoClient.execute({
+        sql: 'INSERT INTO users (username, email, password_hash, is_admin, is_blocked) VALUES (?, ?, ?, ?, ?)',
+        args: ['Franck', 'cryborg.live@gmail.com', passwordHash, 1, 0]
+      });
+      console.log('✅ Default admin user created');
     }
   }
 

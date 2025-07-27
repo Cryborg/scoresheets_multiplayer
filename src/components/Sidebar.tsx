@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { X, ChevronRight, ChevronDown, Home, LogOut } from 'lucide-react';
+import { X, ChevronRight, ChevronDown, Home, LogOut, Shield } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import { BRANDING } from '@/lib/branding';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 interface Game {
   id: number;
@@ -24,6 +25,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose, games, onLogout }: SidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Cartes', 'Dés']));
+  const { isAdmin } = useIsAdmin();
 
   // Group games by category
   const gamesByCategory = games.reduce((acc, game) => {
@@ -134,6 +136,18 @@ export default function Sidebar({ isOpen, onClose, games, onLogout }: SidebarPro
               <span className="text-sm text-gray-600 dark:text-gray-400">Thème</span>
               <ThemeToggle />
             </div>
+            
+            {/* Administration link - Only for admins */}
+            {isAdmin && (
+              <Link
+                href="/admin/users"
+                onClick={onClose}
+                className="flex items-center w-full px-4 py-2 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
+              >
+                <Shield className="h-5 w-5 mr-3" />
+                Administration
+              </Link>
+            )}
             
             <button
               onClick={() => {

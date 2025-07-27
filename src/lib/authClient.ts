@@ -10,13 +10,11 @@ export function isAuthenticated(): boolean {
   
   try {
     // Check for auth-check cookie (non-httpOnly)
-    console.log('Checking auth, cookies:', document.cookie);
     const authCheck = document.cookie
       .split('; ')
       .find(row => row.startsWith('auth-check='))
       ?.split('=')[1];
     
-    console.log('Auth check cookie value:', authCheck);
     return authCheck === '1';
   } catch {
     return false;

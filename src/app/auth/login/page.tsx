@@ -50,10 +50,8 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
-      console.log('Login response:', response.status, data);
 
       if (response.ok) {
-        console.log('Login successful, redirecting to dashboard...');
         login(data.user);
         router.push('/dashboard');
       } else {
@@ -138,6 +136,18 @@ export default function LoginPage() {
                   <p className="text-red-600 dark:text-red-400 text-sm text-center font-medium">
                     {error}
                   </p>
+                </div>
+              )}
+
+              {/* Forgot Password Link - Only in development */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="text-right">
+                  <Link 
+                    href="/auth/forgot-password" 
+                    className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    Mot de passe oublié ?
+                  </Link>
                 </div>
               )}
 

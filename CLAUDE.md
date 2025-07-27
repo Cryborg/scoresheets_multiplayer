@@ -39,6 +39,35 @@
 - **Testing**: Jest + React Testing Library
 - **Real-time**: HTTP polling (not WebSocket) - Vercel compatible
 
+## 🗄️ DATABASE ARCHITECTURE (AI CRITICAL)
+
+### Environment-Based Database System
+```typescript
+// UNIFIED CLIENT: src/lib/database.ts
+export const db = tursoClient; // ⚠️ AI: ALWAYS use `db`, not `tursoClient`
+```
+
+**AI MUST UNDERSTAND:**
+- **Production**: Turso cloud (`TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`)
+- **Development**: SQLite local (`file:./data/scoresheets.db`)
+- **Same API**: Both use `db.execute()` - no code changes needed
+
+### 🚨 AI DATABASE IMPORT RULES
+```typescript
+// ✅ CORRECT - Works in dev AND prod
+import { db } from '@/lib/database';
+await db.execute({ sql: '...', args: [...] });
+
+// ❌ WRONG - Don't use these imports
+import { tursoClient } from '@/lib/turso';     // File doesn't exist
+import { tursoClient } from '@/lib/database';  // Works but avoid
+```
+
+### Database Initialization
+- **Auto-creates** `./data/` directory in dev
+- **Runs migrations** on startup (`createTables()` + `seedInitialData()`)
+- **Dev restart required** when modifying `database.ts`
+
 ### 🤖 AI BEHAVIOR RULES
 
 1. **ALWAYS validate with lint:strict + test before suggesting completion**
@@ -55,23 +84,35 @@ npm run lint:strict  # REQUIRED before any commit suggestion
 npm test            # REQUIRED before marking tasks complete
 npm run quality     # Both linting + tests in one command
 
-# Development
-npm run dev         # Hot reload (restart if database.ts changes)
+# Development (cache disabled in dev)
+npm run dev         # Hot reload with no cache
+npm run dev:clean   # Clean Next.js cache + node_modules cache + start
+npm run dev:setup   # Create admin user in dev database (if missing)
+npm run dev:fresh   # Full reset: cache + database + setup admin + start
 npm run dev:watch   # Auto-restart on DB/env changes
+
+# Production
+npm run build       # Auto-purges cache before build
 ```
 
 ### 🔄 When to Tell User to Restart Dev Server
+
+**Use `npm run dev:fresh` for auth/database issues:**
+- Authentication problems
+- Database schema changes
+- Missing users in dev database
 
 **MUST restart `npm run dev`:**
 - Database changes in `database.ts` → `seedInitialData()`
 - New dependencies installed
 - Environment variables changed
-- New API routes created
+- Next.js configuration changes
 
-**Hot reload works fine:**
+**Hot reload works fine (cache disabled in dev):**
 - React components modified
 - CSS/Tailwind changes  
 - Existing API route modifications
+- Most code changes
 
 ## 🎮 IMPLEMENTED GAMES DATABASE
 
@@ -98,12 +139,12 @@ interface Game {
 **Location**: `src/lib/database.ts` → `seedInitialData()`
 ```typescript
 // TEMPLATE (AI MUST adapt values):
-const existingGame = await tursoClient.execute({
+const existingGame = await db.execute({
   sql: 'SELECT id FROM games WHERE slug = ?',
   args: ['game-slug']
 });
 if (existingGame.rows.length === 0) {
-  await tursoClient.execute(`INSERT INTO games VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+  await db.execute(`INSERT INTO games VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
     'Game Name', 'game-slug', 1, 'Rules text', 1, 'rounds', 0, 2, 6, 'higher'
   ]);
 }

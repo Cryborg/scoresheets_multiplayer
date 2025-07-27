@@ -28,32 +28,25 @@ export default function NewGamePage() {
   } = useGameSessionCreator(game);
 
   const fetchGame = useCallback(async () => {
-    console.log('[DEBUG NewGamePage] Starting fetchGame for slug:', slug);
     try {
       const response = await authenticatedFetch('/api/games');
-      console.log('[DEBUG NewGamePage] API response status:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('[DEBUG NewGamePage] All games data:', data.games);
         const foundGame = data.games.find((g: Game) => g.slug === slug);
-        console.log('[DEBUG NewGamePage] Found game object:', foundGame);
         
         if (!foundGame) {
-          console.warn('[DEBUG NewGamePage] Game not found with slug:', slug, 'Redirecting...');
           router.push('/dashboard');
           return;
         }
 
-        console.log('[DEBUG NewGamePage] Setting game state with:', foundGame);
         setGame(foundGame);
       } else {
-        console.error('[DEBUG NewGamePage] API response not OK:', response);
+        router.push('/dashboard');
       }
     } catch (err) {
       console.error('Error fetching game data:', err);
       router.push('/dashboard');
     } finally {
-      console.log('[DEBUG NewGamePage] Setting loading to false.');
       setLoading(false);
     }
   }, [slug, router]);

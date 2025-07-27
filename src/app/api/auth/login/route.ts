@@ -15,7 +15,6 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await authenticateUser({ email, password });
-    console.log('Authentication attempt for:', email, 'Result:', user ? 'Success' : 'Failed');
     
     if (!user) {
       return NextResponse.json(
