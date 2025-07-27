@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
           g.name as game_name,
           g.slug as game_slug,
           CASE WHEN s.host_user_id = ? THEN 1 ELSE 0 END as is_host
-        FROM sessions s
+        FROM game_sessions s
         JOIN games g ON s.game_id = g.id
         WHERE s.host_user_id = ?
         ORDER BY s.updated_at DESC, s.created_at DESC

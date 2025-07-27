@@ -9,7 +9,7 @@ export async function DELETE(
 ) {
   try {
     const { sessionId } = await params;
-    const userId = await getAuthenticatedUserId(request);
+    const userId = getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }

@@ -9,7 +9,7 @@ interface LeaveSessionParams {
 export async function POST(request: NextRequest, context: LeaveSessionParams) {
   try {
     const { sessionId } = await context.params;
-    const currentUserId = await getAuthenticatedUserId(request);
+    const currentUserId = getAuthenticatedUserId(request);
 
     if (!currentUserId) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
 
     // Check if session exists
     const sessionResult = await db.execute({
-      sql: 'SELECT id, host_user_id, status FROM sessions WHERE id = ?',
+      sql: 'SELECT id, host_user_id, status FROM game_sessions WHERE id = ?',
       args: [sessionId]
     });
 
@@ -25,14 +25,11 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
       return NextResponse.json({ error: 'Session non trouvée' }, { status: 404 });
     }
 
-    // Check if user is in session (simplified check via session_player)
+    const session = sessionResult.rows[0];
+
+    // Check if user has players in session
     const playerResult = await db.execute({
-      sql: `
-        SELECT sp.id, p.user_id 
-        FROM session_player sp 
-        JOIN players p ON sp.player_id = p.id 
-        WHERE sp.session_id = ? AND p.user_id = ? AND sp.left_at IS NULL
-      `,
+      sql: 'SELECT id, player_name FROM players WHERE session_id = ? AND user_id = ?',
       args: [sessionId, currentUserId]
     });
 
@@ -40,17 +37,39 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
       return NextResponse.json({ error: 'Vous n\'êtes pas dans cette session' }, { status: 400 });
     }
 
-    // Simple leave: mark as left in session_player
+    // Remove all players belonging to this user from the session
     await db.execute({
-      sql: 'UPDATE session_player SET left_at = CURRENT_TIMESTAMP WHERE session_id = ? AND player_id IN (SELECT p.id FROM players p WHERE p.user_id = ?)',
+      sql: 'DELETE FROM players WHERE session_id = ? AND user_id = ?',
       args: [sessionId, currentUserId]
     });
 
-    // Update session timestamp
+    // Update session player count
     await db.execute({
-      sql: 'UPDATE sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      args: [sessionId]
+      sql: 'UPDATE game_sessions SET current_players = current_players - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      args: [playerResult.rows.length, sessionId]
     });
+
+    // If user was the host and there are other players, transfer host to first remaining player
+    if (Number(session.host_user_id) === currentUserId) {
+      const remainingPlayersResult = await db.execute({
+        sql: 'SELECT user_id FROM players WHERE session_id = ? AND user_id IS NOT NULL LIMIT 1',
+        args: [sessionId]
+      });
+
+      if (remainingPlayersResult.rows.length > 0) {
+        const newHostId = remainingPlayersResult.rows[0].user_id;
+        await db.execute({
+          sql: 'UPDATE game_sessions SET host_user_id = ? WHERE id = ?',
+          args: [newHostId, sessionId]
+        });
+      } else {
+        // No players left, cancel the session
+        await db.execute({
+          sql: 'UPDATE game_sessions SET status = ?, ended_at = CURRENT_TIMESTAMP WHERE id = ?',
+          args: ['cancelled', sessionId]
+        });
+      }
+    }
 
     // Add leave event
     await db.execute({
@@ -62,22 +81,21 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
         sessionId,
         currentUserId,
         JSON.stringify({
-          user_id: currentUserId,
-          left_at: new Date().toISOString()
+          playersRemoved: playerResult.rows.map(row => ({ id: row.id, name: row.player_name }))
         })
       ]
     });
 
     return NextResponse.json({
-      message: 'Vous avez quitté la session',
-      sessionDeleted: false,
-      sessionCompleted: false
+      success: true,
+      message: 'Vous avez quitté la session avec succès'
     });
 
   } catch (error) {
-    console.error('Erreur lors de la sortie de session:', error);
-    return NextResponse.json({ 
-      error: 'Erreur serveur lors de la sortie de session' 
-    }, { status: 500 });
+    console.error('Leave session error:', error);
+    return NextResponse.json(
+      { error: 'Erreur serveur lors de la sortie de session' },
+      { status: 500 }
+    );
   }
 }

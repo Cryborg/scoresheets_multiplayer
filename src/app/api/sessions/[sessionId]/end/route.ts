@@ -9,14 +9,14 @@ export async function POST(
 ) {
   try {
     const { sessionId } = await params;
-    const userId = await getAuthenticatedUserId(request);
+    const userId = getAuthenticatedUserId(request);
     if (!userId) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
     // Vérifier que l'utilisateur est l'hôte de la session
     const session = await db.execute({
-      sql: 'SELECT host_user_id, status FROM sessions WHERE id = ?',
+      sql: 'SELECT host_user_id, status FROM game_sessions WHERE id = ?',
       args: [sessionId]
     });
 
@@ -36,7 +36,7 @@ export async function POST(
     // Marquer la session comme terminée
     await db.execute({
       sql: `
-        UPDATE sessions 
+        UPDATE game_sessions 
         SET status = 'completed', 
             ended_at = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP
