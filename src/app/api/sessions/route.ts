@@ -15,9 +15,9 @@ export async function GET(request: NextRequest) {
       sql: `
         SELECT DISTINCT
           s.id,
-          s.session_name,
+          s.name as session_name,
           s.status,
-          s.current_players,
+          (SELECT COUNT(*) FROM players WHERE session_id = s.id) as current_players,
           g.max_players,
           s.created_at,
           s.updated_at as last_activity,
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
           g.name as game_name,
           g.slug as game_slug,
           CASE WHEN s.host_user_id = ? THEN 1 ELSE 0 END as is_host
-        FROM game_sessions s
+        FROM sessions s
         JOIN games g ON s.game_id = g.id
         LEFT JOIN players p ON s.id = p.session_id
         WHERE s.host_user_id = ? OR p.user_id = ?
