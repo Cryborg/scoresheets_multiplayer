@@ -217,7 +217,9 @@ export async function GET(
 
       const playerWithScore = {
         ...player,
-        total_score: totalScore
+        total_score: totalScore,
+        is_connected: 1, // Default all players to connected for now
+        is_ready: 1 // Default all players to ready for simplicity
       };
 
       if (player.team_id && teamsMap.has(player.team_id)) {
