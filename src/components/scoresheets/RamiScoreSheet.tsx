@@ -1,3 +1,5 @@
+'use client';
+
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { GameSessionWithRounds } from '@/types/multiplayer';
 import { useState } from 'react';
