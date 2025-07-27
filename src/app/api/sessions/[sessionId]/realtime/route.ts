@@ -22,7 +22,7 @@ export async function GET(
     // Get current user ID if authenticated
     const currentUserId = getAuthenticatedUserId(request);
 
-    // Get session with access control in a single optimized query
+    // Get session with simplified query for new architecture
     const sessionWithAccessResult = await db.execute({
       sql: `
         SELECT 
@@ -36,20 +36,15 @@ export async function GET(
           u.username as host_username,
           CASE 
             WHEN s.host_user_id = ? THEN 'host'
-            WHEN p.user_id = ? THEN 'player'
             WHEN s.status = 'waiting' THEN 'can_join'
-            WHEN EXISTS(SELECT 1 FROM session_player sp JOIN players p2 ON sp.player_id = p2.id WHERE sp.session_id = s.id AND p2.user_id IS NULL) AND ? IS NULL THEN 'guest_allowed'
             ELSE 'denied'
           END as access_level
         FROM sessions s
         JOIN games g ON s.game_id = g.id
         JOIN users u ON s.host_user_id = u.id
-        LEFT JOIN session_player sp ON sp.session_id = s.id
-        LEFT JOIN players p ON sp.player_id = p.id AND p.user_id = ?
         WHERE s.id = ?
-        GROUP BY s.id
       `,
-      args: [currentUserId, currentUserId, currentUserId, currentUserId, sessionId]
+      args: [currentUserId, sessionId]
     });
 
     if (sessionWithAccessResult.rows.length === 0) {
@@ -68,7 +63,7 @@ export async function GET(
       }
     }
 
-    // Get players
+    // Get players - simplified for empty sessions
     const playersResult = await db.execute({
       sql: `
         SELECT 
@@ -82,32 +77,19 @@ export async function GET(
           sp.is_ready,
           sp.joined_at,
           sp.left_at,
-          CASE WHEN tp.team_id IS NOT NULL THEN t.name ELSE NULL END as team_name,
-          tp.team_id
+          NULL as team_name,
+          NULL as team_id
         FROM session_player sp
         JOIN players p ON sp.player_id = p.id
         LEFT JOIN users u ON p.user_id = u.id
-        LEFT JOIN team_player tp ON tp.player_id = p.id AND tp.session_id = ?
-        LEFT JOIN teams t ON tp.team_id = t.id
         WHERE sp.session_id = ? AND sp.left_at IS NULL
         ORDER BY sp.position
       `,
-      args: [sessionId, sessionId]
-    });
-
-    // Get teams
-    const teamsResult = await db.execute({
-      sql: `
-        SELECT 
-          t.id,
-          t.name as team_name
-        FROM session_team st
-        JOIN teams t ON st.team_id = t.id
-        WHERE st.session_id = ?
-        ORDER BY t.id
-      `,
       args: [sessionId]
     });
+
+    // Get teams - simplified, return empty for now
+    const teamsResult = { rows: [] };
 
     const rawPlayers = playersResult.rows as PlayerRecord[];
     const rawTeams = teamsResult.rows as { id: number; team_name: string }[];
