@@ -10,15 +10,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    // Récupérer toutes les sessions où l'utilisateur est participant ou hôte
-    // Utiliser LEFT JOIN pour inclure les sessions même sans entrée dans players
+    // Récupérer toutes les sessions où l'utilisateur est hôte ou participant
+    // Version simplifiée pour la nouvelle architecture Laravel
     const sessions = await db.execute({
       sql: `
         SELECT DISTINCT
           s.id,
           s.name as session_name,
           s.status,
-          COUNT(sp.player_id) as current_players,
+          0 as current_players,
           g.max_players,
           s.created_at,
           s.updated_at as last_activity,
@@ -28,13 +28,10 @@ export async function GET(request: NextRequest) {
           CASE WHEN s.host_user_id = ? THEN 1 ELSE 0 END as is_host
         FROM sessions s
         JOIN games g ON s.game_id = g.id
-        LEFT JOIN session_player sp ON sp.session_id = s.id AND sp.left_at IS NULL
-        LEFT JOIN players p ON sp.player_id = p.id AND p.user_id = ?
-        WHERE s.host_user_id = ? OR p.user_id IS NOT NULL
-        GROUP BY s.id, s.name, s.status, g.max_players, s.created_at, s.updated_at, s.host_user_id, g.name, g.slug
+        WHERE s.host_user_id = ?
         ORDER BY s.updated_at DESC, s.created_at DESC
       `,
-      args: [userId, userId, userId, userId]
+      args: [userId, userId]
     });
 
     return NextResponse.json({
