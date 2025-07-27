@@ -29,7 +29,6 @@ export interface GameSessionCreatorState {
   hasScoreTarget: boolean;
   scoreTarget: string;
   finishCurrentRound: boolean;
-  scoreDirection: string;
   loading: boolean;
   suggestedPlayers: string[];
 }
@@ -43,7 +42,6 @@ export function useGameSessionCreator(game?: Game | null) {
     hasScoreTarget: false,
     scoreTarget: '',
     finishCurrentRound: false,
-    scoreDirection: 'higher',
     loading: false,
     suggestedPlayers: []
   });
@@ -196,8 +194,7 @@ export function useGameSessionCreator(game?: Game | null) {
         ? { ...basePayload, teams: state.teams }
         : { 
             ...basePayload, 
-            players: state.players.map(p => p.name).filter(p => p.trim()),
-            scoreDirection: state.scoreDirection
+            players: state.players.map(p => p.name).filter(p => p.trim())
           };
 
       const response = await authenticatedFetch(apiEndpoint, {
@@ -221,7 +218,7 @@ export function useGameSessionCreator(game?: Game | null) {
     } finally {
       setState(prev => ({ ...prev, loading: false }));
     }
-  }, [game, state.sessionName, state.players, state.teams, state.hasScoreTarget, state.scoreTarget, state.finishCurrentRound, state.scoreDirection, validateSession]);
+  }, [game, state.sessionName, state.players, state.teams, state.hasScoreTarget, state.scoreTarget, state.finishCurrentRound, validateSession]);
 
   const updateState = useCallback((updates: Partial<GameSessionCreatorState>) => {
     setState(prev => ({ ...prev, ...updates }));

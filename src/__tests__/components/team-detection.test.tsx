@@ -3,11 +3,6 @@ import { render, screen } from '@testing-library/react';
 import { GameSessionWithRounds } from '../../types/multiplayer';
 
 // Mock du hook useMultiplayerGame
-const mockGameState = {
-  currentUserId: 123,
-  isHost: true,
-  events: []
-};
 
 // Mock du component parent pour tester la logique de détection d'équipes
 const TeamDetectionTest = ({ session, currentUserId }: { 

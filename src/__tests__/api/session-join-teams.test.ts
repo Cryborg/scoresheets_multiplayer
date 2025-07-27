@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
 
 // Helper to create a proper request mock for testing
-function createMockRequest(url: string, body: any) {
+function createMockRequest(url: string, body: unknown) {
   return {
     json: jest.fn().mockResolvedValue(body),
     url,
     method: 'POST',
-  } as any;
+  } as NextRequest;
 }
 
 // Mock tursoClient

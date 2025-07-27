@@ -5,9 +5,7 @@ import {
   Target, 
   Play, 
   Plus,
-  Settings,
-  TrendingUp,
-  TrendingDown
+  Settings
 } from 'lucide-react';
 import PlayerInput from './PlayerInput';
 import GameSetupCard from './GameSetupCard';
@@ -178,42 +176,6 @@ export default function GameSessionForm({
             </div>
           </div>
 
-          {/* Score Direction (only for non-team games) */}
-          {!game?.team_based && (
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-900 dark:text-white">
-                Objectif de score
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => onUpdateState({ scoreDirection: 'higher' })}
-                  className={`p-3 rounded-xl border-2 transition-all ${
-                    state.scoreDirection === 'higher'
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                      : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-300'
-                  }`}
-                >
-                  <TrendingUp className="h-5 w-5 mx-auto mb-1" />
-                  <div className="text-sm font-medium">Plus haut</div>
-                  <div className="text-xs opacity-70">Le plus grand score gagne</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onUpdateState({ scoreDirection: 'lower' })}
-                  className={`p-3 rounded-xl border-2 transition-all ${
-                    state.scoreDirection === 'lower'
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                      : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-300'
-                  }`}
-                >
-                  <TrendingDown className="h-5 w-5 mx-auto mb-1" />
-                  <div className="text-sm font-medium">Plus bas</div>
-                  <div className="text-xs opacity-70">Le plus petit score gagne</div>
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </GameSetupCard>
 

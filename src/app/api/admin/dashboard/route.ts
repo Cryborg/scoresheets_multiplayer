@@ -54,10 +54,10 @@ export async function GET(request: NextRequest) {
     `);
 
     const stats = {
-      totalUsers: (usersCount.rows[0] as { count: number }).count,
-      totalGames: (gamesCount.rows[0] as { count: number }).count,
-      totalSessions: (sessionsCount.rows[0] as { count: number }).count,
-      activeSessions: (activeSessionsCount.rows[0] as { count: number }).count,
+      totalUsers: Number((usersCount.rows[0] as { count: bigint | number }).count),
+      totalGames: Number((gamesCount.rows[0] as { count: bigint | number }).count),
+      totalSessions: Number((sessionsCount.rows[0] as { count: bigint | number }).count),
+      activeSessions: Number((activeSessionsCount.rows[0] as { count: bigint | number }).count),
       recentSessions: recentSessions.rows.map(row => ({
         id: row.id,
         game_name: row.game_name,
