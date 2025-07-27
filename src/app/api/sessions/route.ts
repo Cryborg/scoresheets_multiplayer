@@ -50,9 +50,14 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Sessions fetch error:', error);
+    console.error('Sessions fetch error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      userId,
+      timestamp: new Date().toISOString()
+    });
     return NextResponse.json(
-      { error: 'Erreur serveur' },
+      { error: 'Erreur serveur', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
