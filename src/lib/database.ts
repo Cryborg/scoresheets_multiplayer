@@ -1,5 +1,5 @@
 // Enhanced Turso database for multiplayer real-time functionality
-import { createClient, Client } from '@libsql/client';
+import { createClient } from '@libsql/client';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 

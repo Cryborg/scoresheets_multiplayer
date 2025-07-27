@@ -5,18 +5,18 @@
  * Crée la base de données et l'utilisateur admin si nécessaire
  */
 
-import { createClient } from '@libsql/client';
+import { initializeDatabase, db } from '../src/lib/database.ts';
 import bcrypt from 'bcrypt';
-
-const db = createClient({
-  url: 'file:./data/scoresheets.db'
-});
 
 async function setupDev() {
   console.log('🚀 Setup environnement de développement...');
   console.log('=====================================');
 
   try {
+    // Initialize database first (creates tables and runs migrations)
+    await initializeDatabase();
+    console.log('✅ Base de données initialisée');
+
     // Vérifier si l'utilisateur admin existe
     const existingUser = await db.execute({
       sql: 'SELECT id FROM users WHERE email = ?',
