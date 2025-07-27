@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRealtimeSession } from './useRealtimeSession';
 import { useGamePermissions } from './useGamePermissions';
@@ -67,31 +67,35 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     pollInterval: optimizedPollInterval,
     onError: useCallback(() => {
       // Silent error handling
-    }, []),
-    onUpdate: useCallback((sessionData: T) => {
-      // Vérifier si la session est locale et ajuster le polling
-      console.log('🔧 DEBUG: onUpdate appelé avec sessionData:', {
-        players: sessionData?.players?.map(p => ({ user_id: p.user_id, player_name: p.player_name })),
-        currentUserId
-      });
-      
-      const isLocal = isLocalSession(sessionData, currentUserId);
-      console.log('🔧 DEBUG: isLocalSession retourne:', isLocal, 'shouldPausePolling actuel:', shouldPausePolling);
-      
-      if (isLocal !== shouldPausePolling) {
-        console.log('🔧 DEBUG: Changement détecté, mise à jour shouldPausePolling vers:', isLocal);
-        setShouldPausePolling(isLocal);
-        if (isLocal) {
-          console.log('🎯 Session détectée comme locale - polling réduit à 30s pour optimiser les performances');
-        } else {
-          console.log('🌐 Session multijoueur détectée - polling normal activé (2s)');
-        }
-      }
-    }, [currentUserId, shouldPausePolling])
+    }, [])
   });
 
   const session = realtimeSession;
   const permissions = useGamePermissions(currentUserId);
+
+  // Effet séparé pour gérer la détection de session locale
+  useEffect(() => {
+    if (!session) return;
+
+    // Vérifier si la session est locale et ajuster le polling
+    console.log('🔧 DEBUG: useEffect session locale appelé avec:', {
+      players: session?.players?.map(p => ({ user_id: p.user_id, player_name: p.player_name })),
+      currentUserId
+    });
+    
+    const isLocal = isLocalSession(session, currentUserId);
+    console.log('🔧 DEBUG: isLocalSession retourne:', isLocal, 'shouldPausePolling actuel:', shouldPausePolling);
+    
+    if (isLocal !== shouldPausePolling) {
+      console.log('🔧 DEBUG: Changement détecté, mise à jour shouldPausePolling vers:', isLocal);
+      setShouldPausePolling(isLocal);
+      if (isLocal) {
+        console.log('🎯 Session détectée comme locale - polling réduit à 30s pour optimiser les performances');
+      } else {
+        console.log('🌐 Session multijoueur détectée - polling normal activé (2s)');
+      }
+    }
+  }, [session, currentUserId, shouldPausePolling]);
   
   // Calculate permissions with session context
   const canJoinSession = permissions.canJoinSession(session);
