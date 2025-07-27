@@ -36,7 +36,7 @@ interface Session {
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'waiting' | 'active' | 'completed'>('all');
+  const [filter, setFilter] = useState<'active_all' | 'waiting' | 'active' | 'completed'>('active_all');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -166,7 +166,10 @@ export default function SessionsPage() {
   };
 
   const filteredSessions = sessions.filter(session => {
-    if (filter === 'all') return true;
+    if (filter === 'active_all') {
+      // Toutes les parties SAUF les terminées
+      return session.status !== 'completed' && session.status !== 'cancelled';
+    }
     if (filter === 'completed') {
       return session.status === 'completed' || session.status === 'cancelled';
     }
@@ -219,7 +222,7 @@ export default function SessionsPage() {
           <div className="mb-6">
             <div className="flex flex-wrap gap-2">
               {[
-                { key: 'all', label: 'Toutes', count: sessions.length },
+                { key: 'active_all', label: 'Actives', count: sessions.filter(s => s.status !== 'completed' && s.status !== 'cancelled').length },
                 { key: 'waiting', label: 'En attente', count: sessions.filter(s => s.status === 'waiting').length },
                 { key: 'active', label: 'En cours', count: sessions.filter(s => s.status === 'active').length },
                 { key: 'completed', label: 'Terminées', count: sessions.filter(s => s.status === 'completed' || s.status === 'cancelled').length }
@@ -248,8 +251,8 @@ export default function SessionsPage() {
                   Aucune partie trouvée
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  {filter === 'all' 
-                    ? "Vous n'avez participé à aucune partie pour le moment."
+                  {filter === 'active_all' 
+                    ? "Vous n'avez aucune partie active pour le moment."
                     : `Aucune partie ${getStatusText(filter as any).toLowerCase()} trouvée.`
                   }
                 </p>
