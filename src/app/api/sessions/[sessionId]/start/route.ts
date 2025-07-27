@@ -21,7 +21,7 @@ export async function POST(
           s.*,
           g.min_players,
           g.max_players,
-          (SELECT COUNT(*) FROM players p WHERE p.session_id = s.id) as connected_players
+          (SELECT COUNT(*) FROM session_player sp WHERE sp.session_id = s.id) as connected_players
         FROM sessions s
         JOIN games g ON s.game_id = g.id
         WHERE s.id = ?
