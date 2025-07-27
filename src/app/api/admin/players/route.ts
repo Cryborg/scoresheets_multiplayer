@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         SELECT 
           p.id,
           p.user_id,
-          p.player_name,
+          p.name as player_name,
           u.username,
           u.email,
           COUNT(DISTINCT gs.id) as games_played,
@@ -58,9 +58,10 @@ export async function GET(request: NextRequest) {
             FROM sessions gs2 
             JOIN games g ON gs2.game_id = g.id 
             WHERE gs2.id IN (
-              SELECT session_id 
+              SELECT sp2.session_id 
               FROM players p2 
-              WHERE p2.player_name = p.player_name 
+              JOIN session_player sp2 ON p2.id = sp2.player_id
+              WHERE p2.name = p.name 
                 AND (p2.user_id = p.user_id OR (p2.user_id IS NULL AND p.user_id IS NULL))
             )
             GROUP BY g.id, g.name 
@@ -75,9 +76,10 @@ export async function GET(request: NextRequest) {
           SUM(COALESCE(s.score, 0)) as total_score
         FROM players p
         LEFT JOIN users u ON p.user_id = u.id
-        LEFT JOIN sessions gs ON p.session_id = gs.id
+        LEFT JOIN session_player sp ON p.id = sp.player_id
+        LEFT JOIN sessions gs ON sp.session_id = gs.id
         LEFT JOIN scores s ON p.id = s.player_id
-        GROUP BY p.id, p.user_id, p.player_name, u.username, u.email
+        GROUP BY p.id, p.user_id, p.name, u.username, u.email
         HAVING games_played > 0
       )
       SELECT * FROM player_stats

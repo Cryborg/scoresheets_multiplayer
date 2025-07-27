@@ -35,8 +35,7 @@ export async function DELETE(
       args: ['cancelled', sessionId]
     });
 
-    // Note: Dans la nouvelle architecture, on ne track plus les participants séparément
-    // Les players sont directement dans la table players avec session_id
+    // Note: Dans l'architecture Laravel, les participants sont gérés via la table pivot session_player
 
     return NextResponse.json({ 
       success: true, 

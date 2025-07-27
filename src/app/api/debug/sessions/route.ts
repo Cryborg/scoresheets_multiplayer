@@ -31,15 +31,16 @@ export async function GET(request: NextRequest) {
     const playerEntries = await db.execute({
       sql: `
         SELECT 
-          p.session_id,
+          sp.session_id,
           p.user_id,
-          p.player_name,
-          p.position,
+          p.name as player_name,
+          sp.position,
           gs.name
         FROM players p
-        JOIN sessions gs ON p.session_id = gs.id
+        JOIN session_player sp ON p.id = sp.player_id
+        JOIN sessions gs ON sp.session_id = gs.id
         WHERE p.user_id = ?
-        ORDER BY p.session_id DESC
+        ORDER BY sp.session_id DESC
       `,
       args: [userId]
     });

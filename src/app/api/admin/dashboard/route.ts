@@ -47,7 +47,8 @@ export async function GET(request: NextRequest) {
         COUNT(p.id) as players_count
       FROM sessions gs
       JOIN games g ON gs.game_id = g.id
-      LEFT JOIN players p ON gs.id = p.session_id
+      LEFT JOIN session_player sp ON gs.id = sp.session_id
+      LEFT JOIN players p ON sp.player_id = p.id
       GROUP BY gs.id, gs.name, gs.status, gs.created_at, g.name
       ORDER BY gs.created_at DESC
       LIMIT 10
