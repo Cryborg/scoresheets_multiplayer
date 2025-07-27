@@ -155,6 +155,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     canJoinSession,
     canViewSession,
     canStartGame,
+    canEditPlayerScores: (player: any) => permissions.canEditPlayerScores(player, session),
     isHost,
     
     // Join functionality

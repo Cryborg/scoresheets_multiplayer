@@ -2,13 +2,18 @@ import { Player } from '@/types/multiplayer';
 
 export function useGamePermissions(currentUserId: number | null) {
   // Check if current user can edit scores for a specific player
-  const canEditPlayerScores = (player: Player): boolean => {
+  const canEditPlayerScores = (player: Player, session?: any): boolean => {
     if (!currentUserId) {
       // Not authenticated - can only edit if player is not linked to a user
       return !player.user_id;
     }
     
-    // Authenticated - can only edit own scores
+    // If user is the host, they can edit all players' scores (multiplayer local game)
+    if (session && session.host_user_id === currentUserId) {
+      return true;
+    }
+    
+    // Otherwise, authenticated user can only edit own scores
     return player.user_id === currentUserId;
   };
 
