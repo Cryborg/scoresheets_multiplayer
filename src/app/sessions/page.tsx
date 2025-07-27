@@ -144,13 +144,14 @@ export default function SessionsPage() {
     }
   };
 
-  const getStatusText = (status: Session['status']) => {
+  const getStatusText = (status: Session['status'] | 'active_all') => {
     switch (status) {
       case 'waiting': return 'En attente';
       case 'active': return 'En cours';
       case 'paused': return 'En pause';
       case 'completed': return 'Terminée';
       case 'cancelled': return 'Annulée';
+      case 'active_all': return 'Active';
       default: return status;
     }
   };
@@ -229,7 +230,7 @@ export default function SessionsPage() {
               ].map(({ key, label, count }) => (
                 <button
                   key={key}
-                  onClick={() => setFilter(key as any)}
+                  onClick={() => setFilter(key as 'active_all' | 'waiting' | 'active' | 'completed')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     filter === key
                       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
@@ -253,7 +254,7 @@ export default function SessionsPage() {
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
                   {filter === 'active_all' 
                     ? "Vous n'avez aucune partie active pour le moment."
-                    : `Aucune partie ${getStatusText(filter as any).toLowerCase()} trouvée.`
+                    : `Aucune partie ${getStatusText(filter).toLowerCase()} trouvée.`
                   }
                 </p>
                 <Link href="/dashboard">
