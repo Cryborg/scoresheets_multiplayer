@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Récupérer toutes les sessions où l'utilisateur est hôte ou participant
-    // Version simplifiée pour la nouvelle architecture Laravel
     const sessions = await db.execute({
       sql: `
         SELECT DISTINCT
@@ -28,10 +27,11 @@ export async function GET(request: NextRequest) {
           CASE WHEN s.host_user_id = ? THEN 1 ELSE 0 END as is_host
         FROM game_sessions s
         JOIN games g ON s.game_id = g.id
-        WHERE s.host_user_id = ?
+        LEFT JOIN players p ON s.id = p.session_id
+        WHERE s.host_user_id = ? OR p.user_id = ?
         ORDER BY s.updated_at DESC, s.created_at DESC
       `,
-      args: [userId, userId]
+      args: [userId, userId, userId]
     });
 
     return NextResponse.json({
