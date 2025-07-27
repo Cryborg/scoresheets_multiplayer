@@ -230,6 +230,71 @@ async function createTables(): Promise<void> {
   `);
 
   // Add missing columns to existing tables via ALTER TABLE
+  
+  // Add is_blocked and related columns to users table
+  try {
+    await tursoClient.execute(`ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0`);
+    console.log('✅ Added is_blocked column to users');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ is_blocked column already exists or table is new');
+    }
+  }
+
+  try {
+    await tursoClient.execute(`ALTER TABLE users ADD COLUMN blocked_at DATETIME`);
+    console.log('✅ Added blocked_at column to users');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ blocked_at column already exists or table is new');
+    }
+  }
+
+  try {
+    await tursoClient.execute(`ALTER TABLE users ADD COLUMN blocked_reason TEXT`);
+    console.log('✅ Added blocked_reason column to users');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ blocked_reason column already exists or table is new');
+    }
+  }
+
+  try {
+    await tursoClient.execute(`ALTER TABLE users ADD COLUMN avatar_url TEXT`);
+    console.log('✅ Added avatar_url column to users');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ avatar_url column already exists or table is new');
+    }
+  }
+
+  try {
+    await tursoClient.execute(`ALTER TABLE users ADD COLUMN display_name TEXT`);
+    console.log('✅ Added display_name column to users');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ display_name column already exists or table is new');
+    }
+  }
+
+  try {
+    await tursoClient.execute(`ALTER TABLE users ADD COLUMN is_online INTEGER DEFAULT 0`);
+    console.log('✅ Added is_online column to users');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ is_online column already exists or table is new');
+    }
+  }
+
+  try {
+    await tursoClient.execute(`ALTER TABLE users ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP`);
+    console.log('✅ Added updated_at column to users');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ updated_at column already exists or table is new');
+    }
+  }
+
   try {
     await tursoClient.execute(`ALTER TABLE game_sessions ADD COLUMN finish_current_round INTEGER DEFAULT 0`);
     console.log('✅ Added finish_current_round column to game_sessions');
