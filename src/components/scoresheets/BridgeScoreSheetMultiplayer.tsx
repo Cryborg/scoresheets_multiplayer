@@ -1,16 +1,12 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { Users, Wifi, WifiOff, Clock, Crown, Shield, Target } from 'lucide-react';
+import { Crown, Shield, Target, Users } from 'lucide-react';
 import ScoreInput from '@/components/ui/ScoreInput';
-import GameLayout from '@/components/layout/GameLayout';
 import GameCard from '@/components/layout/GameCard';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { useRealtimeSession } from '@/hooks/useRealtimeSession';
+import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { GameSessionWithRounds, Player } from '@/types/multiplayer';
 
-// Extension spécifique pour Bridge avec details typés
 interface BridgeGameSession extends GameSessionWithRounds {
   rounds: Array<{
     round_number: number;
@@ -54,12 +50,24 @@ const BRIDGE_CONTRACTS: BridgeContract[] = [
 const POSITIONS = ['Nord', 'Est', 'Sud', 'Ouest'];
 
 export default function BridgeScoreSheetMultiplayer({ sessionId }: { sessionId: string }) {
-  const router = useRouter();
-  const { session, events, isConnected, error, addRound } = useRealtimeSession<BridgeGameSession>({
-    sessionId,
-    gameSlug: 'bridge'
-  });
-  
+  return (
+    <BaseScoreSheetMultiplayer<BridgeGameSession> sessionId={sessionId} gameSlug="bridge">
+      {({ session, gameState }) => (
+        <BridgeGameInterface session={session} gameState={gameState} />
+      )}
+    </BaseScoreSheetMultiplayer>
+  );
+}
+
+function BridgeGameInterface({ 
+  session, 
+  gameState 
+}: { 
+  session: BridgeGameSession;
+  gameState: any;
+}) {
+  const { addRound, isHost } = gameState;
+
   const [newRound, setNewRound] = useState<BridgeRoundData>({
     declarerPosition: 'Nord',
     contract: 'SA',
@@ -186,397 +194,282 @@ export default function BridgeScoreSheetMultiplayer({ sessionId }: { sessionId: 
     } finally {
       setIsSubmitting(false);
     }
-  }, [session, newRound, isSubmitting, addRound, calculateBridgeScore]);
+  }, [session, newRound, isSubmitting, calculateBridgeScore, addRound]);
 
-  const getTeamScore = useCallback((teamNS: boolean) => {
-    if (!session?.rounds || !session?.players) return 0;
-    
+  const getTotalScore = useCallback((playerId: number) => {
+    if (!session?.rounds) return 0;
     return session.rounds.reduce((total, round) => {
-      // Trouve le score d'un joueur de l'équipe
-      const teamPlayer = session.players.find(p => {
-        const position = POSITIONS[p.position - 1];
-        const isNS = position === 'Nord' || position === 'Sud';
-        return isNS === teamNS;
-      });
-      
-      return total + (teamPlayer ? (round.scores[teamPlayer.id] || 0) : 0);
+      return total + (round.scores[playerId] || 0);
     }, 0);
-  }, [session?.rounds, session?.players]);
+  }, [session?.rounds]);
 
-  const getTeamPlayers = useCallback((teamNS: boolean) => {
-    if (!session?.players) return [];
-    
-    return session.players.filter(p => {
-      const position = POSITIONS[p.position - 1];
-      const isNS = position === 'Nord' || position === 'Sud';
-      return isNS === teamNS;
-    }).map(player => ({
-      ...player,
-      total_score: getTeamScore(teamNS)
-    }));
-  }, [session?.players, getTeamScore]);
+  const getTeamScore = useCallback((teamName: 'NS' | 'EW') => {
+    if (!session?.players) return 0;
+    const teamPlayers = session.players.filter(player => {
+      const playerPosition = POSITIONS[player.position - 1];
+      return teamName === 'NS' 
+        ? (playerPosition === 'Nord' || playerPosition === 'Sud')
+        : (playerPosition === 'Est' || playerPosition === 'Ouest');
+    });
+    return teamPlayers.reduce((total, player) => total + getTotalScore(player.id), 0);
+  }, [session?.players, getTotalScore]);
 
-  if (!session && !error) {
-    return (
-      <GameLayout 
-        title="Chargement..."
-        onBack
-      >
-        <div className="flex justify-center items-center min-h-[400px]">
-          <LoadingSpinner />
+  const currentRound = (session?.rounds?.length || 0) + 1;
+
+  // Organiser les joueurs par équipe
+  const nsPlayers = session?.players?.filter(p => {
+    const pos = POSITIONS[p.position - 1];
+    return pos === 'Nord' || pos === 'Sud';
+  }) || [];
+  const ewPlayers = session?.players?.filter(p => {
+    const pos = POSITIONS[p.position - 1];
+    return pos === 'Est' || pos === 'Ouest';
+  }) || [];
+
+  return (
+    <div className="space-y-6">
+      {/* Teams Score Display */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <GameCard title="Nord-Sud" className="border-blue-200 dark:border-blue-800">
+          <div className="space-y-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                {getTeamScore('NS')}
+              </div>
+              <div className="text-sm text-gray-500">Total équipe</div>
+              {newRound.vulnerableNS && (
+                <div className="text-xs text-red-600 font-semibold flex items-center justify-center gap-1 mt-1">
+                  <Shield className="h-3 w-3" />
+                  Vulnérable
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              {nsPlayers.map((player) => (
+                <div key={player.id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {session.host_user_id === player.user_id && (
+                      <Crown className="h-4 w-4 text-yellow-500" />
+                    )}
+                    <span className="font-medium">{player.player_name}</span>
+                    <span className="text-xs text-gray-500">
+                      ({POSITIONS[player.position - 1]})
+                    </span>
+                  </div>
+                  <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                    {getTotalScore(player.id)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </GameCard>
+
+        <GameCard title="Est-Ouest" className="border-red-200 dark:border-red-800">
+          <div className="space-y-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+                {getTeamScore('EW')}
+              </div>
+              <div className="text-sm text-gray-500">Total équipe</div>
+              {newRound.vulnerableEW && (
+                <div className="text-xs text-red-600 font-semibold flex items-center justify-center gap-1 mt-1">
+                  <Shield className="h-3 w-3" />
+                  Vulnérable
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              {ewPlayers.map((player) => (
+                <div key={player.id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {session.host_user_id === player.user_id && (
+                      <Crown className="h-4 w-4 text-yellow-500" />
+                    )}
+                    <span className="font-medium">{player.player_name}</span>
+                    <span className="text-xs text-gray-500">
+                      ({POSITIONS[player.position - 1]})
+                    </span>
+                  </div>
+                  <span className="text-red-600 dark:text-red-400 font-semibold">
+                    {getTotalScore(player.id)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </GameCard>
+      </div>
+
+      {/* Detailed Score Table */}
+      <GameCard title="Historique des donnes">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b dark:border-gray-700">
+                <th className="text-left p-2">Donne</th>
+                <th className="text-center p-2">Contrat</th>
+                <th className="text-center p-2">Déclarant</th>
+                <th className="text-center p-2">Résultat</th>
+                <th className="text-center p-2 text-blue-600">N-S</th>
+                <th className="text-center p-2 text-red-600">E-O</th>
+              </tr>
+            </thead>
+            <tbody>
+              {session?.rounds?.map((round, index) => {
+                const details = round.details;
+                const nsScore = nsPlayers.length > 0 ? round.scores[nsPlayers[0].id] || 0 : 0;
+                const ewScore = ewPlayers.length > 0 ? round.scores[ewPlayers[0].id] || 0 : 0;
+                
+                return (
+                  <tr key={index} className="border-b dark:border-gray-700">
+                    <td className="p-2 font-medium">{round.round_number}</td>
+                    <td className="text-center p-2">
+                      {details && (
+                        <div className="text-sm">
+                          {details.level}{BRIDGE_CONTRACTS.find(c => c.suit === details.contract)?.symbol}
+                          {details.doubled === 1 && ' X'}
+                          {details.doubled === 2 && ' XX'}
+                        </div>
+                      )}
+                    </td>
+                    <td className="text-center p-2 text-sm">
+                      {details?.declarer_position}
+                    </td>
+                    <td className="text-center p-2 text-sm">
+                      {details && `${details.tricks_made} plis`}
+                    </td>
+                    <td className="text-center p-2 text-blue-600 font-semibold">
+                      {nsScore > 0 ? `+${nsScore}` : nsScore}
+                    </td>
+                    <td className="text-center p-2 text-red-600 font-semibold">
+                      {ewScore > 0 ? `+${ewScore}` : ewScore}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      </GameLayout>
-    );
-  }
+      </GameCard>
 
-  if (error) {
-    return (
-      <GameLayout 
-        title="Erreur"
-        onBack
-      >
-        <GameCard>
-          <div className="text-center">
-            <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-            <button 
-              onClick={() => router.push('/dashboard')}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      {/* Add Round Form - Only for host */}
+      {isHost && (
+        <GameCard title={`Ajouter la donne ${currentRound}`}>
+          <div className="space-y-6">
+            {/* Contract Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Niveau
+                </label>
+                <select
+                  value={newRound.level}
+                  onChange={(e) => setNewRound(prev => ({ ...prev, level: parseInt(e.target.value) }))}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                >
+                  {[1, 2, 3, 4, 5, 6, 7].map(level => (
+                    <option key={level} value={level}>{level}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Couleur
+                </label>
+                <select
+                  value={newRound.contract}
+                  onChange={(e) => setNewRound(prev => ({ ...prev, contract: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                >
+                  {BRIDGE_CONTRACTS.map(contract => (
+                    <option key={contract.suit} value={contract.suit}>
+                      {contract.symbol} {contract.suit}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Declarer and Doubled */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Déclarant
+                </label>
+                <select
+                  value={newRound.declarerPosition}
+                  onChange={(e) => setNewRound(prev => ({ ...prev, declarerPosition: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                >
+                  {POSITIONS.map(pos => (
+                    <option key={pos} value={pos}>{pos}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Contre
+                </label>
+                <select
+                  value={newRound.doubled}
+                  onChange={(e) => setNewRound(prev => ({ ...prev, doubled: parseInt(e.target.value) }))}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                >
+                  <option value={0}>Pas de contre</option>
+                  <option value={1}>Contré (X)</option>
+                  <option value={2}>Surcontré (XX)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Tricks Made */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Plis réalisés
+              </label>
+              <ScoreInput
+                value={newRound.tricksMade}
+                onChange={(value) => setNewRound(prev => ({ ...prev, tricksMade: value }))}
+                placeholder="Plis"
+                min={0}
+                max={13}
+              />
+            </div>
+
+            {/* Vulnerability */}
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={newRound.vulnerableNS}
+                  onChange={(e) => setNewRound(prev => ({ ...prev, vulnerableNS: e.target.checked }))}
+                  className="mr-2 h-4 w-4"
+                />
+                Nord-Sud vulnérable
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={newRound.vulnerableEW}
+                  onChange={(e) => setNewRound(prev => ({ ...prev, vulnerableEW: e.target.checked }))}
+                  className="mr-2 h-4 w-4"
+                />
+                Est-Ouest vulnérable
+              </label>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              onClick={handleSubmitRound}
+              disabled={isSubmitting}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 px-4 rounded-lg transition-colors font-medium"
             >
-              Retour au dashboard
+              {isSubmitting ? 'Ajout en cours...' : `Valider la donne ${currentRound}`}
             </button>
           </div>
         </GameCard>
-      </GameLayout>
-    );
-  }
-
-  const currentRound = (session?.rounds?.length || 0) + 1;
-  const nsPlayers = getTeamPlayers(true);
-  const ewPlayers = getTeamPlayers(false);
-
-  return (
-    <GameLayout 
-      title={session?.session_name || 'Bridge'}
-      subtitle={
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1">
-            {isConnected ? (
-              <><Wifi className="h-4 w-4 text-green-500" /> Connecté</>
-            ) : (
-              <><WifiOff className="h-4 w-4 text-red-500" /> Déconnecté</>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            <Users className="h-4 w-4" />
-            {session?.players.filter(p => p.is_connected).length}/{session?.players.length} joueurs
-          </div>
-          <div className="flex items-center gap-1">
-            <Clock className="h-4 w-4" />
-            Donne {currentRound}
-          </div>
-          <div className="bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded text-xs font-mono">
-            Code: {session?.session_code}
-          </div>
-        </div>
-      }
-      onBack
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Nouvelle donne */}
-        <div className="lg:col-span-3">
-          <GameCard title="Nouvelle donne" icon={<Crown className="h-5 w-5" />}>
-            <div className="space-y-4">
-              {/* Déclarant et contrat */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Déclarant</label>
-                  <select
-                    value={newRound.declarerPosition}
-                    onChange={(e) => setNewRound(prev => ({ ...prev, declarerPosition: e.target.value }))}
-                    className="w-full p-2 border rounded-md bg-white dark:bg-gray-700 dark:border-gray-600"
-                  >
-                    {POSITIONS.map(position => (
-                      <option key={position} value={position}>{position}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Niveau</label>
-                  <select
-                    value={newRound.level}
-                    onChange={(e) => setNewRound(prev => ({ ...prev, level: parseInt(e.target.value) }))}
-                    className="w-full p-2 border rounded-md bg-white dark:bg-gray-700 dark:border-gray-600"
-                  >
-                    {[1,2,3,4,5,6,7].map(level => (
-                      <option key={level} value={level}>{level}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Couleur</label>
-                  <select
-                    value={newRound.contract}
-                    onChange={(e) => setNewRound(prev => ({ ...prev, contract: e.target.value }))}
-                    className="w-full p-2 border rounded-md bg-white dark:bg-gray-700 dark:border-gray-600"
-                  >
-                    {BRIDGE_CONTRACTS.map(contract => (
-                      <option key={contract.suit} value={contract.suit}>
-                        {contract.suit} {contract.symbol}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Modificateurs */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Contre</label>
-                  <select
-                    value={newRound.doubled}
-                    onChange={(e) => setNewRound(prev => ({ ...prev, doubled: parseInt(e.target.value) }))}
-                    className="w-full p-2 border rounded-md bg-white dark:bg-gray-700 dark:border-gray-600"
-                  >
-                    <option value={0}>Normal</option>
-                    <option value={1}>Contre</option>
-                    <option value={2}>Surcontre</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Levées réalisées</label>
-                  <ScoreInput
-                    value={newRound.tricksMade}
-                    onChange={(value) => setNewRound(prev => ({ ...prev, tricksMade: value }))}
-                    min={0}
-                    max={13}
-                  />
-                </div>
-              </div>
-
-              {/* Vulnérabilité */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium">Vulnérabilité</label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={newRound.vulnerableNS}
-                      onChange={(e) => setNewRound(prev => ({ ...prev, vulnerableNS: e.target.checked }))}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm flex items-center gap-1">
-                      <Shield className="h-4 w-4 text-red-500" />
-                      Nord/Sud vulnérables
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={newRound.vulnerableEW}
-                      onChange={(e) => setNewRound(prev => ({ ...prev, vulnerableEW: e.target.checked }))}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm flex items-center gap-1">
-                      <Shield className="h-4 w-4 text-red-500" />
-                      Est/Ouest vulnérables
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Aperçu des scores */}
-              <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md">
-                <h4 className="font-medium mb-2">Aperçu des scores :</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div className="font-medium">Nord/Sud</div>
-                    {Object.entries(calculateBridgeScore(newRound))
-                      .filter(([playerId]) => {
-                        const player = session?.players.find(p => p.id === parseInt(playerId));
-                        if (!player) return false;
-                        const position = POSITIONS[player.position - 1];
-                        return position === 'Nord' || position === 'Sud';
-                      })
-                      .map(([playerId, score]) => {
-                        const player = session?.players.find(p => p.id === parseInt(playerId));
-                        const position = POSITIONS[player?.position - 1];
-                        return (
-                          <div key={playerId} className="flex justify-between">
-                            <span>{position}</span>
-                            <span className={score > 0 ? 'text-green-600' : score < 0 ? 'text-red-600' : ''}>
-                              {score > 0 ? '+' : ''}{score}
-                            </span>
-                          </div>
-                        );
-                      })}
-                  </div>
-                  <div>
-                    <div className="font-medium">Est/Ouest</div>
-                    {Object.entries(calculateBridgeScore(newRound))
-                      .filter(([playerId]) => {
-                        const player = session?.players.find(p => p.id === parseInt(playerId));
-                        if (!player) return false;
-                        const position = POSITIONS[player.position - 1];
-                        return position === 'Est' || position === 'Ouest';
-                      })
-                      .map(([playerId, score]) => {
-                        const player = session?.players.find(p => p.id === parseInt(playerId));
-                        const position = POSITIONS[player?.position - 1];
-                        return (
-                          <div key={playerId} className="flex justify-between">
-                            <span>{position}</span>
-                            <span className={score > 0 ? 'text-green-600' : score < 0 ? 'text-red-600' : ''}>
-                              {score > 0 ? '+' : ''}{score}
-                            </span>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={handleSubmitRound}
-                disabled={isSubmitting}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Ajout...' : 'Ajouter la donne'}
-              </button>
-            </div>
-          </GameCard>
-
-          {/* Historique */}
-          {(session?.rounds?.length || 0) > 0 && (
-            <GameCard title="Historique des donnes" className="mt-6">
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b dark:border-gray-700">
-                      <th className="py-2 px-3 text-left text-sm font-medium">Donne</th>
-                      <th className="py-2 px-3 text-left text-sm font-medium">Contrat</th>
-                      <th className="py-2 px-3 text-left text-sm font-medium">Levées</th>
-                      <th className="py-2 px-3 text-center text-sm font-medium">Nord</th>
-                      <th className="py-2 px-3 text-center text-sm font-medium">Est</th>
-                      <th className="py-2 px-3 text-center text-sm font-medium">Sud</th>
-                      <th className="py-2 px-3 text-center text-sm font-medium">Ouest</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {session?.rounds.map((round) => {
-                      const contractStr = `${round.details?.level}${BRIDGE_CONTRACTS.find(c => c.suit === round.details?.contract)?.symbol}`;
-                      const doubleStr = round.details?.doubled === 1 ? ' X' : round.details?.doubled === 2 ? ' XX' : '';
-                      
-                      return (
-                        <tr key={round.round_number} className="border-b dark:border-gray-700">
-                          <td className="py-2 px-3 text-sm">{round.round_number}</td>
-                          <td className="py-2 px-3 text-sm">
-                            {round.details?.declarer_position} - {contractStr}{doubleStr}
-                          </td>
-                          <td className="py-2 px-3 text-sm">{round.details?.tricks_made}/13</td>
-                          {POSITIONS.map((position) => {
-                            const player = session.players.find(p => POSITIONS[p.position - 1] === position);
-                            if (!player) return <td key={position} className="py-2 px-3 text-center text-sm">-</td>;
-                            
-                            const score = round.scores[player.id] || 0;
-                            return (
-                              <td key={position} className="py-2 px-3 text-center text-sm">
-                                <span className={`font-medium ${
-                                  score > 0 ? 'text-green-600' : score < 0 ? 'text-red-600' : ''
-                                }`}>
-                                  {score > 0 ? '+' : ''}{score}
-                                </span>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </GameCard>
-          )}
-        </div>
-
-        {/* Sidebar scores par équipes */}
-        <div className="lg:col-span-1">
-          <GameCard title="Scores par équipes" icon={<Target className="h-5 w-5" />}>
-            <div className="space-y-4">
-              {/* Équipe Nord/Sud */}
-              <div className="border rounded-md p-3 bg-blue-50 dark:bg-blue-900/20">
-                <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-2">Nord / Sud</h3>
-                <div className="space-y-1">
-                  {nsPlayers.map(player => (
-                    <div key={player.id} className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-1">
-                        {player.is_connected ? (
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        ) : (
-                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                        )}
-                        {POSITIONS[player.position - 1]}
-                      </span>
-                      <span className="font-mono">
-                        {getTeamScore(true)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Équipe Est/Ouest */}
-              <div className="border rounded-md p-3 bg-red-50 dark:bg-red-900/20">
-                <h3 className="font-medium text-red-800 dark:text-red-200 mb-2">Est / Ouest</h3>
-                <div className="space-y-1">
-                  {ewPlayers.map(player => (
-                    <div key={player.id} className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-1">
-                        {player.is_connected ? (
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        ) : (
-                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                        )}
-                        {POSITIONS[player.position - 1]}
-                      </span>
-                      <span className="font-mono">
-                        {getTeamScore(false)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Différence */}
-              <div className="text-center pt-2 border-t">
-                <div className="text-sm text-gray-600 dark:text-gray-400">Différence</div>
-                <div className="text-lg font-mono font-bold">
-                  {getTeamScore(true) - getTeamScore(false)}
-                </div>
-              </div>
-            </div>
-          </GameCard>
-
-          {/* Événements récents */}
-          {events.length > 0 && (
-            <GameCard title="Activité récente" className="mt-6">
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {events.slice(-10).reverse().map((event) => (
-                  <div key={event.id} className="text-xs text-gray-600 dark:text-gray-400 border-l-2 border-blue-200 dark:border-blue-800 pl-2">
-                    <div className="font-medium">{event.username || 'Système'}</div>
-                    <div>{event.event_type}</div>
-                    <div className="text-gray-400">
-                      {new Date(event.created_at).toLocaleTimeString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </GameCard>
-          )}
-        </div>
-      </div>
-    </GameLayout>
+      )}
+    </div>
   );
 }
