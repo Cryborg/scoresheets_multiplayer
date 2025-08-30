@@ -368,9 +368,9 @@ export default function AdminUsersPage() {
       <AlertDialog open={actionType === 'block'} onOpenChange={() => setActionType(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Bloquer l'utilisateur</AlertDialogTitle>
+            <AlertDialogTitle>Bloquer l&apos;utilisateur</AlertDialogTitle>
             <AlertDialogDescription>
-              Bloquer l'accès pour {selectedUser?.username}
+              Bloquer l&apos;accès pour {selectedUser?.username}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
@@ -399,9 +399,9 @@ export default function AdminUsersPage() {
       <AlertDialog open={actionType === 'unblock'} onOpenChange={() => setActionType(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Débloquer l'utilisateur</AlertDialogTitle>
+            <AlertDialogTitle>Débloquer l&apos;utilisateur</AlertDialogTitle>
             <AlertDialogDescription>
-              Restaurer l'accès pour {selectedUser?.username}
+              Restaurer l&apos;accès pour {selectedUser?.username}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

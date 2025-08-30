@@ -1,25 +1,14 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { Users, Wifi, WifiOff, Clock, Crown, Target } from 'lucide-react';
+import { Crown, Target, Users } from 'lucide-react';
 import ScoreInput from '@/components/ui/ScoreInput';
-import GameLayout from '@/components/layout/GameLayout';
 import GameCard from '@/components/layout/GameCard';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { useRealtimeSession } from '@/hooks/useRealtimeSession';
-import { Player } from '@/types/multiplayer';
+import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
+import { GameSessionWithRounds, Player } from '@/types/multiplayer';
 
-interface GameSession {
-  id: number;
-  session_name: string;
-  session_code: string;
-  status: 'waiting' | 'active' | 'paused' | 'completed';
-  game_name: string;
-  host_user_id: number;
-  current_round: number;
+interface BeloteGameSession extends GameSessionWithRounds {
   score_target?: number;
-  players: Player[];
   rounds: Array<{
     round_number: number;
     scores: { [playerId: number]: number };
@@ -46,12 +35,24 @@ interface BeloteRoundData {
 }
 
 export default function BeloteScoreSheetMultiplayer({ sessionId }: { sessionId: string }) {
-  const router = useRouter();
-  const { session, events, isConnected, error, addRound } = useRealtimeSession<GameSession>({
-    sessionId,
-    gameSlug: 'belote'
-  });
-  
+  return (
+    <BaseScoreSheetMultiplayer<BeloteGameSession> sessionId={sessionId} gameSlug="belote">
+      {({ session, gameState }) => (
+        <BeloteGameInterface session={session} gameState={gameState} />
+      )}
+    </BaseScoreSheetMultiplayer>
+  );
+}
+
+function BeloteGameInterface({ 
+  session, 
+  gameState 
+}: { 
+  session: BeloteGameSession;
+  gameState: any;
+}) {
+  const { addRound, isHost } = gameState;
+
   const [newRound, setNewRound] = useState<BeloteRoundData>({
     team1Points: 0,
     team2Points: 0,
@@ -66,52 +67,60 @@ export default function BeloteScoreSheetMultiplayer({ sessionId }: { sessionId: 
   const calculateBeloteScore = useCallback((data: BeloteRoundData) => {
     if (!session?.players) return {};
 
-    const team1TotalPoints = data.team1Points + data.team1Announces;
-    const team2TotalPoints = data.team2Points + data.team2Announces;
+    // Diviser les joueurs en équipes (équipe 1: pos 0,2 - équipe 2: pos 1,3)
+    const team1Players = session.players.filter(p => p.position === 0 || p.position === 2);
+    const team2Players = session.players.filter(p => p.position === 1 || p.position === 3);
 
     let team1Score = 0;
     let team2Score = 0;
-    
-    // Base des points
-    if (data.takingTeam === 1) {
-      if (data.team1Points >= data.team2Points) {
-        // Équipe 1 gagne
-        team1Score = team1TotalPoints;
-        team2Score = team2TotalPoints;
+
+    // Points de base + annonces
+    const team1Total = data.team1Points + data.team1Announces;
+    const team2Total = data.team2Points + data.team2Announces;
+
+    // L'équipe qui prend doit faire au moins 82 points
+    const takingTeamTotal = data.takingTeam === 1 ? team1Total : team2Total;
+    const defendingTeamTotal = data.takingTeam === 1 ? team2Total : team1Total;
+
+    if (takingTeamTotal >= 82) {
+      // Réussite - l'équipe qui prend marque ses points
+      if (data.takingTeam === 1) {
+        team1Score = team1Total;
+        // Si l'équipe défendante fait 0, l'équipe prenante fait capot (+90)
+        if (defendingTeamTotal === 0) {
+          team1Score += 90;
+        }
       } else {
-        // Équipe 1 chutée
-        team1Score = 0;
-        team2Score = 162 + team2TotalPoints; // Tous les points + annonces adverses
+        team2Score = team2Total;
+        if (defendingTeamTotal === 0) {
+          team2Score += 90;
+        }
       }
     } else {
-      if (data.team2Points >= data.team1Points) {
-        // Équipe 2 gagne
-        team1Score = team1TotalPoints;
-        team2Score = team2TotalPoints;
+      // Échec - l'équipe défendante marque 162 + ses annonces
+      if (data.takingTeam === 1) {
+        team2Score = 162 + data.team2Announces;
       } else {
-        // Équipe 2 chutée
-        team1Score = 162 + team1TotalPoints; // Tous les points + annonces adverses
-        team2Score = 0;
+        team1Score = 162 + data.team1Announces;
       }
     }
 
-    // Application coinche/surcoinche
-    if (data.coinche) {
-      if (data.surcoinche) {
-        team1Score *= 4;
-        team2Score *= 4;
-      } else {
-        team1Score *= 2;
-        team2Score *= 2;
-      }
+    // Multiplicateurs coinche/surcoinche
+    if (data.surcoinche) {
+      team1Score *= 4;
+      team2Score *= 4;
+    } else if (data.coinche) {
+      team1Score *= 2;
+      team2Score *= 2;
     }
 
-    // Distribution aux joueurs par équipe
-    const scores: { [playerId: number]: number } = {};
-    session.players.forEach(player => {
-      // Les joueurs en position 1,3 sont équipe 1, les joueurs 2,4 sont équipe 2
-      const isTeam1 = player.position === 1 || player.position === 3;
-      scores[player.id] = isTeam1 ? team1Score : team2Score;
+    // Répartir les scores entre les joueurs de chaque équipe
+    const scores: { [key: number]: number } = {};
+    team1Players.forEach(player => {
+      scores[player.id] = team1Score;
+    });
+    team2Players.forEach(player => {
+      scores[player.id] = team2Score;
     });
 
     return scores;
@@ -120,9 +129,9 @@ export default function BeloteScoreSheetMultiplayer({ sessionId }: { sessionId: 
   const handleSubmitRound = useCallback(async () => {
     if (!session || isSubmitting) return;
 
-    // Validation de base
-    if (newRound.team1Points + newRound.team2Points !== 162) {
-      alert('Le total des points doit être égal à 162');
+    // Validation : au moins une équipe doit avoir des points
+    if (newRound.team1Points === 0 && newRound.team2Points === 0) {
+      alert('Veuillez saisir au moins des points pour une équipe.');
       return;
     }
 
@@ -160,421 +169,275 @@ export default function BeloteScoreSheetMultiplayer({ sessionId }: { sessionId: 
     } finally {
       setIsSubmitting(false);
     }
-  }, [session, newRound, isSubmitting, addRound, calculateBeloteScore]);
+  }, [session, newRound, isSubmitting, calculateBeloteScore, addRound]);
 
-  const getTeamScore = useCallback((teamNumber: number) => {
-    if (!session?.rounds || !session?.players) return 0;
-    
+  const getTotalScore = useCallback((playerId: number) => {
+    if (!session?.rounds) return 0;
     return session.rounds.reduce((total, round) => {
-      // Trouve le score d'un joueur de l'équipe
-      const teamPlayer = session.players.find(p => {
-        const isTeam1 = p.position === 1 || p.position === 3;
-        return (isTeam1 && teamNumber === 1) || (!isTeam1 && teamNumber === 2);
-      });
-      
-      return total + (teamPlayer ? (round.scores[teamPlayer.id] || 0) : 0);
+      return total + (round.scores[playerId] || 0);
     }, 0);
-  }, [session?.rounds, session?.players]);
+  }, [session?.rounds]);
 
-  const getTeamPlayers = useCallback((teamNumber: number) => {
-    if (!session?.players) return [];
-    
-    return session.players.filter(p => {
-      const isTeam1 = p.position === 1 || p.position === 3;
-      return (isTeam1 && teamNumber === 1) || (!isTeam1 && teamNumber === 2);
-    }).map(player => ({
-      ...player,
-      total_score: getTeamScore(teamNumber)
-    }));
-  }, [session?.players, getTeamScore]);
-
-  if (!session && !error) {
-    return (
-      <GameLayout 
-        title="Chargement..."
-        onBack
-      >
-        <div className="flex justify-center items-center min-h-[400px]">
-          <LoadingSpinner />
-        </div>
-      </GameLayout>
+  const getTeamScore = useCallback((teamNumber: 1 | 2) => {
+    if (!session?.players) return 0;
+    const teamPlayers = session.players.filter(p => 
+      teamNumber === 1 ? (p.position === 0 || p.position === 2) : (p.position === 1 || p.position === 3)
     );
-  }
+    return teamPlayers.reduce((total, player) => total + getTotalScore(player.id), 0) / teamPlayers.length;
+  }, [session?.players, getTotalScore]);
 
-  if (error) {
-    return (
-      <GameLayout 
-        title="Erreur"
-        onBack
-      >
-        <GameCard>
-          <div className="text-center">
-            <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-            <button 
-              onClick={() => router.push('/dashboard')}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+  const currentRound = (session?.rounds?.length || 0) + 1;
+  const scoreTarget = session?.score_target || 1000;
+
+  // Organiser les joueurs par équipe
+  const team1Players = session?.players?.filter(p => p.position === 0 || p.position === 2) || [];
+  const team2Players = session?.players?.filter(p => p.position === 1 || p.position === 3) || [];
+
+  return (
+    <div className="space-y-6">
+      {/* Score Target Display */}
+      {session?.score_target && (
+        <GameCard title="Objectif">
+          <div className="flex items-center justify-center gap-4">
+            <div className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-blue-500" />
+              <span className="text-lg font-semibold">
+                Premier à {session.score_target} points
+              </span>
+            </div>
+          </div>
+        </GameCard>
+      )}
+
+      {/* Teams Score Display */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <GameCard title="Équipe 1" className="border-blue-200 dark:border-blue-800">
+          <div className="space-y-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                {getTeamScore(1)}
+              </div>
+              <div className="text-sm text-gray-500">Total équipe</div>
+            </div>
+            <div className="space-y-2">
+              {team1Players.map((player) => (
+                <div key={player.id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {session.host_user_id === player.user_id && (
+                      <Crown className="h-4 w-4 text-yellow-500" />
+                    )}
+                    <span className="font-medium">{player.player_name}</span>
+                  </div>
+                  <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                    {getTotalScore(player.id)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </GameCard>
+
+        <GameCard title="Équipe 2" className="border-red-200 dark:border-red-800">
+          <div className="space-y-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+                {getTeamScore(2)}
+              </div>
+              <div className="text-sm text-gray-500">Total équipe</div>
+            </div>
+            <div className="space-y-2">
+              {team2Players.map((player) => (
+                <div key={player.id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {session.host_user_id === player.user_id && (
+                      <Crown className="h-4 w-4 text-yellow-500" />
+                    )}
+                    <span className="font-medium">{player.player_name}</span>
+                  </div>
+                  <span className="text-red-600 dark:text-red-400 font-semibold">
+                    {getTotalScore(player.id)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </GameCard>
+      </div>
+
+      {/* Detailed Score Table */}
+      <GameCard title="Historique des manches">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b dark:border-gray-700">
+                <th className="text-left p-2">Manche</th>
+                <th className="text-center p-2 text-blue-600">Équipe 1</th>
+                <th className="text-center p-2 text-red-600">Équipe 2</th>
+                <th className="text-center p-2">Détails</th>
+              </tr>
+            </thead>
+            <tbody>
+              {session?.rounds?.map((round, index) => {
+                const team1Score = team1Players.length > 0 ? round.scores[team1Players[0].id] || 0 : 0;
+                const team2Score = team2Players.length > 0 ? round.scores[team2Players[0].id] || 0 : 0;
+                const details = round.details;
+                
+                return (
+                  <tr key={index} className="border-b dark:border-gray-700">
+                    <td className="p-2 font-medium">{round.round_number}</td>
+                    <td className="text-center p-2 text-blue-600 font-semibold">
+                      {team1Score > 0 ? `+${team1Score}` : team1Score}
+                    </td>
+                    <td className="text-center p-2 text-red-600 font-semibold">
+                      {team2Score > 0 ? `+${team2Score}` : team2Score}
+                    </td>
+                    <td className="text-center p-2 text-sm text-gray-500">
+                      {details && (
+                        <div>
+                          {details.team1_points}+{details.team1_announces} vs {details.team2_points}+{details.team2_announces}
+                          {details.coinche && ' (Coinché)'}
+                          {details.surcoinche && ' (Surcoinché)'}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </GameCard>
+
+      {/* Add Round Form - Only for host */}
+      {isHost && (
+        <GameCard title={`Ajouter la manche ${currentRound}`}>
+          <div className="space-y-6">
+            {/* Taking Team Selection */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Équipe qui prend
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setNewRound(prev => ({ ...prev, takingTeam: 1 }))}
+                  className={`p-3 rounded-lg border-2 transition-colors ${
+                    newRound.takingTeam === 1
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-blue-300'
+                  }`}
+                >
+                  <Users className="h-5 w-5 mx-auto mb-2" />
+                  Équipe 1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNewRound(prev => ({ ...prev, takingTeam: 2 }))}
+                  className={`p-3 rounded-lg border-2 transition-colors ${
+                    newRound.takingTeam === 2
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                      : 'border-gray-200 dark:border-gray-600 hover:border-red-300'
+                  }`}
+                >
+                  <Users className="h-5 w-5 mx-auto mb-2" />
+                  Équipe 2
+                </button>
+              </div>
+            </div>
+
+            {/* Points Input */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Points Équipe 1
+                </label>
+                <ScoreInput
+                  value={newRound.team1Points}
+                  onChange={(value) => setNewRound(prev => ({ ...prev, team1Points: value }))}
+                  placeholder="Points"
+                  min={0}
+                  max={162}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Points Équipe 2
+                </label>
+                <ScoreInput
+                  value={newRound.team2Points}
+                  onChange={(value) => setNewRound(prev => ({ ...prev, team2Points: value }))}
+                  placeholder="Points"
+                  min={0}
+                  max={162}
+                />
+              </div>
+            </div>
+
+            {/* Announces Input */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Annonces Équipe 1
+                </label>
+                <ScoreInput
+                  value={newRound.team1Announces}
+                  onChange={(value) => setNewRound(prev => ({ ...prev, team1Announces: value }))}
+                  placeholder="Annonces"
+                  min={0}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Annonces Équipe 2
+                </label>
+                <ScoreInput
+                  value={newRound.team2Announces}
+                  onChange={(value) => setNewRound(prev => ({ ...prev, team2Announces: value }))}
+                  placeholder="Annonces"
+                  min={0}
+                />
+              </div>
+            </div>
+
+            {/* Coinche/Surcoinche */}
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={newRound.coinche}
+                  onChange={(e) => setNewRound(prev => ({ 
+                    ...prev, 
+                    coinche: e.target.checked,
+                    surcoinche: e.target.checked ? prev.surcoinche : false
+                  }))}
+                  className="mr-2 h-4 w-4"
+                />
+                Coinché (x2)
+              </label>
+              {newRound.coinche && (
+                <label className="flex items-center ml-6">
+                  <input
+                    type="checkbox"
+                    checked={newRound.surcoinche}
+                    onChange={(e) => setNewRound(prev => ({ ...prev, surcoinche: e.target.checked }))}
+                    className="mr-2 h-4 w-4"
+                  />
+                  Surcoinché (x4)
+                </label>
+              )}
+            </div>
+
+            {/* Submit Button */}
+            <button
+              onClick={handleSubmitRound}
+              disabled={isSubmitting}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 px-4 rounded-lg transition-colors font-medium"
             >
-              Retour au dashboard
+              {isSubmitting ? 'Ajout en cours...' : `Valider la manche ${currentRound}`}
             </button>
           </div>
         </GameCard>
-      </GameLayout>
-    );
-  }
-
-  const currentRound = (session?.rounds?.length || 0) + 1;
-  const team1Players = getTeamPlayers(1);
-  const team2Players = getTeamPlayers(2);
-
-  return (
-    <GameLayout 
-      title={session?.session_name || 'Belote'}
-      subtitle={
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1">
-            {isConnected ? (
-              <><Wifi className="h-4 w-4 text-green-500" /> Connecté</>
-            ) : (
-              <><WifiOff className="h-4 w-4 text-red-500" /> Déconnecté</>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            <Users className="h-4 w-4" />
-            {session?.players.filter(p => p.is_connected).length}/{session?.players.length} joueurs
-          </div>
-          <div className="flex items-center gap-1">
-            <Clock className="h-4 w-4" />
-            Manche {currentRound}
-          </div>
-          <div className="bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded text-xs font-mono">
-            Code: {session?.session_code}
-          </div>
-        </div>
-      }
-      onBack
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Nouvelle manche */}
-        <div className="lg:col-span-3">
-          <GameCard title="Nouvelle manche" icon={<Crown className="h-5 w-5" />}>
-            <div className="space-y-4">
-              {/* Équipe prenante */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Équipe prenante</label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="takingTeam"
-                      checked={newRound.takingTeam === 1}
-                      onChange={() => setNewRound(prev => ({ ...prev, takingTeam: 1 }))}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm">Équipe 1</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="takingTeam"
-                      checked={newRound.takingTeam === 2}
-                      onChange={() => setNewRound(prev => ({ ...prev, takingTeam: 2 }))}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm">Équipe 2</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Points aux cartes */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Points équipe 1
-                  </label>
-                  <ScoreInput
-                    value={newRound.team1Points}
-                    onChange={(value) => {
-                      setNewRound(prev => ({ 
-                        ...prev, 
-                        team1Points: value,
-                        team2Points: 162 - value
-                      }));
-                    }}
-                    min={0}
-                    max={162}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Points équipe 2 ({162 - newRound.team1Points})
-                  </label>
-                  <ScoreInput
-                    value={newRound.team2Points}
-                    onChange={(value) => {
-                      setNewRound(prev => ({ 
-                        ...prev, 
-                        team2Points: value,
-                        team1Points: 162 - value
-                      }));
-                    }}
-                    min={0}
-                    max={162}
-                  />
-                </div>
-              </div>
-
-              {/* Annonces */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Annonces équipe 1
-                  </label>
-                  <ScoreInput
-                    value={newRound.team1Announces}
-                    onChange={(value) => setNewRound(prev => ({ ...prev, team1Announces: value }))}
-                    min={0}
-                    max={500}
-                    step={10}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Annonces équipe 2
-                  </label>
-                  <ScoreInput
-                    value={newRound.team2Announces}
-                    onChange={(value) => setNewRound(prev => ({ ...prev, team2Announces: value }))}
-                    min={0}
-                    max={500}
-                    step={10}
-                  />
-                </div>
-              </div>
-
-              {/* Coinche */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={newRound.coinche}
-                    onChange={(e) => setNewRound(prev => ({ 
-                      ...prev, 
-                      coinche: e.target.checked,
-                      surcoinche: e.target.checked ? prev.surcoinche : false
-                    }))}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">Coinche (×2)</span>
-                </label>
-                {newRound.coinche && (
-                  <label className="flex items-center gap-2 ml-6">
-                    <input
-                      type="checkbox"
-                      checked={newRound.surcoinche}
-                      onChange={(e) => setNewRound(prev => ({ ...prev, surcoinche: e.target.checked }))}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm">Surcoinche (×4)</span>
-                  </label>
-                )}
-              </div>
-
-              {/* Aperçu des scores */}
-              <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md">
-                <h4 className="font-medium mb-2">Aperçu des scores :</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div className="font-medium">Équipe 1</div>
-                    {Object.entries(calculateBeloteScore(newRound))
-                      .filter(([playerId]) => {
-                        const player = session?.players.find(p => p.id === parseInt(playerId));
-                        return player && (player.position === 1 || player.position === 3);
-                      })
-                      .map(([playerId, score]) => {
-                        const player = session?.players.find(p => p.id === parseInt(playerId));
-                        return (
-                          <div key={playerId} className="flex justify-between">
-                            <span>{player?.player_name}</span>
-                            <span className={score > 0 ? 'text-green-600' : score < 0 ? 'text-red-600' : ''}>
-                              {score > 0 ? '+' : ''}{score}
-                            </span>
-                          </div>
-                        );
-                      })}
-                  </div>
-                  <div>
-                    <div className="font-medium">Équipe 2</div>
-                    {Object.entries(calculateBeloteScore(newRound))
-                      .filter(([playerId]) => {
-                        const player = session?.players.find(p => p.id === parseInt(playerId));
-                        return player && (player.position === 2 || player.position === 4);
-                      })
-                      .map(([playerId, score]) => {
-                        const player = session?.players.find(p => p.id === parseInt(playerId));
-                        return (
-                          <div key={playerId} className="flex justify-between">
-                            <span>{player?.player_name}</span>
-                            <span className={score > 0 ? 'text-green-600' : score < 0 ? 'text-red-600' : ''}>
-                              {score > 0 ? '+' : ''}{score}
-                            </span>
-                          </div>
-                        );
-                      })}
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={handleSubmitRound}
-                disabled={isSubmitting || newRound.team1Points + newRound.team2Points !== 162}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Ajout...' : 'Ajouter la manche'}
-              </button>
-              
-              {newRound.team1Points + newRound.team2Points !== 162 && (
-                <p className="text-sm text-red-600 text-center">
-                  Le total doit être 162 points (actuellement {newRound.team1Points + newRound.team2Points})
-                </p>
-              )}
-            </div>
-          </GameCard>
-
-          {/* Historique */}
-          {(session?.rounds?.length || 0) > 0 && (
-            <GameCard title="Historique des manches" className="mt-6">
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b dark:border-gray-700">
-                      <th className="py-2 px-3 text-left text-sm font-medium">Manche</th>
-                      <th className="py-2 px-3 text-left text-sm font-medium">Prenante</th>
-                      <th className="py-2 px-3 text-left text-sm font-medium">Points</th>
-                      <th className="py-2 px-3 text-left text-sm font-medium">Annonces</th>
-                      <th className="py-2 px-3 text-center text-sm font-medium">Éq.1</th>
-                      <th className="py-2 px-3 text-center text-sm font-medium">Éq.2</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {session?.rounds.map((round) => (
-                      <tr key={round.round_number} className="border-b dark:border-gray-700">
-                        <td className="py-2 px-3 text-sm">{round.round_number}</td>
-                        <td className="py-2 px-3 text-sm">
-                          Équipe {round.details?.taking_team}
-                          {round.details?.coinche && (round.details?.surcoinche ? ' (××)' : ' (×)')}
-                        </td>
-                        <td className="py-2 px-3 text-sm">
-                          {round.details?.team1_points} - {round.details?.team2_points}
-                        </td>
-                        <td className="py-2 px-3 text-sm">
-                          {round.details?.team1_announces} - {round.details?.team2_announces}
-                        </td>
-                        {[1, 2].map((teamNum) => {
-                          const teamPlayer = session.players.find(p => {
-                            const isTeam1 = p.position === 1 || p.position === 3;
-                            return (isTeam1 && teamNum === 1) || (!isTeam1 && teamNum === 2);
-                          });
-                          
-                          if (!teamPlayer) return <td key={teamNum} className="py-2 px-3 text-center text-sm">-</td>;
-                          
-                          const score = round.scores[teamPlayer.id] || 0;
-                          return (
-                            <td key={teamNum} className="py-2 px-3 text-center text-sm">
-                              <span className={`font-medium ${
-                                score > 0 ? 'text-green-600' : score < 0 ? 'text-red-600' : ''
-                              }`}>
-                                {score > 0 ? '+' : ''}{score}
-                              </span>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </GameCard>
-          )}
-        </div>
-
-        {/* Sidebar scores par équipes */}
-        <div className="lg:col-span-1">
-          <GameCard title="Scores par équipes" icon={<Target className="h-5 w-5" />}>
-            <div className="space-y-4">
-              {/* Équipe 1 */}
-              <div className="border rounded-md p-3 bg-blue-50 dark:bg-blue-900/20">
-                <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-2">Équipe 1</h3>
-                <div className="space-y-1">
-                  {team1Players.map(player => (
-                    <div key={player.id} className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-1">
-                        {player.is_connected ? (
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        ) : (
-                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                        )}
-                        {player.player_name}
-                      </span>
-                      <span className="font-mono">
-                        {getTeamScore(1)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Équipe 2 */}
-              <div className="border rounded-md p-3 bg-red-50 dark:bg-red-900/20">
-                <h3 className="font-medium text-red-800 dark:text-red-200 mb-2">Équipe 2</h3>
-                <div className="space-y-1">
-                  {team2Players.map(player => (
-                    <div key={player.id} className="flex justify-between items-center text-sm">
-                      <span className="flex items-center gap-1">
-                        {player.is_connected ? (
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        ) : (
-                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                        )}
-                        {player.player_name}
-                      </span>
-                      <span className="font-mono">
-                        {getTeamScore(2)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Différence */}
-              <div className="text-center pt-2 border-t">
-                <div className="text-sm text-gray-600 dark:text-gray-400">Différence</div>
-                <div className="text-lg font-mono font-bold">
-                  {getTeamScore(1) - getTeamScore(2)}
-                </div>
-              </div>
-            </div>
-          </GameCard>
-
-          {/* Événements récents */}
-          {events.length > 0 && (
-            <GameCard title="Activité récente" className="mt-6">
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {events.slice(-10).reverse().map((event) => (
-                  <div key={event.id} className="text-xs text-gray-600 dark:text-gray-400 border-l-2 border-blue-200 dark:border-blue-800 pl-2">
-                    <div className="font-medium">{event.username || 'Système'}</div>
-                    <div>{event.event_type}</div>
-                    <div className="text-gray-400">
-                      {new Date(event.created_at).toLocaleTimeString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </GameCard>
-          )}
-        </div>
-      </div>
-    </GameLayout>
+      )}
+    </div>
   );
 }

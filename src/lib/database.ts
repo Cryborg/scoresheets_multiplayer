@@ -453,6 +453,16 @@ async function seedInitialData(): Promise<void> {
       estimated_duration: 30
     },
     {
+      name: 'Belote',
+      slug: 'belote',
+      category: 'Cartes',
+      rules: 'Jeu de cartes traditionnel français en équipes de 2.',
+      score_type: 'rounds',
+      min_players: 4,
+      max_players: 4,
+      estimated_duration: 45
+    },
+    {
       name: 'Jeu Libre',
       slug: 'jeu-libre',
       category: 'Plateau',
