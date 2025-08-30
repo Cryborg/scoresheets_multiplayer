@@ -443,6 +443,16 @@ async function seedInitialData(): Promise<void> {
       estimated_duration: 45
     },
     {
+      name: 'Mille Bornes',
+      slug: 'mille-bornes',
+      category: 'Cartes',
+      rules: 'Course automobile avec cartes de distance et d\'attaque.',
+      score_type: 'rounds',
+      min_players: 2,
+      max_players: 6,
+      estimated_duration: 30
+    },
+    {
       name: 'Jeu Libre',
       slug: 'jeu-libre',
       category: 'Plateau',

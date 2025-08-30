@@ -216,6 +216,116 @@ export const gameNameMetadata = {
 - New creation pages (`/games/[game]/new/page.tsx`) - USE EXISTING  
 - Custom hooks for basic session management - USE `useMultiplayerGame`
 
+## 🔄 SCORESHEET MIGRATION PATTERN (AI CRITICAL)
+
+### Migration from Legacy to BaseScoreSheetMultiplayer
+
+**IMPORTANT**: Always use BaseScoreSheetMultiplayer for new scoresheets and migrate existing ones to eliminate boilerplate duplication.
+
+#### ✅ CORRECT Modern Pattern (2024+):
+```typescript
+// src/components/scoresheets/GameScoreSheetMultiplayer.tsx
+'use client';
+
+import { useState, useCallback } from 'react';
+import GameCard from '@/components/layout/GameCard';
+import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
+import { GameSessionWithRounds } from '@/types/multiplayer';
+
+// Game-specific interfaces only
+interface GameSpecificSession extends GameSessionWithRounds {
+  // Add game-specific fields if needed
+}
+
+export default function GameScoreSheetMultiplayer({ sessionId }: { sessionId: string }) {
+  return (
+    <BaseScoreSheetMultiplayer<GameSpecificSession> sessionId={sessionId} gameSlug="game-slug">
+      {({ session, gameState }) => (
+        <GameInterface session={session} gameState={gameState} />
+      )}
+    </BaseScoreSheetMultiplayer>
+  );
+}
+
+function GameInterface({ session, gameState }: { 
+  session: GameSpecificSession; 
+  gameState: any; 
+}) {
+  const { addRound, isHost } = gameState;
+  // Only game-specific logic here
+  
+  return (
+    <div className="space-y-6">
+      <GameCard title="Game Content">
+        {/* Game-specific UI only */}
+      </GameCard>
+    </div>
+  );
+}
+```
+
+#### ❌ LEGACY Pattern (Pre-2024):
+```typescript
+// DON'T DO THIS - Contains massive boilerplate duplication
+export default function LegacyScoreSheet({ sessionId }: { sessionId: string }) {
+  const router = useRouter();
+  const { session, events, isConnected, error, addRound } = useRealtimeSession({ sessionId, gameSlug });
+  
+  // ❌ Manual loading states
+  if (!session && !error) return <LoadingSpinner />;
+  if (error) return <ErrorPage />;
+  
+  // ❌ Manual GameLayout with all props
+  return (
+    <GameLayout 
+      title={session.session_name}
+      subtitle={connectionStatus}
+      onBack
+      sidebar={<RankingSidebar players={rankedPlayers} events={events} />}
+    >
+      {/* Game content */}
+    </GameLayout>
+  );
+}
+```
+
+#### 🚀 Migration Benefits:
+- **-20% to -50% code reduction** per component
+- **Eliminates boilerplate**: Loading, error, layout, navigation, polling
+- **Consistent UX**: Automatic sidebar, connection status, error boundaries
+- **Maintainability**: Single source of truth for common patterns
+- **Type safety**: Full TypeScript support with generics
+
+#### 🔧 Migration Steps:
+1. **Backup original**: `cp Component.tsx Component.tsx.backup`
+2. **Replace structure**: Main component → BaseScoreSheetMultiplayer wrapper
+3. **Extract game logic**: Move specific logic to child component
+4. **Remove boilerplate**: Delete loading, error, layout, navigation code  
+5. **Test thoroughly**: Verify all functionality preserved
+6. **Delete backup**: Once migration confirmed working
+
+#### ⚠️ What BaseScoreSheetMultiplayer Handles:
+- ✅ Loading states (`LoadingSpinner`)
+- ✅ Error states with navigation back
+- ✅ Join form for new players  
+- ✅ Waiting room with player list
+- ✅ Real-time session polling (`useRealtimeSession`)
+- ✅ GameLayout with title, subtitle, back button
+- ✅ RankingSidebar with live events
+- ✅ Connection status indicators
+- ✅ Automatic navigation patterns
+
+#### 🎯 What Game Component Should Contain:
+- ✅ Game-specific interfaces and types
+- ✅ Score calculation logic
+- ✅ Game rules and validation  
+- ✅ Form handling for rounds/scores
+- ✅ Game-specific UI components
+- ✅ Custom game state management
+- ❌ Loading/error/navigation boilerplate
+- ❌ Manual useRealtimeSession usage
+- ❌ GameLayout/RankingSidebar setup
+
 ## 🏷️ BRANDING SYSTEM (AI CRITICAL PATTERN)
 
 ### NEVER hardcode branding text - USE CONSTANTS
