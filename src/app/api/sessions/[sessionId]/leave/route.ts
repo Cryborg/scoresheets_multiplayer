@@ -40,6 +40,17 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
       return NextResponse.json({ error: 'Vous n\'êtes pas dans cette session' }, { status: 400 });
     }
 
+    // Check if this is a local session BEFORE removing players
+    const allUsersInSessionResult = await db.execute({
+      sql: `SELECT DISTINCT p.user_id 
+            FROM players p 
+            JOIN session_player sp ON p.id = sp.player_id 
+            WHERE sp.session_id = ? AND p.user_id IS NOT NULL`,
+      args: [sessionId]
+    });
+
+    const isLocalSession = allUsersInSessionResult.rows.length <= 1;
+
     // Remove all players belonging to this user from the session
     // First get the player IDs to delete from session_player
     const playerIds = playerResult.rows.map(row => row.id);
@@ -80,11 +91,18 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
           args: [newHostId, sessionId]
         });
       } else {
-        // No players left, cancel the session
-        await db.execute({
-          sql: 'UPDATE sessions SET status = ?, ended_at = CURRENT_TIMESTAMP WHERE id = ?',
-          args: ['cancelled', sessionId]
-        });
+        // No players left
+        if (isLocalSession) {
+          // Local session - don't cancel, keep user as host so they can return
+          // Session stays active with no current players but user can rejoin
+          console.log(`[LEAVE] Keeping local session ${sessionId} active for user ${currentUserId} to return`);
+        } else {
+          // Real multiplayer session with no players left - cancel it
+          await db.execute({
+            sql: 'UPDATE sessions SET status = ?, ended_at = CURRENT_TIMESTAMP WHERE id = ?',
+            args: ['cancelled', sessionId]
+          });
+        }
       }
     }
 
