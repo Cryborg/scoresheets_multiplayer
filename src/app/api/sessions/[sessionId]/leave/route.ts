@@ -51,30 +51,36 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
 
     const isLocalSession = allUsersInSessionResult.rows.length <= 1;
 
-    // Remove all players belonging to this user from the session
-    // First get the player IDs to delete from session_player
-    const playerIds = playerResult.rows.map(row => row.id);
-    
-    // Delete from session_player pivot table
-    if (playerIds.length > 0) {
-      const placeholders = playerIds.map(() => '?').join(',');
-      await db.execute({
-        sql: `DELETE FROM session_player WHERE session_id = ? AND player_id IN (${placeholders})`,
-        args: [sessionId, ...playerIds]
-      });
+    // For local sessions, don't actually remove players - just record the leave event
+    // For real multiplayer sessions, remove the players
+    if (!isLocalSession) {
+      // Remove all players belonging to this user from the session
+      // First get the player IDs to delete from session_player
+      const playerIds = playerResult.rows.map(row => row.id);
       
-      // Optionally delete players from players table if they're not used elsewhere
-      // For now, keep them for historical data
+      // Delete from session_player pivot table
+      if (playerIds.length > 0) {
+        const placeholders = playerIds.map(() => '?').join(',');
+        await db.execute({
+          sql: `DELETE FROM session_player WHERE session_id = ? AND player_id IN (${placeholders})`,
+          args: [sessionId, ...playerIds]
+        });
+        
+        // Optionally delete players from players table if they're not used elsewhere
+        // For now, keep them for historical data
+      }
+
+      // Update session player count
+      await db.execute({
+        sql: 'UPDATE sessions SET current_players = current_players - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        args: [playerResult.rows.length, sessionId]
+      });
+    } else {
+      console.log(`[LEAVE] Local session ${sessionId} - not removing players, user can return`);
     }
 
-    // Update session player count
-    await db.execute({
-      sql: 'UPDATE sessions SET current_players = current_players - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      args: [playerResult.rows.length, sessionId]
-    });
-
-    // If user was the host and there are other players, transfer host to first remaining player
-    if (Number(session.host_user_id) === currentUserId) {
+    // For non-local sessions, handle host transfer and cancellation
+    if (!isLocalSession && Number(session.host_user_id) === currentUserId) {
       const remainingPlayersResult = await db.execute({
         sql: `SELECT p.user_id 
               FROM players p 
@@ -91,19 +97,17 @@ export async function POST(request: NextRequest, context: LeaveSessionParams) {
           args: [newHostId, sessionId]
         });
       } else {
-        // No players left
-        if (isLocalSession) {
-          // Local session - don't cancel, keep user as host so they can return
-          // Session stays active with no current players but user can rejoin
-          console.log(`[LEAVE] Keeping local session ${sessionId} active for user ${currentUserId} to return`);
-        } else {
-          // Real multiplayer session with no players left - cancel it
-          await db.execute({
-            sql: 'UPDATE sessions SET status = ?, ended_at = CURRENT_TIMESTAMP WHERE id = ?',
-            args: ['cancelled', sessionId]
-          });
-        }
+        // Real multiplayer session with no players left - cancel it
+        await db.execute({
+          sql: 'UPDATE sessions SET status = ?, ended_at = CURRENT_TIMESTAMP WHERE id = ?',
+          args: ['cancelled', sessionId]
+        });
       }
+    }
+    
+    // For local sessions, just log that user "left" but session remains intact
+    if (isLocalSession) {
+      console.log(`[LEAVE] Local session ${sessionId} - user ${currentUserId} disconnected but can return anytime`);
     }
 
     // Add leave event

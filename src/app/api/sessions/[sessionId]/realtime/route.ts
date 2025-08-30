@@ -53,8 +53,24 @@ export async function GET(
 
     const session = sessionWithAccessResult.rows[0] as SessionRecord;
     
+    // Check if this is a local session for access control
+    const allUsersInSessionResult = await db.execute({
+      sql: `SELECT DISTINCT p.user_id 
+            FROM players p 
+            JOIN session_player sp ON p.id = sp.player_id 
+            WHERE sp.session_id = ? AND p.user_id IS NOT NULL`,
+      args: [sessionId]
+    });
+    
+    const isLocalSession = allUsersInSessionResult.rows.length <= 1;
+    let accessLevel = String(session.access_level);
+    
+    // For local sessions, allow access if user is the owner
+    if (isLocalSession && currentUserId && Number(session.host_user_id) === currentUserId) {
+      accessLevel = 'host';
+    }
+    
     // Check access level
-    const accessLevel = String(session.access_level);
     if (accessLevel === 'denied') {
       if (currentUserId) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });
