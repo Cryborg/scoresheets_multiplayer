@@ -18,6 +18,8 @@ interface MilleBornesGameSession extends GameSessionWithRounds {
   }>;
 }
 
+type GameVariant = 'classique' | 'moderne';
+
 interface MilleBornesRoundData {
   distances: { [playerId: number]: number };
   primes: {
@@ -31,6 +33,9 @@ interface MilleBornesRoundData {
       extension: boolean;
       fermeture: boolean;
       arret_rouge: boolean;
+      // Primes classiques uniquement
+      coup_couronnement: boolean;
+      capot: boolean;
     };
   };
 }
@@ -44,7 +49,10 @@ const MILLE_BORNES_PRIMES = {
   sans_essence: 300,
   extension: 200,
   fermeture: 300,
-  arret_rouge: 300
+  arret_rouge: 300,
+  // Primes classiques uniquement
+  coup_couronnement: 300,
+  capot: 500
 };
 
 export default function MilleBornesScoreSheetMultiplayer({ sessionId }: { sessionId: string }) {
@@ -71,6 +79,8 @@ function MilleBornesGameInterface({
     primes: {}
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [gameVariant, setGameVariant] = useState<GameVariant>('moderne');
+  const [variantSelected, setVariantSelected] = useState(false);
 
   // Initialize form data for all players
   useEffect(() => {
@@ -89,7 +99,9 @@ function MilleBornesGameInterface({
           sans_essence: false,
           extension: false,
           fermeture: false,
-          arret_rouge: false
+          arret_rouge: false,
+          coup_couronnement: false,
+          capot: false
         };
       });
 
@@ -121,11 +133,17 @@ function MilleBornesGameInterface({
       if (playerPrimes.fermeture) score += MILLE_BORNES_PRIMES.fermeture;
       if (playerPrimes.arret_rouge) score += MILLE_BORNES_PRIMES.arret_rouge;
 
+      // Primes classiques uniquement
+      if (gameVariant === 'classique') {
+        if (playerPrimes.coup_couronnement) score += MILLE_BORNES_PRIMES.coup_couronnement;
+        if (playerPrimes.capot) score += MILLE_BORNES_PRIMES.capot;
+      }
+
       scores[player.id] = score;
     });
 
     return scores;
-  }, [session?.players]);
+  }, [session?.players, gameVariant]);
 
   const handleSubmitRound = useCallback(async () => {
     if (!session || isSubmitting) return;
@@ -169,7 +187,9 @@ function MilleBornesGameInterface({
           sans_essence: false,
           extension: false,
           fermeture: false,
-          arret_rouge: false
+          arret_rouge: false,
+          coup_couronnement: false,
+          capot: false
         };
       });
 
@@ -214,8 +234,97 @@ function MilleBornesGameInterface({
 
   const currentRound = (session?.rounds?.length || 0) + 1;
 
+  // Si aucune variante n'est sélectionnée, afficher le sélecteur
+  if (!variantSelected) {
+    return (
+      <GameCard title="Choisissez votre variante de Mille Bornes">
+        <div className="space-y-4">
+          <p className="text-gray-600 dark:text-gray-400">
+            Le Mille Bornes existe en deux versions principales. Choisissez celle que vous préférez :
+          </p>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Version moderne */}
+            <div 
+              className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+                gameVariant === 'moderne' 
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+              onClick={() => setGameVariant('moderne')}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="radio"
+                  checked={gameVariant === 'moderne'}
+                  onChange={() => setGameVariant('moderne')}
+                  className="w-4 h-4"
+                />
+                <h3 className="font-bold text-lg">Version Moderne</h3>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                Version simplifiée, sans les règles historiques complexes
+              </p>
+              <ul className="text-sm space-y-1">
+                <li>✅ Toutes les primes classiques</li>
+                <li>❌ Coup du Couronnement</li>
+                <li>❌ Capot</li>
+              </ul>
+            </div>
+            
+            {/* Version classique */}
+            <div 
+              className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+                gameVariant === 'classique' 
+                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+              onClick={() => setGameVariant('classique')}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="radio"
+                  checked={gameVariant === 'classique'}
+                  onChange={() => setGameVariant('classique')}
+                  className="w-4 h-4"
+                />
+                <h3 className="font-bold text-lg">Version Classique</h3>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                Version originale avec toutes les règles historiques
+              </p>
+              <ul className="text-sm space-y-1">
+                <li>✅ Toutes les primes</li>
+                <li>✅ Coup du Couronnement (+300)</li>
+                <li>✅ Capot (+500)</li>
+              </ul>
+            </div>
+          </div>
+          
+          <button
+            onClick={() => setVariantSelected(true)}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition-colors font-medium"
+          >
+            Commencer avec la version {gameVariant}
+          </button>
+        </div>
+      </GameCard>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Variante choisie */}
+      <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        Variante : <span className="font-medium capitalize">{gameVariant}</span>
+        <button 
+          onClick={() => setVariantSelected(false)}
+          className="ml-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+        >
+          (Changer)
+        </button>
+      </div>
+
       {/* Scores Table */}
       <GameCard title="Tableau des scores">
         <div className="overflow-x-auto">
@@ -335,6 +444,33 @@ function MilleBornesGameInterface({
                         </label>
                       ))}
                     </div>
+
+                    {/* Primes classiques uniquement */}
+                    {gameVariant === 'classique' && (
+                      <div className="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <h6 className="text-sm font-medium text-green-700 dark:text-green-300">
+                          Primes classiques uniquement
+                        </h6>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {[
+                            { key: 'coup_couronnement', label: 'Coup du Couronnement (300 pts)' },
+                            { key: 'capot', label: 'Capot (500 pts)' }
+                          ].map(prime => (
+                            <label key={prime.key} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={newRound.primes[player.id]?.[prime.key] || false}
+                                onChange={(e) => updatePrime(player.id, prime.key, e.target.checked)}
+                                className="mr-2 h-4 w-4"
+                              />
+                              <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                                {prime.label}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
