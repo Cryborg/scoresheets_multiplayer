@@ -11,17 +11,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import MilleBornesRulesHelper from '@/components/ui/MilleBornesRulesHelper';
 import { useRealtimeSession } from '@/hooks/useRealtimeSession';
 import { TeamRecord } from '@/types/realtime'; // Import TeamRecord
-
-interface Player {
-  id: number;
-  player_name: string;
-  position: number;
-  is_connected: number;
-  is_ready: number;
-  user_id?: number;
-  total_score?: number;
-  team_id?: number;
-}
+import { Player } from '@/types/multiplayer';
 
 interface GameSession {
   id: number;

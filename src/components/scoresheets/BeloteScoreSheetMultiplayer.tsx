@@ -8,17 +8,7 @@ import GameLayout from '@/components/layout/GameLayout';
 import GameCard from '@/components/layout/GameCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useRealtimeSession } from '@/hooks/useRealtimeSession';
-
-interface Player {
-  id: number;
-  player_name: string;
-  position: number;
-  is_connected: number;
-  is_ready: number;
-  user_id?: number;
-  total_score?: number;
-  team_id?: number;
-}
+import { Player } from '@/types/multiplayer';
 
 interface GameSession {
   id: number;

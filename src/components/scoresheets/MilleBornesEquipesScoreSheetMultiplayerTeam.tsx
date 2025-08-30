@@ -5,18 +5,7 @@ import { Car, Award } from 'lucide-react';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import RankingSidebar from '@/components/layout/RankingSidebar';
 import ScoreInput from '@/components/ui/ScoreInput';
-import { GameSessionWithRounds } from '@/types/multiplayer';
-
-interface Player {
-  id: number;
-  player_name: string;
-  position: number;
-  is_connected: number;
-  is_ready: number;
-  user_id?: number;
-  total_score?: number;
-  team_id?: number;
-}
+import { GameSessionWithRounds, Player } from '@/types/multiplayer';
 
 interface MilleBornesRoundData {
   distances: { [playerId: number]: number };

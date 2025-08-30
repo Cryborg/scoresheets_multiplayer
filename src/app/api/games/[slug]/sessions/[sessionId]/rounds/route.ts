@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, initializeDatabase } from '@/lib/database';
 import { getAuthenticatedUserId } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -17,8 +18,8 @@ export async function POST(
     const { sessionId, slug } = await params;
     const { scores } = await request.json();
 
-    console.log(`[API] POST /api/games/${slug}/sessions/${sessionId}/rounds`);
-    console.log('Scores:', JSON.stringify(scores, null, 2));
+    logger.api(`POST /api/games/${slug}/sessions/${sessionId}/rounds`);
+    logger.debug('Scores:', JSON.stringify(scores, null, 2));
 
     // Verify session exists and get next round number
     const sessionResult = await db.execute({
@@ -40,7 +41,7 @@ export async function POST(
     }
 
     const roundNumber = session.current_round;
-    console.log(`[API] Adding scores for round ${roundNumber}`);
+    logger.debug(`Adding scores for round ${roundNumber}`);
 
     // Insert scores for this round
     for (const scoreData of scores) {
@@ -60,7 +61,7 @@ export async function POST(
       args: [sessionId]
     });
 
-    console.log(`[API] Round ${roundNumber} completed, advanced to round ${roundNumber + 1}`);
+    logger.debug(`Round ${roundNumber} completed, advanced to round ${roundNumber + 1}`);
 
     return NextResponse.json({
       message: 'Manche enregistrée avec succès',

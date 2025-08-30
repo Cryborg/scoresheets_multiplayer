@@ -2,15 +2,7 @@
 
 import { useState } from 'react';
 import { Users, Play, Copy, Check, UserPlus, Crown, ArrowLeft } from 'lucide-react';
-
-interface Player {
-  id: number;
-  player_name: string;
-  position: number;
-  is_connected: number;
-  is_ready: number;
-  user_id?: number;
-}
+import { Player } from '@/types/multiplayer';
 
 interface GameSession {
   id: number;
