@@ -1,14 +1,10 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { Users, Wifi, WifiOff, Clock, Crown } from 'lucide-react';
+import { Users, Crown } from 'lucide-react';
 import ScoreInput from '@/components/ui/ScoreInput';
-import GameLayout from '@/components/layout/GameLayout';
 import GameCard from '@/components/layout/GameCard';
-import RankingSidebar from '@/components/layout/RankingSidebar';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { useRealtimeSession } from '@/hooks/useRealtimeSession';
+import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { GameSessionWithRounds, Player } from '@/types/multiplayer';
 
 // Extension spécifique pour Tarot avec details typés
@@ -26,7 +22,6 @@ interface TarotGameSession extends GameSessionWithRounds {
     };
   }>;
 }
-
 
 interface TarotContract {
   name: string;
@@ -53,11 +48,23 @@ const TAROT_CONTRACTS: TarotContract[] = [
 const OUDLERS_POINTS = [56, 51, 46, 36]; // Points nécessaires selon nombre d'oudlers (0,1,2,3)
 
 export default function TarotScoreSheetMultiplayer({ sessionId }: { sessionId: string }) {
-  const router = useRouter();
-  const { session, events, isConnected, error, addRound } = useRealtimeSession<TarotGameSession>({
-    sessionId,
-    gameSlug: 'tarot'
-  });
+  return (
+    <BaseScoreSheetMultiplayer<TarotGameSession> sessionId={sessionId} gameSlug="tarot">
+      {({ session, gameState }) => (
+        <TarotGameInterface session={session} gameState={gameState} />
+      )}
+    </BaseScoreSheetMultiplayer>
+  );
+}
+
+function TarotGameInterface({ 
+  session, 
+  gameState 
+}: { 
+  session: TarotGameSession;
+  gameState: any;
+}) {
+  const { addRound, isConnected, events, isHost } = gameState;
   
   const [newRound, setNewRound] = useState<TarotRoundData>({
     takerId: 0,
@@ -71,34 +78,28 @@ export default function TarotScoreSheetMultiplayer({ sessionId }: { sessionId: s
 
   const calculateTarotScore = useCallback((data: TarotRoundData) => {
     if (!session?.players) return {};
-
     const contract = TAROT_CONTRACTS.find(c => c.name === data.contract);
     if (!contract) return {};
 
+    const taker = session.players.find(p => p.id === data.takerId);
+    if (!taker) return {};
+
     const requiredPoints = OUDLERS_POINTS[data.oudlers];
     const difference = data.points - requiredPoints;
-    
-    // Calcul points de base
-    let baseScore = contract.basePoints + difference;
-    
-    // Bonus/malus
+    const success = difference >= 0;
+
+    let baseScore = contract.basePoints + Math.abs(difference);
+
+    // Bonifications
     if (data.petitAuBout) baseScore += 10;
-    if (data.chelem && difference >= 0) baseScore += 200;
-    if (data.chelem && difference < 0) baseScore -= 200;
-    
-    // Application du multiplicateur
-    const finalScore = baseScore * contract.multiplier;
-    
-    // Distribution des scores
-    const scores: { [playerId: number]: number } = {};
-    const isSuccess = difference >= 0;
-    
+    if (data.chelem) baseScore += success ? 400 : -200;
+
+    const takerScore = (success ? baseScore : -baseScore) * contract.multiplier;
+    const otherPlayersScore = -Math.round(takerScore / (session.players.length - 1));
+
+    const scores: { [key: number]: number } = {};
     session.players.forEach(player => {
-      if (player.id === data.takerId) {
-        scores[player.id] = isSuccess ? finalScore : -finalScore;
-      } else {
-        scores[player.id] = isSuccess ? -Math.round(finalScore / (session.players.length - 1)) : Math.round(finalScore / (session.players.length - 1));
-      }
+      scores[player.id] = player.id === data.takerId ? takerScore : otherPlayersScore;
     });
 
     return scores;
@@ -106,7 +107,6 @@ export default function TarotScoreSheetMultiplayer({ sessionId }: { sessionId: s
 
   const handleSubmitRound = useCallback(async () => {
     if (!session || newRound.takerId === 0 || isSubmitting) return;
-
     setIsSubmitting(true);
     try {
       const calculatedScores = calculateTarotScore(newRound);
@@ -139,7 +139,7 @@ export default function TarotScoreSheetMultiplayer({ sessionId }: { sessionId: s
     } finally {
       setIsSubmitting(false);
     }
-  }, [session, newRound, isSubmitting, addRound, calculateTarotScore]);
+  }, [session, newRound, isSubmitting, calculateTarotScore, addRound]);
 
   const getTotalScore = useCallback((playerId: number) => {
     if (!session?.rounds) return 0;
@@ -148,272 +148,183 @@ export default function TarotScoreSheetMultiplayer({ sessionId }: { sessionId: s
     }, 0);
   }, [session?.rounds]);
 
-  const getRankedPlayers = useCallback(() => {
-    if (!session?.players) return [];
-    return [...session.players]
-      .map(player => ({
-        ...player,
-        total_score: getTotalScore(player.id)
-      }))
-      .sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
-  }, [session?.players, getTotalScore]);
+  const currentRound = (session?.rounds?.length || 0) + 1;
 
-  if (!session && !error) {
-    return (
-      <GameLayout 
-        title="Chargement..."
-        onBack
-      >
-        <div className="flex justify-center items-center min-h-[400px]">
-          <LoadingSpinner />
+  return (
+    <div className="space-y-6">
+      {/* Scores Table */}
+      <GameCard title="Scores">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b dark:border-gray-700">
+                <th className="text-left p-2">Joueur</th>
+                {session?.rounds?.map((_, index) => (
+                  <th key={index} className="text-center p-2 min-w-16">M{index + 1}</th>
+                ))}
+                <th className="text-center p-2 font-bold">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {session?.players?.map((player) => (
+                <tr key={player.id} className="border-b dark:border-gray-700">
+                  <td className="p-2 font-medium">
+                    <div className="flex items-center gap-2">
+                      {session.host_user_id === player.user_id && (
+                        <Crown className="h-4 w-4 text-yellow-500" title="Hôte" />
+                      )}
+                      {player.player_name}
+                    </div>
+                  </td>
+                  {session?.rounds?.map((round, roundIndex) => (
+                    <td key={roundIndex} className="text-center p-2">
+                      <span className={round.scores[player.id] > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                        {round.scores[player.id] || 0}
+                      </span>
+                    </td>
+                  ))}
+                  <td className="text-center p-2 font-bold text-lg">
+                    <span className={getTotalScore(player.id) > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                      {getTotalScore(player.id)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </GameLayout>
-    );
-  }
+      </GameCard>
 
-  if (error) {
-    return (
-      <GameLayout 
-        title="Erreur"
-        onBack
-      >
-        <GameCard>
-          <div className="text-center">
-            <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-            <button 
-              onClick={() => router.push('/dashboard')}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      {/* Add Round Form - Only for host */}
+      {isHost && (
+        <GameCard title={`Ajouter la manche ${currentRound}`}>
+          <div className="space-y-4">
+            {/* Taker Selection */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Preneur</label>
+              <select
+                value={newRound.takerId}
+                onChange={(e) => setNewRound(prev => ({ ...prev, takerId: parseInt(e.target.value) }))}
+                className="w-full p-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+              >
+                <option value={0}>Sélectionner le preneur</option>
+                {session?.players?.map(player => (
+                  <option key={player.id} value={player.id}>
+                    {player.player_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Contract Selection */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Contrat</label>
+              <select
+                value={newRound.contract}
+                onChange={(e) => setNewRound(prev => ({ ...prev, contract: e.target.value }))}
+                className="w-full p-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+              >
+                {TAROT_CONTRACTS.map(contract => (
+                  <option key={contract.name} value={contract.name}>
+                    {contract.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Points and Oudlers */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Points du preneur</label>
+                <ScoreInput
+                  value={newRound.points}
+                  onChange={(value) => setNewRound(prev => ({ ...prev, points: value }))}
+                  placeholder="Points"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Nombre d'oudlers</label>
+                <select
+                  value={newRound.oudlers}
+                  onChange={(e) => setNewRound(prev => ({ ...prev, oudlers: parseInt(e.target.value) }))}
+                  className="w-full p-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                >
+                  {[0, 1, 2, 3].map(num => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Bonifications */}
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={newRound.petitAuBout}
+                  onChange={(e) => setNewRound(prev => ({ ...prev, petitAuBout: e.target.checked }))}
+                  className="mr-2"
+                />
+                Petit au bout (+10 points)
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={newRound.chelem}
+                  onChange={(e) => setNewRound(prev => ({ ...prev, chelem: e.target.checked }))}
+                  className="mr-2"
+                />
+                Chelem (+400 si réussi, -200 si échoué)
+              </label>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              onClick={handleSubmitRound}
+              disabled={newRound.takerId === 0 || isSubmitting}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-lg transition-colors"
             >
-              Retour au dashboard
+              {isSubmitting ? 'Ajout en cours...' : `Ajouter la manche ${currentRound}`}
             </button>
           </div>
         </GameCard>
-      </GameLayout>
-    );
-  }
+      )}
 
-  const currentRound = (session?.rounds?.length || 0) + 1;
-  const rankedPlayers = getRankedPlayers();
-
-  return (
-    <GameLayout 
-      title={session?.session_name || 'Tarot'}
-      subtitle={
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1">
-            {isConnected ? (
-              <><Wifi className="h-4 w-4 text-green-500" /> Connecté</>
-            ) : (
-              <><WifiOff className="h-4 w-4 text-red-500" /> Déconnecté</>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            <Users className="h-4 w-4" />
-            {session?.players.filter(p => p.is_connected).length}/{session?.players.length} joueurs
-          </div>
-          <div className="flex items-center gap-1">
-            <Clock className="h-4 w-4" />
-            Manche {currentRound}
-          </div>
-          <div className="bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded text-xs font-mono">
-            Code: {session?.session_code}
-          </div>
-        </div>
-      }
-      onBack
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Nouvelle manche */}
-        <div className="lg:col-span-3">
-          <GameCard title="Nouvelle manche" icon={<Crown className="h-5 w-5" />}>
-            <div className="space-y-4">
-              {/* Preneur */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Preneur</label>
-                <select
-                  value={newRound.takerId}
-                  onChange={(e) => setNewRound(prev => ({ ...prev, takerId: parseInt(e.target.value) }))}
-                  className="w-full p-2 border rounded-md bg-white dark:bg-gray-700 dark:border-gray-600"
-                >
-                  <option value={0}>Sélectionner le preneur</option>
-                  {session?.players.map(player => (
-                    <option key={player.id} value={player.id}>
-                      {player.player_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Contrat */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Contrat</label>
-                <select
-                  value={newRound.contract}
-                  onChange={(e) => setNewRound(prev => ({ ...prev, contract: e.target.value }))}
-                  className="w-full p-2 border rounded-md bg-white dark:bg-gray-700 dark:border-gray-600"
-                >
-                  {TAROT_CONTRACTS.map(contract => (
-                    <option key={contract.name} value={contract.name}>
-                      {contract.name} (×{contract.multiplier})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Points et oudlers */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Points réalisés (sur 91)
-                  </label>
-                  <ScoreInput
-                    value={newRound.points}
-                    onChange={(value) => setNewRound(prev => ({ ...prev, points: value }))}
-                    min={0}
-                    max={91}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Oudlers ({OUDLERS_POINTS[newRound.oudlers]} pts nécessaires)
-                  </label>
-                  <select
-                    value={newRound.oudlers}
-                    onChange={(e) => setNewRound(prev => ({ ...prev, oudlers: parseInt(e.target.value) }))}
-                    className="w-full p-2 border rounded-md bg-white dark:bg-gray-700 dark:border-gray-600"
-                  >
-                    <option value={0}>0 oudlers (56 pts)</option>
-                    <option value={1}>1 oudler (51 pts)</option>
-                    <option value={2}>2 oudlers (46 pts)</option>
-                    <option value={3}>3 oudlers (36 pts)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Bonus */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={newRound.petitAuBout}
-                    onChange={(e) => setNewRound(prev => ({ ...prev, petitAuBout: e.target.checked }))}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">Petit au bout (+10 pts)</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={newRound.chelem}
-                    onChange={(e) => setNewRound(prev => ({ ...prev, chelem: e.target.checked }))}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">Chelem réalisé/annoncé (±200 pts)</span>
-                </label>
-              </div>
-
-              {/* Aperçu des scores */}
-              {newRound.takerId > 0 && (
-                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-md">
-                  <h4 className="font-medium mb-2">Aperçu des scores :</h4>
-                  <div className="space-y-1 text-sm">
-                    {Object.entries(calculateTarotScore(newRound)).map(([playerId, score]) => {
-                      const player = session?.players.find(p => p.id === parseInt(playerId));
-                      return (
-                        <div key={playerId} className="flex justify-between">
-                          <span>{player?.player_name}</span>
-                          <span className={score > 0 ? 'text-green-600' : score < 0 ? 'text-red-600' : ''}>
-                            {score > 0 ? '+' : ''}{score}
-                          </span>
+      {/* Rounds History */}
+      {session?.rounds && session.rounds.length > 0 && (
+        <GameCard title="Historique des manches">
+          <div className="space-y-3">
+            {session.rounds.map((round, index) => {
+              const details = round.details;
+              const taker = session.players?.find(p => p.id === details?.taker_id);
+              return (
+                <div key={index} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium">Manche {round.round_number}</div>
+                      {details && (
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          {taker?.player_name} - {details.contract} - {details.points} pts ({details.oudlers} oudlers)
+                          {details.petit_au_bout && ' - Petit au bout'}
+                          {details.chelem && ' - Chelem'}
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <button
-                onClick={handleSubmitRound}
-                disabled={newRound.takerId === 0 || isSubmitting}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Ajout...' : 'Ajouter la manche'}
-              </button>
-            </div>
-          </GameCard>
-
-          {/* Historique */}
-          {(session?.rounds?.length || 0) > 0 && (
-            <GameCard title="Historique des manches" className="mt-6">
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b dark:border-gray-700">
-                      <th className="py-2 px-3 text-left text-sm font-medium">Manche</th>
-                      <th className="py-2 px-3 text-left text-sm font-medium">Preneur</th>
-                      <th className="py-2 px-3 text-left text-sm font-medium">Contrat</th>
-                      <th className="py-2 px-3 text-left text-sm font-medium">Points</th>
-                      {session?.players.map(player => (
-                        <th key={player.id} className="py-2 px-3 text-center text-sm font-medium">
-                          {player.player_name}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {session?.rounds.map((round) => (
-                      <tr key={round.round_number} className="border-b dark:border-gray-700">
-                        <td className="py-2 px-3 text-sm">{round.round_number}</td>
-                        <td className="py-2 px-3 text-sm">
-                          {session.players.find(p => p.id === round.details?.taker_id)?.player_name}
-                        </td>
-                        <td className="py-2 px-3 text-sm">{round.details?.contract}</td>
-                        <td className="py-2 px-3 text-sm">{round.details?.points}/91</td>
-                        {session?.players.map(player => (
-                          <td key={player.id} className="py-2 px-3 text-center text-sm">
-                            <span className={`font-medium ${
-                              (round.scores[player.id] || 0) > 0 
-                                ? 'text-green-600' 
-                                : (round.scores[player.id] || 0) < 0 
-                                  ? 'text-red-600' 
-                                  : ''
-                            }`}>
-                              {round.scores[player.id] > 0 ? '+' : ''}{round.scores[player.id] || 0}
-                            </span>
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </GameCard>
-          )}
-        </div>
-
-        {/* Sidebar classement */}
-        <div className="lg:col-span-1">
-          <RankingSidebar players={rankedPlayers} />
-          
-          {/* Événements récents */}
-          {events.length > 0 && (
-            <GameCard title="Activité récente" className="mt-6">
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {events.slice(-10).reverse().map((event) => (
-                  <div key={event.id} className="text-xs text-gray-600 dark:text-gray-400 border-l-2 border-blue-200 dark:border-blue-800 pl-2">
-                    <div className="font-medium">{event.username || 'Système'}</div>
-                    <div>{event.event_type}</div>
-                    <div className="text-gray-400">
-                      {new Date(event.created_at).toLocaleTimeString()}
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium">
+                        Scores: {Object.entries(round.scores).map(([playerId, score]) => {
+                          const player = session.players?.find(p => p.id === parseInt(playerId));
+                          return `${player?.player_name}: ${score > 0 ? '+' : ''}${score}`;
+                        }).join(', ')}
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </GameCard>
-          )}
-        </div>
-      </div>
-    </GameLayout>
+                </div>
+              );
+            })}
+          </div>
+        </GameCard>
+      )}
+    </div>
   );
 }

@@ -433,6 +433,16 @@ async function seedInitialData(): Promise<void> {
       estimated_duration: 30
     },
     {
+      name: 'Tarot',
+      slug: 'tarot',
+      category: 'Cartes',
+      rules: 'Jeu de cartes traditionnel français avec preneurs et contrats.',
+      score_type: 'rounds',
+      min_players: 3,
+      max_players: 5,
+      estimated_duration: 45
+    },
+    {
       name: 'Jeu Libre',
       slug: 'jeu-libre',
       category: 'Plateau',
