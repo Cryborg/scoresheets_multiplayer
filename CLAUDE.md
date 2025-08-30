@@ -9,6 +9,14 @@
 **ARCHITECTURE QUALITY**: B+ (Production-ready, some tech debt)
 **CURRENT STATE**: 5 games implemented, multiplayer system working, active development
 
+### 🔴 CRITICAL ROUTING BUG TO AVOID
+**NEVER create static game folders in `/app/games/`!**
+- ❌ `/app/games/belote/[sessionId]/page.tsx` - BREAKS `/games/belote/new`
+- ❌ `/app/games/tarot/[sessionId]/page.tsx` - BREAKS `/games/tarot/new`
+- ✅ `/app/games/[slug]/[sessionId]/page.tsx` - WORKS for ALL games
+
+**Why this breaks:** Next.js prioritizes static routes over dynamic ones. If you create `/games/belote/`, it matches before `/games/[slug]/`, causing `/games/belote/new` to be interpreted as `/games/belote/[sessionId]` with sessionId="new".
+
 ### 🔥 INSTANT DECISION TREE
 
 **When user asks to add new game:**
@@ -170,15 +178,14 @@ export default function GameNameScoreSheet({ sessionId }: { sessionId: string })
 }
 ```
 
-### Step 3: Page Route (AI COPY EXACTLY)
+### Step 3: Page Route
 ```typescript
-// src/app/games/game-slug/[sessionId]/page.tsx  
-import GameNameScoreSheet from '@/components/scoresheets/GameNameScoreSheet';
+// ⚠️ CRITICAL: Use DYNAMIC routes only - NEVER create game-specific folders!
+// ❌ WRONG: src/app/games/belote/[sessionId]/page.tsx (breaks routing)
+// ✅ CORRECT: Use existing src/app/games/[slug]/[sessionId]/page.tsx
 
-export default async function Page({ params }: { params: Promise<{ sessionId: string }> }) {
-  const { sessionId } = await params;
-  return <GameNameScoreSheet sessionId={sessionId} />;
-}
+// The dynamic route already exists and handles ALL games automatically
+// via gameComponentLoader.tsx - NO NEED to create new page files!
 ```
 
 ### Step 4: Component Loader (AI MUST ADD)
@@ -215,6 +222,10 @@ export const gameNameMetadata = {
 - New API routes (`/api/games/[game]/*`) - USE GENERICS
 - New creation pages (`/games/[game]/new/page.tsx`) - USE EXISTING  
 - Custom hooks for basic session management - USE `useMultiplayerGame`
+- **Static game folders** (`/games/belote/`, `/games/tarot/`) - BREAKS ROUTING!
+  - Next.js prioritizes static routes over dynamic `[slug]` routes
+  - Creating `/games/belote/[sessionId]/page.tsx` breaks `/games/belote/new`
+  - ALWAYS use the existing dynamic route: `/games/[slug]/[sessionId]/page.tsx`
 
 ## 🔄 SCORESHEET MIGRATION PATTERN (AI CRITICAL)
 
