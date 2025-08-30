@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { authenticatedFetch } from '@/lib/authClient';
 import { useGameSessionCreator, Game } from '@/hooks/useGameSessionCreator';
+import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
 import GameSessionForm from '@/components/GameSessionForm';
 import AuthGuard from '@/components/AuthGuard';
 
@@ -27,6 +28,8 @@ export default function NewGamePage() {
     createSession
   } = useGameSessionCreator(game);
 
+  const { setLastPlayedGame } = useLastPlayedGame();
+
   const fetchGame = useCallback(async () => {
     try {
       const response = await authenticatedFetch('/api/games');
@@ -40,6 +43,8 @@ export default function NewGamePage() {
         }
 
         setGame(foundGame);
+        // Save this game as the last played
+        setLastPlayedGame(slug);
       } else {
         router.push('/dashboard');
       }

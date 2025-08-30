@@ -20,6 +20,7 @@ interface UseRealtimeSessionReturn<T> {
   addRound: (scores: Array<{ playerId: number; score: number }>, details?: Record<string, unknown>) => Promise<void>;
   connectionStatus: 'connected' | 'connecting' | 'disconnected' | 'error';
   forceRefresh: () => Promise<void>;
+  isLocalSession: boolean;
 }
 
 // Configuration adaptative du polling selon l'activité
@@ -61,6 +62,7 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected' | 'error'>('connecting');
+  const [isLocalSession, setIsLocalSession] = useState(false);
 
   // Refs pour la gestion optimisée
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -148,9 +150,14 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
       }
 
       const newData = await response.json();
-      // Exclure le timestamp du hash pour éviter les re-renders inutiles
-      const { timestamp, ...sessionDataForHash } = newData;
+      // Exclure le timestamp et isLocalSession du hash pour éviter les re-renders inutiles
+      const { timestamp, isLocalSession: isLocal, ...sessionDataForHash } = newData;
       const dataHash = JSON.stringify(sessionDataForHash);
+      
+      // Update local session flag
+      if (typeof isLocal === 'boolean') {
+        setIsLocalSession(isLocal);
+      }
 
       // Mise à jour uniquement si données changées
       if (dataHash !== lastDataHashRef.current) {
@@ -296,13 +303,18 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
     }
   }, [isConnected, onConnectionChange]);
 
-  // Démarrage et nettoyage avec gestion du pausePolling
+  // Démarrage et nettoyage avec gestion du pausePolling et sessions locales
   useEffect(() => {
     if (!pausePolling && sessionId && sessionId !== 'new') {
+      // Fetch initial data
       if (fetchSessionDataRef.current) {
         fetchSessionDataRef.current();
       }
-      setupPolling();
+      // Only setup polling if not a local session
+      // For local sessions, we only fetch once initially
+      if (!isLocalSession) {
+        setupPolling();
+      }
     }
     
     return () => {
@@ -312,7 +324,7 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
         clearTimeout(connectionDebounceRef.current);
       }
     };
-  }, [sessionId, pausePolling]); // Seulement les valeurs primitives
+  }, [sessionId, pausePolling, isLocalSession]); // Ajouter isLocalSession aux dépendances
 
   // Retry automatique avec backoff exponentiel  
   useEffect(() => {
@@ -346,6 +358,7 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
     currentUserId,
     addRound,
     connectionStatus,
-    forceRefresh
+    forceRefresh,
+    isLocalSession
   };
 }

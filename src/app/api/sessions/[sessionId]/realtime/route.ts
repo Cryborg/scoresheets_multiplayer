@@ -256,7 +256,8 @@ export async function GET(
       },
       events: eventsResult.rows.map(event => event as SessionEventRecord).reverse(), // Most recent first
       timestamp: new Date().toISOString(),
-      currentUserId // Include current user ID for client-side permissions
+      currentUserId, // Include current user ID for client-side permissions
+      isLocalSession // Include flag to indicate if this is a local solo session
     };
 
     return NextResponse.json(responseData);

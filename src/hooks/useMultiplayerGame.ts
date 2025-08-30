@@ -59,7 +59,8 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     currentUserId,
     connectionStatus,
     addRound,
-    forceRefresh
+    forceRefresh,
+    isLocalSession: isLocalFromServer
   } = useRealtimeSession<T>({
     sessionId,
     gameSlug,
@@ -194,6 +195,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     lastUpdate,
     currentUserId,
     connectionStatus,
+    isLocalSession: isLocalFromServer, // Use server-determined local session flag
     
     // Permissions
     canJoinSession,

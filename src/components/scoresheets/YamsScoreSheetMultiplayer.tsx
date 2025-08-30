@@ -137,17 +137,17 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
 
           {/* Score grid */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className={`${session.players.length <= 2 ? '' : 'overflow-x-auto'}`}>
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Catégorie
                 </th>
                 {session.players.map(player => {
                   const canEdit = gameState.canEditPlayerScores?.(player) ?? false;
                   return (
-                    <th key={player.id} className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th key={player.id} className="px-2 sm:px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       <div className="flex flex-col items-center gap-1">
                         <div className="flex items-center justify-center gap-2">
                           <span>{player.player_name}</span>
@@ -170,7 +170,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
               {/* Upper section (1-6) */}
               {YAMS_CATEGORIES.slice(0, 6).map(category => (
                 <tr key={category.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-4 py-4">
+                  <td className="px-2 sm:px-4 py-4">
                     <div>
                       <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {category.name}
@@ -187,7 +187,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                     const canEdit = gameState.canEditPlayerScores?.(player) ?? false;
                     
                     return (
-                      <td key={`${category.id}-${player.id}`} className="px-4 py-4 text-center">
+                      <td key={`${category.id}-${player.id}`} className="px-2 sm:px-4 py-4 text-center">
                         {existingScore !== undefined ? (
                           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {existingScore}
@@ -202,7 +202,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                               onBlur={() => handleScoreBlur(category.id, player.id)}
                               validValues={category.validValues}
                               disabled={!player.is_connected}
-                              className="w-16"
+                              className="w-14 sm:w-16"
                             />
                             {isSaving && (
                               <div className="absolute inset-0 flex items-center justify-center">
@@ -252,7 +252,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
               {/* Lower section */}
               {YAMS_CATEGORIES.slice(6).map(category => (
                 <tr key={category.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-4 py-4">
+                  <td className="px-2 sm:px-4 py-4">
                     <div>
                       <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {category.name}
@@ -269,7 +269,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                     const canEdit = gameState.canEditPlayerScores?.(player) ?? false;
                     
                     return (
-                      <td key={`${category.id}-${player.id}`} className="px-4 py-4 text-center">
+                      <td key={`${category.id}-${player.id}`} className="px-2 sm:px-4 py-4 text-center">
                         {existingScore !== undefined ? (
                           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {existingScore}
@@ -307,7 +307,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
                                   onBlur={() => handleScoreBlur(category.id, player.id)}
                                   validValues={category.validValues}
                                   disabled={!player.is_connected}
-                                  className="w-16"
+                                  className="w-14 sm:w-16"
                                 />
                                 {isSaving && (
                                   <div className="absolute inset-0 flex items-center justify-center">

@@ -141,14 +141,16 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
           )
         }
       >
-        {/* Status Bar */}
-        <StatusBar 
-          connectionStatus={connectionStatus}
-          playersCount={session.players?.length || 0}
-          isEditing={false}
-          lastUpdate={gameState.lastUpdate}
-          gameStatus={session.status || 'active'}
-        />
+        {/* Status Bar - only show for networked sessions */}
+        {!gameState.isLocalSession && (
+          <StatusBar 
+            connectionStatus={connectionStatus}
+            playersCount={session.players?.length || 0}
+            isEditing={false}
+            lastUpdate={gameState.lastUpdate}
+            gameStatus={session.status || 'active'}
+          />
+        )}
 
         {/* Game-specific content wrapped in error boundary */}
         <ErrorBoundary>

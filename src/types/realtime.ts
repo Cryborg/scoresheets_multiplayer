@@ -71,4 +71,5 @@ export interface RealtimeAPIResponse {
   events: SessionEventRecord[];
   timestamp: string;
   currentUserId: number | null;
+  isLocalSession?: boolean;
 }

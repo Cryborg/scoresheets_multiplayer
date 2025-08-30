@@ -1,5 +1,35 @@
 # 🚀 Roadmap & Idées d'évolution - Oh Sheet!
 
+## ✅ Fonctionnalités Implémentées
+
+### 🎮 Système de Jeu Complet
+- **5 jeux fonctionnels** : Yams, Mille Bornes (individuel/équipes), Tarot, Belote, Rami
+- **Architecture générique** : `BaseScoreSheetMultiplayer` + composants spécialisés
+- **Système multijoueur temps réel** : polling HTTP avec intervalles adaptatifs
+- **Sessions persistantes** : codes de partage, rejoindre/quitter, transfert d'hôte
+
+### 🎨 Interface & UX
+- **Responsive mobile** : interface optimisée tactile
+- **Dark/Light mode** : thème adaptatif
+- **Dashboard intelligent** : filtres par catégorie/joueurs/type
+- **Dernier jeu joué** : remonte automatiquement en première position
+- **Indicateurs visuels** : statut connexion, états de partie, badges
+
+### 🔐 Système Utilisateur
+- **Authentification JWT** : login/register sécurisé
+- **Permissions granulaires** : hôte, joueur, spectateur
+- **Sessions guest** : possibilité de jouer sans compte
+- **Admin panel** : gestion utilisateurs et paramètres
+
+### 🏗️ Architecture Technique
+- **Next.js 15** + TypeScript + Tailwind
+- **Base SQLite** : Turso cloud + développement local
+- **Déploiement Vercel** : CI/CD automatique
+- **Tests complets** : Jest + React Testing Library
+- **Code quality** : ESLint strict + pre-commit hooks
+
+---
+
 ## 📋 Fonctionnalités en attente
 
 ### 🔄 Reconnexion & Historique des parties
@@ -210,9 +240,11 @@ POST /api/webhooks/discord
 ## 📅 Timeline suggérée
 
 ### Phase 1 : Consolidation (Q1)
-- ✅ Fixes multiplayer actuels
-- 🔄 Historique des parties
-- 📱 Responsive mobile
+- ✅ ~~Fixes multiplayer actuels~~
+- ✅ ~~Responsive mobile~~
+- ✅ ~~Dernier jeu joué en première position~~
+- 🔄 Reprise de partie en cours depuis dashboard
+- 🔄 Historique des parties complètes
 
 ### Phase 2 : Extension (Q2)
 - 🎪 **Gamification system** (priorité Franck !)

@@ -1,6 +1,7 @@
 import { getGameComponent } from '@/lib/gameComponentLoader';
 import AuthGuard from '@/components/AuthGuard';
 import BackButton from '@/components/ui/BackButton';
+import LastPlayedGameTracker from '@/components/LastPlayedGameTracker';
 
 interface GameSessionPageProps {
   params: Promise<{ 
@@ -51,6 +52,7 @@ export default async function GameSessionPage({ params }: GameSessionPageProps) 
 
   return (
     <AuthGuard>
+      <LastPlayedGameTracker gameSlug={slug} />
       <ScoreSheetComponent sessionId={sessionId} />
     </AuthGuard>
   );

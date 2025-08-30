@@ -9,6 +9,7 @@ import Sidebar from '@/components/Sidebar';
 import { loadMultipleGameMetadata, defaultGameMetadata } from '@/lib/gameMetadata';
 import { Game, GamesAPIResponse } from '@/types/dashboard';
 import { useDashboardFilters } from '@/hooks/useDashboardFilters';
+import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
 import { BRANDING } from '@/lib/branding';
 
 export default function DashboardPage() {
@@ -29,6 +30,9 @@ export default function DashboardPage() {
     resetFilters,
     initialized: filtersInitialized
   } = useDashboardFilters();
+
+  // Last played game tracking
+  const { sortGamesWithLastPlayedFirst, lastPlayedGameSlug, initialized: lastPlayedInitialized } = useLastPlayedGame();
 
   // Chargement des jeux depuis l'API avec métadonnées
   useEffect(() => {
@@ -90,8 +94,11 @@ export default function DashboardPage() {
       }
     }
 
+    // Sort games with last played first
+    games = sortGamesWithLastPlayedFirst(games);
+
     return games;
-  }, [allGames, categoryFilter, multiplayerFilter, playerCountFilter]);
+  }, [allGames, categoryFilter, multiplayerFilter, playerCountFilter, sortGamesWithLastPlayedFirst]);
 
   const gameCategories = useMemo(() => 
     ['all', ...Array.from(new Set(allGames.map(g => g.category_name)))]
@@ -258,9 +265,15 @@ export default function DashboardPage() {
                 <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border dark:border-gray-700 animate-pulse"><div className="p-6"><div className="flex items-center justify-between mb-4"><div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded"></div><div className="w-16 h-5 bg-gray-200 dark:bg-gray-600 rounded-full"></div></div><div className="w-32 h-6 bg-gray-200 dark:bg-gray-600 rounded mb-2"></div><div className="w-full h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-24 h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-full h-10 bg-gray-200 dark:bg-gray-600 rounded"></div></div></div>
               ))
             ) : (
-              filteredGames.map((game) => {
+              filteredGames.map((game, index) => {
+                const isLastPlayed = lastPlayedInitialized && lastPlayedGameSlug === game.slug && index === 0;
                 return (
-                  <div key={game.id} className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:shadow-2xl dark:drop-shadow-[0_0_10px_rgba(255,255,255,0.2)] dark:hover:drop-shadow-[0_0_14px_rgba(255,255,255,0.35)] border dark:border-gray-600 dark:hover:border-gray-500 transition-all duration-200 flex flex-col">
+                  <div key={game.id} className={`relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:shadow-2xl dark:drop-shadow-[0_0_10px_rgba(255,255,255,0.2)] dark:hover:drop-shadow-[0_0_14px_rgba(255,255,255,0.35)] border dark:border-gray-600 dark:hover:border-gray-500 transition-all duration-200 flex flex-col ${isLastPlayed ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`}>
+                    {isLastPlayed && (
+                      <div className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-2 rotate-12 bg-blue-500 text-white text-xs font-bold px-6 py-1 shadow-lg z-10">
+                        Dernier joué
+                      </div>
+                    )}
                     {game.multiplayer && (
                       <div className="absolute top-0 left-0 transform -translate-x-1/4 translate-y-4 -rotate-45 bg-yellow-400 text-black text-xs font-bold px-8 py-1 shadow-lg">
                         Multi
