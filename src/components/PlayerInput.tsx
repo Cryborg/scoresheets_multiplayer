@@ -85,10 +85,10 @@ export default function PlayerInput({
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => {
-            // Délai court mais suffisant pour permettre le clic
+            // Délai suffisant pour permettre le clic sur les suggestions
             setTimeout(() => {
               setShowSuggestions(false);
-            }, 100);
+            }, 200);
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
@@ -123,7 +123,10 @@ export default function PlayerInput({
           {filteredSuggestions.map((suggestion, index) => (
             <button
               key={suggestion}
-              onClick={() => selectSuggestion(suggestion)}
+              onMouseDown={(e) => {
+                e.preventDefault(); // Empêche l'input de perdre le focus
+                selectSuggestion(suggestion);
+              }}
               className={`w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                 index === selectedIndex ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'
               } ${index === 0 ? 'rounded-t-lg' : ''} ${index === filteredSuggestions.length - 1 ? 'rounded-b-lg' : ''}`}

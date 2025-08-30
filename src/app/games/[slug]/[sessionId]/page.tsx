@@ -1,5 +1,6 @@
 import { getGameComponent } from '@/lib/gameComponentLoader';
 import AuthGuard from '@/components/AuthGuard';
+import BackButton from '@/components/ui/BackButton';
 
 interface GameSessionPageProps {
   params: Promise<{ 
@@ -17,14 +18,31 @@ export default async function GameSessionPage({ params }: GameSessionPageProps) 
   if (!ScoreSheetComponent) {
     return (
       <AuthGuard>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Jeu non trouvé
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Le jeu "{slug}" n'est pas encore implémenté.
-            </p>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          {/* Navigation Bar */}
+          <nav className="bg-white dark:bg-gray-800 shadow">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center h-16">
+                <BackButton href="/dashboard" label="Retour au tableau de bord" />
+              </div>
+            </div>
+          </nav>
+
+          {/* Error Content */}
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center max-w-md mx-auto px-4">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                Jeu non trouvé
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Le jeu "{slug}" n'est pas encore implémenté.
+              </p>
+              <BackButton 
+                href="/dashboard" 
+                label="Retour au tableau de bord"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              />
+            </div>
           </div>
         </div>
       </AuthGuard>
