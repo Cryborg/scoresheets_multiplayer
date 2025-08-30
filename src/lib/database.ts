@@ -453,6 +453,17 @@ async function seedInitialData(): Promise<void> {
       estimated_duration: 30
     },
     {
+      name: 'Mille Bornes - Équipes',
+      slug: 'mille-bornes-equipes',
+      category: 'Cartes',
+      rules: 'Course automobile en équipes avec cartes de distance et d\'attaque. Version officielle 2 contre 2.',
+      score_type: 'rounds',
+      team_based: 1,
+      min_players: 4,
+      max_players: 4,
+      estimated_duration: 45
+    },
+    {
       name: 'Belote',
       slug: 'belote',
       category: 'Cartes',
