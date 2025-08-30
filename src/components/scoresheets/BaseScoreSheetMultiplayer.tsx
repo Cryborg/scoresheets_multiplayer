@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import GameLayout from '@/components/layout/GameLayout';
 import RankingSidebar from '@/components/layout/RankingSidebar';
 import WaitingRoom from '@/components/multiplayer/WaitingRoom';
@@ -9,6 +9,7 @@ import { LoadingState, ErrorState, JoinSessionForm } from '@/components/multipla
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
 import { GameSessionWithCategories, GameSessionWithRounds } from '@/types/multiplayer';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { logger } from '@/lib/logger';
 
 interface BaseScoreSheetProps<T> {
   sessionId: string;
@@ -25,6 +26,11 @@ interface BaseScoreSheetProps<T> {
  * Handles common multiplayer logic: loading, error states, waiting room, etc.
  * Reduces duplication across 7+ scoresheet components
  */
+// Memoized components for performance
+const MemoizedRankingSidebar = memo(RankingSidebar);
+const MemoizedStatusBar = memo(StatusBar);
+const MemoizedWaitingRoom = memo(WaitingRoom);
+
 export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCategories | GameSessionWithRounds>({ 
   sessionId, 
   gameSlug,
@@ -33,6 +39,15 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
 }: BaseScoreSheetProps<T>) {
   
   const gameState = useMultiplayerGame<T>({ sessionId, gameSlug });
+
+  // Development logging
+  logger.debug('[BaseScoreSheet] State:', { 
+    sessionId, 
+    gameSlug, 
+    hasSession: !!gameState.session, 
+    error: gameState.error,
+    status: gameState.session?.status 
+  });
   
   const {
     session,
@@ -58,8 +73,19 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
     return <LoadingState />;
   }
 
-  // Error state
+  // Error state with enhanced logging
   if (error) {
+    const isNetworkError = error.toLowerCase().includes('network') || 
+                          error.toLowerCase().includes('fetch') ||
+                          error.toLowerCase().includes('connection');
+    
+    logger.error('[BaseScoreSheet] Error occurred:', { 
+      error, 
+      sessionId, 
+      gameSlug, 
+      isNetworkError 
+    });
+    
     return (
       <ErrorState 
         error={error}
@@ -108,7 +134,7 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
   // Waiting room state
   if (session.status === 'waiting') {
     return (
-      <WaitingRoom
+      <MemoizedWaitingRoom
         session={session}
         currentUserId={currentUserId}
         canStartGame={canStartGame}
@@ -118,6 +144,14 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
     );
   }
 
+
+  // Memoized ranking component for performance
+  const memoizedRankingComponent = useMemo(() => {
+    if (rankingComponent) {
+      return rankingComponent({ session });
+    }
+    return <MemoizedRankingSidebar session={session} />;
+  }, [rankingComponent, session]);
 
   // Game active - render the actual scoresheet with error boundary
   return (
@@ -133,16 +167,10 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
         session={session}
         onLeaveSession={handleLeaveSession}
         showRanking={true}
-        rankingComponent={
-          rankingComponent ? (
-            rankingComponent({ session })
-          ) : (
-            <RankingSidebar session={session} />
-          )
-        }
+        rankingComponent={memoizedRankingComponent}
       >
         {/* Status Bar */}
-        <StatusBar 
+        <MemoizedStatusBar 
           connectionStatus={connectionStatus}
           playersCount={session.players?.length || 0}
           isEditing={false}
