@@ -15,12 +15,24 @@ import { GameSessionWithRounds, GameSessionWithCategories } from '@/types/multip
  * Génère automatiquement une interface de jeu complète à partir d'une GameDefinition
  */
 export default function GameFramework({ sessionId, definition }: GameFrameworkProps) {
-  const sessionType = definition.scoreType === 'categories' 
-    ? 'GameSessionWithCategories' 
-    : 'GameSessionWithRounds';
+  console.log('[GameFramework] Initializing with:', { sessionId, slug: definition.slug, scoreType: definition.scoreType });
+  
+  if (definition.scoreType === 'categories') {
+    return (
+      <BaseScoreSheetMultiplayer<GameSessionWithCategories> sessionId={sessionId} gameSlug={definition.slug}>
+        {({ session, gameState }) => (
+          <GameInterface 
+            session={session} 
+            gameState={gameState} 
+            definition={definition}
+          />
+        )}
+      </BaseScoreSheetMultiplayer>
+    );
+  }
 
   return (
-    <BaseScoreSheetMultiplayer sessionId={sessionId} gameSlug={definition.slug}>
+    <BaseScoreSheetMultiplayer<GameSessionWithRounds> sessionId={sessionId} gameSlug={definition.slug}>
       {({ session, gameState }) => (
         <GameInterface 
           session={session} 
@@ -40,6 +52,25 @@ interface GameInterfaceProps {
 
 function GameInterface({ session, gameState, definition }: GameInterfaceProps) {
   const { isHost } = gameState;
+  
+  // Debug logging
+  console.log('[GameFramework] Debug:', { 
+    hasSession: !!session, 
+    hasPlayers: !!session?.players, 
+    playersLength: session?.players?.length,
+    sessionStatus: session?.status,
+    gameState: Object.keys(gameState || {}),
+    definition: definition.slug 
+  });
+  
+  // Attendre que la session soit complètement chargée
+  if (!session) {
+    return <div>Chargement de la session...</div>;
+  }
+  
+  if (!session.players || !Array.isArray(session.players)) {
+    return <div>Chargement des joueurs...</div>;
+  }
   const gameLogic = useGameLogic({
     definition,
     session,

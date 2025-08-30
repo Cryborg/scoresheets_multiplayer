@@ -463,6 +463,16 @@ async function seedInitialData(): Promise<void> {
       estimated_duration: 45
     },
     {
+      name: 'Test Minimal',
+      slug: 'test-minimal',
+      category: 'Plateau',
+      rules: 'Jeu de test minimal pour debug',
+      score_type: 'rounds',
+      min_players: 2,
+      max_players: 4,
+      estimated_duration: 5
+    },
+    {
       name: 'Pierre Papier Ciseaux',
       slug: 'pierre-papier-ciseaux',
       category: 'Plateau',

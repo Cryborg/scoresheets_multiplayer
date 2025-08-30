@@ -80,9 +80,9 @@ export function useGameLogic<TRoundData = any>({
 
   // Calcul des scores totaux
   const getTotalScore = useCallback((playerId: number): number => {
-    if (!session?.rounds) return 0;
+    if (!session?.rounds || !Array.isArray(session.rounds)) return 0;
     return session.rounds.reduce((total, round) => {
-      return total + (round.scores[playerId] || 0);
+      return total + (round.scores?.[playerId] || 0);
     }, 0);
   }, [session?.rounds]);
 
@@ -99,7 +99,8 @@ export function useGameLogic<TRoundData = any>({
 
   // Numéro de la manche actuelle
   const getCurrentRound = useCallback((): number => {
-    return (session?.rounds?.length || 0) + 1;
+    if (!session?.rounds || !Array.isArray(session.rounds)) return 1;
+    return session.rounds.length + 1;
   }, [session?.rounds]);
 
   // Validation des données
