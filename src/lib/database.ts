@@ -463,6 +463,16 @@ async function seedInitialData(): Promise<void> {
       estimated_duration: 45
     },
     {
+      name: 'Pierre Papier Ciseaux',
+      slug: 'pierre-papier-ciseaux',
+      category: 'Plateau',
+      rules: 'Jeu classique Pierre-Papier-Ciseaux pour 2 joueurs. Premier à 5 points gagne.',
+      score_type: 'rounds',
+      min_players: 2,
+      max_players: 2,
+      estimated_duration: 10
+    },
+    {
       name: 'Jeu Libre',
       slug: 'jeu-libre',
       category: 'Plateau',

@@ -28,6 +28,9 @@ const specificComponents: Record<string, ComponentType<ScoreSheetProps>> = {
   'belote': dynamic(() => import('@/components/scoresheets/BeloteScoreSheetMultiplayer'), {
     loading: LoadingComponent
   }),
+  'pierre-papier-ciseaux': dynamic(() => import('@/components/scoresheets/PierrePapierCiseauxScoreSheet'), {
+    loading: LoadingComponent
+  }),
   'mille-bornes': dynamic(() => import('@/components/scoresheets/MilleBornesScoreSheetMultiplayer'), {
     loading: LoadingComponent
   }),

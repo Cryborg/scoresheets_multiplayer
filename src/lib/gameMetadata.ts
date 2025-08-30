@@ -18,6 +18,7 @@ const metadataLoaders: Record<string, () => Promise<{ default?: GameMetadata } |
   'yams': () => import('@/games/yams/metadata').then(m => ({ default: m.yamsMetadata })),
   'tarot': () => import('@/games/tarot/metadata').then(m => ({ default: m.tarotMetadata })),
   'belote': () => import('@/games/belote/metadata').then(m => ({ default: m.beloteMetadata })),
+  'pierre-papier-ciseaux': () => import('@/games/pierre-papier-ciseaux/metadata').then(m => ({ default: m.pierrePapierCiseauxMetadata })),
   'bridge': () => import('@/games/bridge/metadata').then(m => ({ default: m.bridgeMetadata })),
   'mille-bornes': () => import('@/games/mille-bornes/metadata').then(m => ({ default: m.milleBornesMetadata })),
   'mille-bornes-equipes': () => import('@/games/mille-bornes-equipes/metadata').then(m => ({ default: m.milleBornesEquipesMetadata })),
