@@ -10,7 +10,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const tursoClient = createClient({
   url: isProduction 
     ? (process.env.TURSO_DATABASE_URL || 'libsql://scoresheets-cryborg.aws-eu-west-1.turso.io')
-    : 'file:./data/scoresheets-new.db',
+    : 'file:./data/scoresheets.db',
   authToken: isProduction ? process.env.TURSO_AUTH_TOKEN : undefined
 });
 
@@ -163,6 +163,9 @@ async function createTables(): Promise<void> {
       host_user_id INTEGER NOT NULL,
       session_code TEXT UNIQUE NOT NULL,
       status TEXT CHECK (status IN ('waiting', 'active', 'paused', 'completed', 'cancelled')) DEFAULT 'waiting',
+      current_round INTEGER DEFAULT 1,
+      current_players INTEGER DEFAULT 0,
+      last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
       has_score_target INTEGER DEFAULT 0,
       score_target INTEGER,
       score_direction TEXT CHECK (score_direction IN ('higher', 'lower')) DEFAULT 'higher',
@@ -179,9 +182,11 @@ async function createTables(): Promise<void> {
   await tursoClient.execute(`
     CREATE TABLE IF NOT EXISTS teams (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL,
       name TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE
     )
   `);
 
@@ -247,9 +252,12 @@ async function createTables(): Promise<void> {
       round_number INTEGER,
       category_id TEXT,
       score INTEGER NOT NULL,
+      created_by_user_id INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE,
-      FOREIGN KEY (player_id) REFERENCES players (id)
+      FOREIGN KEY (player_id) REFERENCES players (id),
+      FOREIGN KEY (created_by_user_id) REFERENCES users (id)
     )
   `);
 
@@ -297,8 +305,9 @@ async function createTables(): Promise<void> {
   // App settings table
   await tursoClient.execute(`
     CREATE TABLE IF NOT EXISTS app_settings (
-      id TEXT PRIMARY KEY,
+      key TEXT PRIMARY KEY,
       value TEXT,
+      type TEXT,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -308,9 +317,88 @@ async function createTables(): Promise<void> {
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_session_player_session ON session_player (session_id)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_scores_session ON scores (session_id)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_session_events_session ON session_events (session_id)`);
+  
+  // Add missing columns to existing tables via ALTER TABLE (for migration)
+  try {
+    await tursoClient.execute(`ALTER TABLE sessions ADD COLUMN current_players INTEGER DEFAULT 0`);
+    console.log('✅ Added current_players column to sessions');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ current_players column already exists or error:', error.message);
+    }
+  }
+  
+  try {
+    await tursoClient.execute(`ALTER TABLE sessions ADD COLUMN last_activity DATETIME DEFAULT CURRENT_TIMESTAMP`);
+    console.log('✅ Added last_activity column to sessions');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ last_activity column already exists or error:', error.message);
+    }
+  }
+  
+  try {
+    await tursoClient.execute(`ALTER TABLE scores ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP`);
+    console.log('✅ Added updated_at column to scores');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ updated_at column already exists or error:', error.message);
+    }
+  }
+  
+  try {
+    await tursoClient.execute(`ALTER TABLE teams ADD COLUMN session_id INTEGER`);
+    console.log('✅ Added session_id column to teams');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ session_id column already exists or error:', error.message);
+    }
+  }
+  
+  try {
+    await tursoClient.execute(`ALTER TABLE app_settings RENAME COLUMN id TO key`);
+    console.log('✅ Renamed id column to key in app_settings');
+  } catch (error: any) {
+    // SQLite doesn't support RENAME COLUMN in older versions, ignore
+  }
+  
+  try {
+    await tursoClient.execute(`ALTER TABLE app_settings ADD COLUMN type TEXT`);
+    console.log('✅ Added type column to app_settings');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ type column already exists or error:', error.message);
+    }
+  }
 }
 
 async function seedInitialData(): Promise<void> {
+  // Create admin user from environment variables
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminUsername = process.env.ADMIN_USERNAME || 'Admin';
+  
+  if (adminEmail && adminPassword) {
+    const existingAdmin = await tursoClient.execute({
+      sql: 'SELECT id FROM users WHERE email = ?',
+      args: [adminEmail]
+    });
+    
+    if (existingAdmin.rows.length === 0) {
+      const bcrypt = await import('bcrypt');
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      
+      await tursoClient.execute({
+        sql: `INSERT INTO users (username, email, password_hash, is_admin, created_at, updated_at) 
+              VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        args: [adminUsername, adminEmail, hashedPassword]
+      });
+      console.log(`✅ Admin user created: ${adminUsername} (${adminEmail})`);
+    } else {
+      console.log(`⏭️ Admin user already exists: ${adminEmail}`);
+    }
+  }
+
   // Game categories
   const categories = [
     { name: 'Cartes', description: 'Jeux de cartes traditionnels', icon: '🎴' },
@@ -526,13 +614,13 @@ async function migrateSystemData(): Promise<void> {
           
           for (const setting of oldSettings.rows) {
             const existing = await tursoClient.execute({
-              sql: 'SELECT id FROM app_settings WHERE id = ?',
+              sql: 'SELECT key FROM app_settings WHERE key = ?',
               args: [setting.id || setting.key]
             });
 
             if (existing.rows.length === 0) {
               await tursoClient.execute({
-                sql: `INSERT INTO app_settings (id, value, updated_at) VALUES (?, ?, ?)`,
+                sql: `INSERT INTO app_settings (key, value, updated_at) VALUES (?, ?, ?)`,
                 args: [
                   setting.id || setting.key,
                   setting.value,
