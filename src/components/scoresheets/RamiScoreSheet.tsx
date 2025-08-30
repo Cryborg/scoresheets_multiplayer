@@ -22,15 +22,18 @@ export default function RamiScoreSheet({ sessionId }: { sessionId: string }) {
   };
 
   const handleSubmitRound = async (session: GameSessionWithRounds) => {
-    const scores = Object.entries(roundScores).map(([playerId, score]) => ({
-      playerId: parseInt(playerId),
-      score
+    // Include all players, treating empty/missing scores as 0
+    const scores = session.players.map(player => ({
+      playerId: player.id,
+      score: roundScores[player.id] || 0
     }));
 
-    if (scores.length !== session.players.length) {
+    // Vérifier qu'au moins un score n'est pas vide/zéro
+    const hasAtLeastOneScore = scores.some(score => score.score !== 0);
+    if (!hasAtLeastOneScore) {
       toast({
         title: "Erreur",
-        description: "Veuillez entrer les scores pour tous les joueurs",
+        description: "Veuillez entrer au moins un score non nul",
         variant: "destructive"
       });
       return;
@@ -220,7 +223,7 @@ export default function RamiScoreSheet({ sessionId }: { sessionId: string }) {
                 <div className="pt-4 border-t border-blue-200 dark:border-blue-800">
                   <Button 
                     onClick={() => handleSubmitRound(session)} 
-                    disabled={isSubmitting || Object.keys(roundScores).length !== session.players.length}
+                    disabled={isSubmitting}
                     className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 transition-all duration-200 transform hover:scale-[1.02] disabled:hover:scale-100"
                   >
                     {isSubmitting ? (
