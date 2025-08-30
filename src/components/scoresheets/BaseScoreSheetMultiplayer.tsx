@@ -68,6 +68,15 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
     goToDashboard
   } = gameState;
 
+  // Memoized ranking component for performance (must be before any conditional returns)
+  const memoizedRankingComponent = useMemo(() => {
+    if (!session) return null;
+    if (rankingComponent) {
+      return rankingComponent({ session });
+    }
+    return <MemoizedRankingSidebar session={session} />;
+  }, [rankingComponent, session]);
+
   // Loading state
   if (!session && !error) {
     return <LoadingState />;
@@ -144,14 +153,6 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
     );
   }
 
-
-  // Memoized ranking component for performance
-  const memoizedRankingComponent = useMemo(() => {
-    if (rankingComponent) {
-      return rankingComponent({ session });
-    }
-    return <MemoizedRankingSidebar session={session} />;
-  }, [rankingComponent, session]);
 
   // Game active - render the actual scoresheet with error boundary
   return (

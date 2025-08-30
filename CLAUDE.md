@@ -356,6 +356,38 @@ export const metadata = {
 <LoadingSpinner text={BRANDING.loading.text} />
 ```
 
+## 🔧 CODE QUALITY RULES (AI CRITICAL)
+
+### TypeScript & ESLint Standards
+
+**NEVER use `any` type - ALWAYS specify proper types:**
+```typescript
+// ❌ WRONG - Causes linting errors
+function handleData(data: any) { ... }
+const result: any = await response.json();
+
+// ✅ CORRECT - Use proper types
+function handleData(data: GameSession) { ... }
+const result: Player[] = await response.json();
+function handleData(data: unknown) { ... } // If truly unknown
+
+// ✅ For complex objects, use specific interfaces or Record<>
+interface ApiResponse { success: boolean; data: Player[]; }
+const config: Record<string, string> = {};
+```
+
+**React Rules:**
+- ✅ Always escape apostrophes: `l'application` → `l&apos;application`  
+- ✅ Always escape quotes: `"example"` → `&quot;example&quot;`
+- ✅ Use `useCallback` for functions in useEffect dependencies
+- ✅ Include all dependencies in React hooks dependency arrays
+- ✅ Use `console.error` for error variables in catch blocks
+
+**Import Rules:**
+- ❌ Remove unused imports immediately
+- ✅ Import only what you need from libraries
+- ✅ Use ES6 imports, avoid `require()` except in specific cases
+
 ## 🧠 MULTIPLAYER HOOKS ARCHITECTURE (AI CRITICAL KNOWLEDGE)
 
 ### useMultiplayerGame (Master Hook)
