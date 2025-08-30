@@ -65,6 +65,7 @@ export default function AdminUsersPage() {
       const data = await usersResponse.json();
       setUsers(data.users);
     } catch (error) {
+      console.error('Error loading users:', error);
       toast({
         title: "Erreur",
         description: "Impossible de charger les utilisateurs",

@@ -40,7 +40,7 @@ export interface GameSessionWithRounds extends BaseGameSession {
   rounds: Array<{
     round_number: number;
     scores: { [playerId: number]: number };
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
   }>;
 }
 

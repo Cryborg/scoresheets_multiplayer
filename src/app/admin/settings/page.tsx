@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Save, RefreshCw, Database, Shield, Globe, Palette } from 'lucide-react';
+import { Save, RefreshCw, Database, Shield, Globe, Palette } from 'lucide-react';
 
 interface AppSettings {
   siteName: string;
@@ -107,7 +107,7 @@ export default function AdminSettingsPage() {
             Configuration
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Paramètres de l'application
+            Paramètres de l&apos;application
           </p>
         </div>
         <div className="flex gap-3">
@@ -167,7 +167,7 @@ export default function AdminSettingsPage() {
             <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
               <div>
                 <h3 className="font-medium text-gray-900 dark:text-white">Mode maintenance</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Désactiver l'accès public au site</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Désactiver l&apos;accès public au site</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -183,7 +183,7 @@ export default function AdminSettingsPage() {
             <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
               <div>
                 <h3 className="font-medium text-gray-900 dark:text-white">Autoriser les inscriptions</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Permettre aux nouveaux utilisateurs de s'inscrire</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Permettre aux nouveaux utilisateurs de s&apos;inscrire</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -246,7 +246,7 @@ export default function AdminSettingsPage() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Durée avant expiration d'une session inactive
+                Durée avant expiration d&apos;une session inactive
               </p>
             </div>
             
@@ -269,7 +269,7 @@ export default function AdminSettingsPage() {
           
           <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>Note :</strong> Le nombre maximum de joueurs est défini individuellement pour chaque jeu dans la section "Jeux".
+              <strong>Note :</strong> Le nombre maximum de joueurs est défini individuellement pour chaque jeu dans la section &quot;Jeux&quot;.
             </p>
           </div>
         </div>
@@ -289,7 +289,7 @@ export default function AdminSettingsPage() {
                 Paramètres de sécurité avancés
               </h3>
               <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                Les paramètres de sécurité avancés sont configurés via les variables d'environnement et ne peuvent pas être modifiés depuis cette interface.
+                Les paramètres de sécurité avancés sont configurés via les variables d&apos;environnement et ne peuvent pas être modifiés depuis cette interface.
               </p>
             </div>
             

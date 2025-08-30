@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRealtimeSession } from './useRealtimeSession';
 import { useGamePermissions } from './useGamePermissions';
-import { GameSession } from '@/types/multiplayer';
+import { GameSession, Player } from '@/types/multiplayer';
 import { notify } from '@/lib/toast';
 
 /**
@@ -199,7 +199,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     canJoinSession,
     canViewSession,
     canStartGame,
-    canEditPlayerScores: (player: any) => permissions.canEditPlayerScores(player, session),
+    canEditPlayerScores: (player: Player) => permissions.canEditPlayerScores(player, session),
     isHost,
     
     // Join functionality

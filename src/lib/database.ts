@@ -322,9 +322,9 @@ async function createTables(): Promise<void> {
   try {
     await tursoClient.execute(`ALTER TABLE sessions ADD COLUMN current_players INTEGER DEFAULT 0`);
     console.log('✅ Added current_players column to sessions');
-  } catch (error: any) {
-    if (!error.message?.includes('duplicate column name')) {
-      console.log('ℹ️ current_players column already exists or error:', error.message);
+  } catch (error: unknown) {
+    if (!(error as Error).message?.includes('duplicate column name')) {
+      console.log('ℹ️ current_players column already exists or error:', (error as Error).message);
     }
   }
   

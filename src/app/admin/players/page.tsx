@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, TrendingUp, Trophy, Clock, Users } from 'lucide-react';
 
 interface PlayerStats {
@@ -23,11 +23,7 @@ export default function PlayersPage() {
   const [sortBy, setSortBy] = useState<'games_played' | 'last_played' | 'win_rate'>('games_played');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    fetchPlayers();
-  }, [sortBy, sortOrder]);
-
-  const fetchPlayers = async () => {
+  const fetchPlayers = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/players?sortBy=${sortBy}&sortOrder=${sortOrder}`);
       if (response.ok) {
@@ -39,7 +35,11 @@ export default function PlayersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortBy, sortOrder]);
+
+  useEffect(() => {
+    fetchPlayers();
+  }, [fetchPlayers]);
 
   const filteredPlayers = players.filter(player =>
     player.player_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
