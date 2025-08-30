@@ -494,6 +494,16 @@ async function seedInitialData(): Promise<void> {
       estimated_duration: 10
     },
     {
+      name: 'Rami',
+      slug: 'rami',
+      category: 'Cartes',
+      rules: 'Formez des combinaisons (suites et brelans) pour vous débarrasser de toutes vos cartes. Le premier à poser toutes ses cartes gagne la manche.',
+      score_type: 'rounds',
+      min_players: 2,
+      max_players: 6,
+      estimated_duration: 45
+    },
+    {
       name: 'Jeu Libre',
       slug: 'jeu-libre',
       category: 'Plateau',
