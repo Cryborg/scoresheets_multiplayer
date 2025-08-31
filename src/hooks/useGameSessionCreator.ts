@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { authenticatedFetch } from '@/lib/authClient';
 import { notify } from '@/lib/toast';
+import { getGuestId, trackGuestSession, isGuest } from '@/lib/guestAuth';
+import { authenticatedFetch } from '@/lib/authClient';
+import { initializeGameSession, validateGameSession, type Game as GameTeamLogicGame } from '@/lib/gameTeamLogic';
 
 export interface Player {
   name: string;
@@ -13,14 +15,8 @@ export interface Team {
   players: string[];
 }
 
-export interface Game {
-  id: number;
-  name: string;
-  slug: string;
-  team_based: boolean;
-  min_players: number;
-  max_players: number;
-}
+// Use the Game interface from gameTeamLogic for consistency
+export interface Game extends GameTeamLogicGame {}
 
 export interface GameSessionCreatorState {
   sessionName: string;
@@ -72,29 +68,8 @@ export function useGameSessionCreator(game?: Game | null) {
   };
 
   const initializePlayers = (game: Game) => {
-    if (game.team_based) {
-      // Pour Mille Bornes Équipes : commencer avec juste la première équipe
-      // La deuxième équipe sera créée via le salon
-      if (game.slug === 'mille-bornes-equipes') {
-        const newTeams = [
-          { name: '', players: ['', ''] } // Le nom sera généré à partir des joueurs
-        ];
-        setState(prev => ({ ...prev, teams: newTeams, players: [] }));
-      } else {
-        // Mode équipe standard : toutes les équipes
-        const teamCount = game.min_players / 2;
-        const newTeams = Array.from({ length: teamCount }, (_, i) => ({
-          name: `Équipe ${i + 1}`,
-          players: ['', '']
-        }));
-        setState(prev => ({ ...prev, teams: newTeams, players: [] }));
-      }
-    } else {
-      // Start with 1 player for multiplayer games (others can join later)
-      const initialPlayerCount = 1;
-      const newPlayers = Array.from({ length: initialPlayerCount }, () => ({ name: '' }));
-      setState(prev => ({ ...prev, players: newPlayers, teams: [] }));
-    }
+    const { teams, players } = initializeGameSession(game);
+    setState(prev => ({ ...prev, teams, players }));
   };
 
   const updatePlayer = useCallback((index: number, name: string) => {
@@ -148,18 +123,10 @@ export function useGameSessionCreator(game?: Game | null) {
       ? state.teams.flatMap(team => team.players).filter(p => p.trim())
       : state.players.map(p => p.name).filter(p => p.trim());
     
-    // Pour les jeux multijoueurs, permettre de créer avec 1 joueur minimum
-    // Les autres joueurs peuvent rejoindre via le salon
-    const minPlayersRequired = game?.team_based && game?.slug === 'mille-bornes-equipes'
-      ? 2  // Jeu d'équipes spécial : il faut au moins une équipe complète
-      : 1; // Autres jeux : 1 joueur suffit pour créer, les autres rejoignent ensuite
-    
-    // Enforce minimum players requirement
-    if (game && validPlayers.length < minPlayersRequired) {
-      const message = game?.team_based && game?.slug === 'mille-bornes-equipes'
-        ? 'Il faut au moins 2 joueurs pour créer la première équipe'
-        : `Il faut au moins 1 joueur pour créer une partie de ${game.name}`;
-      return message;
+    // Use centralized validation logic for minimum players
+    const gameValidationError = validateGameSession(game, state.teams, state.players);
+    if (gameValidationError) {
+      return gameValidationError;
     }
 
     // Enforce max_players limit
@@ -200,14 +167,34 @@ export function useGameSessionCreator(game?: Game | null) {
             players: state.players.map(p => p.name).filter(p => p.trim())
           };
 
-      const response = await authenticatedFetch(apiEndpoint, {
+      // For guests, add guest ID to payload
+      const finalPayload = isGuest() 
+        ? { ...payload, guestId: getGuestId() }
+        : payload;
+
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        credentials: 'include', // Include cookies if any
+        body: JSON.stringify(finalPayload),
       });
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Track session for guests
+        if (isGuest() && data.sessionId && game) {
+          trackGuestSession({
+            sessionId: data.sessionId,
+            sessionCode: data.sessionCode,
+            gameSlug: game.slug,
+            gameName: game.name,
+            sessionName: state.sessionName.trim() || `Partie de ${game.name}`,
+            createdAt: new Date().toISOString(),
+            role: 'host'
+          });
+        }
+        
         return data;
       } else {
         const data = await response.json();

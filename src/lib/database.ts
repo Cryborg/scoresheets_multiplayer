@@ -312,11 +312,28 @@ async function createTables(): Promise<void> {
     )
   `);
 
+  // User game activity tracking
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS user_game_activity (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      game_slug TEXT NOT NULL,
+      last_opened_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      times_opened INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+      UNIQUE (user_id, game_slug)
+    )
+  `);
+
   // Create indexes for performance
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_host ON sessions (host_user_id)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_session_player_session ON session_player (session_id)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_scores_session ON scores (session_id)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_session_events_session ON session_events (session_id)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_game_activity_user ON user_game_activity (user_id)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_game_activity_last_opened ON user_game_activity (user_id, last_opened_at DESC)`);
   
   // Add missing columns to existing tables via ALTER TABLE (for migration)
   try {
@@ -368,6 +385,55 @@ async function createTables(): Promise<void> {
   } catch (error: any) {
     if (!error.message?.includes('duplicate column name')) {
       console.log('ℹ️ type column already exists or error:', error.message);
+    }
+  }
+  
+  // Add is_guest column for guest users
+  try {
+    await tursoClient.execute(`ALTER TABLE users ADD COLUMN is_guest INTEGER DEFAULT 0`);
+    console.log('✅ Added is_guest column to users');
+  } catch (error) {
+    if (error instanceof Error && !error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ is_guest column already exists or table is new');
+    }
+  }
+  
+  // Add guest_sessions_migrated for tracking migration status
+  try {
+    await tursoClient.execute(`ALTER TABLE users ADD COLUMN guest_sessions_migrated INTEGER DEFAULT 0`);
+    console.log('✅ Added guest_sessions_migrated column to users');
+  } catch (error) {
+    if (error instanceof Error && !error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ guest_sessions_migrated column already exists');
+    }
+  }
+
+  // Add created_by_user_id for custom games
+  try {
+    await tursoClient.execute(`ALTER TABLE games ADD COLUMN created_by_user_id INTEGER REFERENCES users(id)`);
+    console.log('✅ Added created_by_user_id column to games');
+  } catch (error) {
+    if (error instanceof Error && !error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ created_by_user_id column already exists or table is new');
+    }
+  }
+
+  // Add team configuration columns for custom games
+  try {
+    await tursoClient.execute(`ALTER TABLE games ADD COLUMN team_count INTEGER DEFAULT 2`);
+    console.log('✅ Added team_count column to games');
+  } catch (error) {
+    if (error instanceof Error && !error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ team_count column already exists or table is new');
+    }
+  }
+
+  try {
+    await tursoClient.execute(`ALTER TABLE games ADD COLUMN players_per_team INTEGER DEFAULT 2`);
+    console.log('✅ Added players_per_team column to games');
+  } catch (error) {
+    if (error instanceof Error && !error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ players_per_team column already exists or table is new');
     }
   }
 }

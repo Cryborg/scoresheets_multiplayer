@@ -36,6 +36,27 @@ export async function GET(request: NextRequest) {
       args: [userId, userId, userId]
     });
 
+    // Récupérer les joueurs pour chaque session
+    const sessionIds = sessions.rows.map(row => row.id);
+    let playersData = [];
+    
+    if (sessionIds.length > 0) {
+      const placeholders = sessionIds.map(() => '?').join(',');
+      const playersResult = await db.execute({
+        sql: `
+          SELECT 
+            sp.session_id,
+            p.name as player_name
+          FROM session_player sp
+          JOIN players p ON sp.player_id = p.id
+          WHERE sp.session_id IN (${placeholders})
+          ORDER BY sp.position
+        `,
+        args: sessionIds
+      });
+      playersData = playersResult.rows;
+    }
+
     return NextResponse.json({
       sessions: sessions.rows.map(row => ({
         id: row.id,
@@ -48,7 +69,10 @@ export async function GET(request: NextRequest) {
         created_at: row.created_at,
         last_activity: row.last_activity,
         ended_at: row.ended_at,
-        is_host: Boolean(row.is_host)
+        is_host: Boolean(row.is_host),
+        players: playersData
+          .filter(player => player.session_id === row.id)
+          .map(player => player.player_name)
       }))
     });
 

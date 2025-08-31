@@ -3,10 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import ThemeToggle from '@/components/ThemeToggle';
-import { LogIn, Mail, Lock } from 'lucide-react';
+import { LogIn, Mail, Lock, ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -15,7 +13,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
-  useTheme();
   const { login } = useAuth();
 
   useEffect(() => {
@@ -67,9 +64,15 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-      {/* Theme Toggle */}
-      <div className="absolute top-6 right-6 z-10">
-        <ThemeToggle />
+      {/* Back Button */}
+      <div className="absolute top-6 left-6 z-10">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50 hover:shadow-lg transition-all duration-200 text-gray-700 dark:text-gray-300"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Retour
+        </Link>
       </div>
 
       {/* Main Content */}

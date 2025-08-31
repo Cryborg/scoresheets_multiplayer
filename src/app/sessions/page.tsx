@@ -5,19 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Users, Clock, Play, Trash2, Square, Calendar, RotateCcw, Loader2 } from 'lucide-react';
 import { authenticatedFetch } from '@/lib/authClient';
 import AuthGuard from '@/components/AuthGuard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from '@/components/ui/alert-dialog';
+import Button from '@/components/ui/Button';
 
 interface Session {
   id: number;
@@ -40,7 +28,7 @@ export default function SessionsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { toast } = useToast();
+  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   const fetchSessions = async () => {
     try {
@@ -69,25 +57,14 @@ export default function SessionsPage() {
       });
 
       if (response.ok) {
-        toast({
-          title: "Partie terminée",
-          description: "La partie a été marquée comme terminée"
-        });
+        setMessage({type: 'success', text: 'Partie terminée avec succès'});
         fetchSessions(); // Refresh the list
       } else {
         const data = await response.json();
-        toast({
-          title: "Erreur",
-          description: data.error || "Impossible de terminer la partie",
-          variant: "destructive"
-        });
+        setMessage({type: 'error', text: data.error || 'Impossible de terminer la partie'});
       }
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Erreur de connexion",
-        variant: "destructive"
-      });
+      setMessage({type: 'error', text: 'Erreur de connexion'});
     }
   };
 
@@ -107,25 +84,14 @@ export default function SessionsPage() {
       });
 
       if (response.ok) {
-        toast({
-          title: "Partie supprimée",
-          description: "La partie a été supprimée définitivement"
-        });
+        setMessage({type: 'success', text: 'Partie supprimée définitivement'});
         fetchSessions(); // Refresh the list
       } else {
         const data = await response.json();
-        toast({
-          title: "Erreur",
-          description: data.error || "Impossible de supprimer la partie",
-          variant: "destructive"
-        });
+        setMessage({type: 'error', text: data.error || 'Impossible de supprimer la partie'});
       }
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Erreur de connexion",
-        variant: "destructive"
-      });
+      setMessage({type: 'error', text: 'Erreur de connexion'});
     } finally {
       setIsDeleting(false);
       setDeleteDialogOpen(false);
@@ -217,6 +183,27 @@ export default function SessionsPage() {
           </div>
         </header>
 
+        {/* Messages */}
+        {message && (
+          <div className={`mx-auto max-w-6xl px-6 pt-4`}>
+            <div className={`p-4 rounded-lg border ${
+              message.type === 'success' 
+                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
+                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'
+            }`}>
+              <div className="flex justify-between items-center">
+                <span>{message.text}</span>
+                <button 
+                  onClick={() => setMessage(null)}
+                  className="ml-4 text-current hover:opacity-70"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Main Content */}
         <div className="max-w-6xl mx-auto px-6 py-8">
           {/* Filters */}
@@ -245,8 +232,8 @@ export default function SessionsPage() {
 
           {/* Sessions List */}
           {filteredSessions.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 shadow-sm">
+              <div className="text-center py-12">
                 <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                   Aucune partie trouvée
@@ -262,13 +249,13 @@ export default function SessionsPage() {
                     Créer une nouvelle partie
                   </Button>
                 </Link>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ) : (
             <div className="grid gap-4">
               {filteredSessions.map((session) => (
-                <Card key={session.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
+                <div key={session.id} className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
@@ -347,49 +334,51 @@ export default function SessionsPage() {
                         )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
           )}
         </div>
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-gray-900 dark:text-white">
-                Supprimer la partie
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
-                Êtes-vous sûr de vouloir supprimer cette partie ? Cette action est irréversible et toutes les données associées seront perdues.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel 
-                onClick={() => setDeleteDialogOpen(false)}
-                disabled={isDeleting}
-                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              >
-                Annuler
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteConfirm}
-                disabled={isDeleting}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Suppression...
-                  </>
-                ) : (
-                  'Supprimer'
-                )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {deleteDialogOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg max-w-md w-full mx-4">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Supprimer la partie
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Êtes-vous sûr de vouloir supprimer cette partie ? Cette action est irréversible et toutes les données associées seront perdues.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setDeleteDialogOpen(false)}
+                    disabled={isDeleting}
+                    className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 rounded-md transition-colors disabled:opacity-50"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleDeleteConfirm}
+                    disabled={isDeleting}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white border border-red-600 hover:border-red-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2 inline" />
+                        Suppression...
+                      </>
+                    ) : (
+                      'Supprimer'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AuthGuard>
   );

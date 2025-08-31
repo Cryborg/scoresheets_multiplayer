@@ -3,20 +3,24 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, Zap, Users, Clock, Gamepad2, Share2, RotateCcw, Save } from 'lucide-react';
+import { Menu, Zap, Users, Clock, Gamepad2, Share2, RotateCcw, Save, Plus } from 'lucide-react';
+import Button from '@/components/ui/Button';
 import AuthGuard from '@/components/AuthGuard';
 import Sidebar from '@/components/Sidebar';
 import { loadMultipleGameMetadata, defaultGameMetadata } from '@/lib/gameMetadata';
 import { Game, GamesAPIResponse } from '@/types/dashboard';
 import { useDashboardFilters } from '@/hooks/useDashboardFilters';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
+import GameCard from '@/components/dashboard/GameCard';
 import { BRANDING } from '@/lib/branding';
+import { authenticatedFetch } from '@/lib/authClient';
 
 export default function DashboardPage() {
   const router = useRouter();
   const [sessionId, setSessionId] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [allGames, setAllGames] = useState<Game[]>([]);
+  const [availableGames, setAvailableGames] = useState<Game[]>([]); // Pour le Sidebar
   const [loading, setLoading] = useState(true);
 
   // Filter states with localStorage persistence
@@ -31,14 +35,49 @@ export default function DashboardPage() {
     initialized: filtersInitialized
   } = useDashboardFilters();
 
-  // Last played game tracking
-  const { sortGamesWithLastPlayedFirst, lastPlayedGameSlug, initialized: lastPlayedInitialized } = useLastPlayedGame();
+  // Keep the hook for tracking in other parts of the app but don't use sort logic here
+  const { setLastPlayedGame } = useLastPlayedGame();
 
-  // Chargement des jeux depuis l'API avec métadonnées
+  // Chargement des jeux depuis l'API avec métadonnées (seulement ceux ouverts par l'utilisateur)
   useEffect(() => {
-    const fetchGames = async () => {
+    const fetchUserGames = async () => {
       try {
-        const response = await fetch('/api/games');
+        const response = await authenticatedFetch('/api/games');
+        const data: GamesAPIResponse = await response.json();
+        
+        const slugs = data.games.map(game => game.slug);
+        const metadataMap = await loadMultipleGameMetadata(slugs);
+        
+        const formattedGames: Game[] = data.games.map(game => {
+          const metadata = metadataMap[game.slug] || defaultGameMetadata;
+          return {
+            id: game.id,
+            name: game.name,
+            slug: game.slug,
+            category_name: game.category_name,
+            rules: metadata.shortDescription,
+            min_players: game.min_players,
+            max_players: game.max_players,
+            duration: metadata.duration,
+            icon: metadata.icon,
+            is_implemented: game.is_implemented,
+            difficulty: metadata.difficulty,
+            variant: metadata.variant,
+            multiplayer: metadata.multiplayer,
+            last_opened_at: game.last_opened_at,
+            times_opened: game.times_opened
+          };
+        });
+        
+        setAllGames(formattedGames);
+      } catch (error) {
+        console.error('Erreur lors du chargement des jeux utilisateur:', error);
+      }
+    };
+
+    const fetchAvailableGames = async () => {
+      try {
+        const response = await fetch('/api/games/available');
         const data: GamesAPIResponse = await response.json();
         
         const slugs = data.games.map(game => game.slug);
@@ -63,15 +102,19 @@ export default function DashboardPage() {
           };
         });
         
-        setAllGames(formattedGames);
-        setLoading(false);
+        setAvailableGames(formattedGames);
       } catch (error) {
-        console.error('Erreur lors du chargement des jeux:', error);
-        setLoading(false);
+        console.error('Erreur lors du chargement des jeux disponibles:', error);
       }
     };
 
-    fetchGames();
+
+    const fetchData = async () => {
+      await Promise.all([fetchUserGames(), fetchAvailableGames()]);
+      setLoading(false);
+    };
+
+    fetchData();
   }, []);
 
   const filteredGames = useMemo(() => {
@@ -94,11 +137,11 @@ export default function DashboardPage() {
       }
     }
 
-    // Sort games with last played first
-    games = sortGamesWithLastPlayedFirst(games);
+    // Sort games by last opened date (already sorted from API query ORDER BY last_opened_at DESC)
+    // Les jeux sont déjà triés par date de dernière ouverture par l'API
 
     return games;
-  }, [allGames, categoryFilter, multiplayerFilter, playerCountFilter, sortGamesWithLastPlayedFirst]);
+  }, [allGames, categoryFilter, multiplayerFilter, playerCountFilter]);
 
   const gameCategories = useMemo(() => 
     ['all', ...Array.from(new Set(allGames.map(g => g.category_name)))]
@@ -266,36 +309,15 @@ export default function DashboardPage() {
               ))
             ) : (
               filteredGames.map((game, index) => {
-                const isLastPlayed = lastPlayedInitialized && lastPlayedGameSlug === game.slug && index === 0;
+                // Le premier jeu dans la liste est le dernier joué (trié par last_opened_at DESC)
+                const isLastPlayed = index === 0 && filteredGames.length > 0;
                 return (
-                  <div key={game.id} className={`relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:shadow-2xl dark:drop-shadow-[0_0_10px_rgba(255,255,255,0.2)] dark:hover:drop-shadow-[0_0_14px_rgba(255,255,255,0.35)] border dark:border-gray-600 dark:hover:border-gray-500 transition-all duration-200 flex flex-col ${isLastPlayed ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`}>
-                    {isLastPlayed && (
-                      <div className="absolute top-0 right-0 transform translate-x-1/4 -translate-y-2 rotate-12 bg-blue-500 text-white text-xs font-bold px-6 py-1 shadow-lg z-10">
-                        Dernier joué
-                      </div>
-                    )}
-                    {game.multiplayer && (
-                      <div className="absolute top-0 left-0 transform -translate-x-1/4 translate-y-4 -rotate-45 bg-yellow-400 text-black text-xs font-bold px-8 py-1 shadow-lg">
-                        Multi
-                      </div>
-                    )}
-                    <div className="p-6 flex-1 flex flex-col">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="text-3xl">{game.icon}</div>
-                        <div className="text-xs px-2 py-1 bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200 rounded-full">{game.category_name}</div>
-                      </div>
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{game.name}</h4>
-                      <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm flex-1">{game.rules}</p>
-                      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4">
-                        <div className="flex items-center gap-1"><Users className="h-3 w-3" />{game.min_players === game.max_players ? `${game.min_players} joueurs` : `${game.min_players}-${game.max_players} joueurs`}</div>
-                        <div className="flex items-center gap-1"><Clock className="h-3 w-3" />{game.duration}</div>
-                      </div>
-                      <Link href={`/games/${game.slug}/new`} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm mt-auto">
-                        <Zap className="h-4 w-4" />
-                        Nouvelle Partie
-                      </Link>
-                    </div>
-                  </div>
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    isLastPlayed={isLastPlayed}
+                    index={index}
+                  />
                 );
               })
             )}
@@ -311,7 +333,7 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} games={allGames} onLogout={handleLogout} />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} games={availableGames} onLogout={handleLogout} />
       </div>
     </AuthGuard>
   );

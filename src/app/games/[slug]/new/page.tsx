@@ -4,11 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { authenticatedFetch } from '@/lib/authClient';
 import { useGameSessionCreator, Game } from '@/hooks/useGameSessionCreator';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
 import GameSessionForm from '@/components/GameSessionForm';
-import AuthGuard from '@/components/AuthGuard';
+import { authenticatedFetch } from '@/lib/authClient';
 
 export default function NewGamePage() {
   const params = useParams();
@@ -32,12 +31,14 @@ export default function NewGamePage() {
 
   const fetchGame = useCallback(async () => {
     try {
-      const response = await authenticatedFetch('/api/games');
+      // Use available games API to allow access to all games
+      const response = await fetch('/api/games/available');
       if (response.ok) {
         const data = await response.json();
         const foundGame = data.games.find((g: Game) => g.slug === slug);
         
         if (!foundGame) {
+          // Game not found in available games, redirect to dashboard
           router.push('/dashboard');
           return;
         }
@@ -45,6 +46,20 @@ export default function NewGamePage() {
         setGame(foundGame);
         // Save this game as the last played
         setLastPlayedGame(slug);
+        
+        // Track game activity (game opening)
+        try {
+          await authenticatedFetch('/api/games/activity', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ gameSlug: slug }),
+          });
+        } catch (activityError) {
+          // Don't fail if activity tracking fails
+          console.warn('Failed to track game activity:', activityError);
+        }
       } else {
         router.push('/dashboard');
       }
@@ -75,14 +90,12 @@ export default function NewGamePage() {
 
   if (loading) {
     return (
-      <AuthGuard>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600 dark:text-gray-400 mt-4">Chargement du jeu...</p>
-          </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600 dark:text-gray-400 mt-4">Chargement du jeu...</p>
         </div>
-      </AuthGuard>
+      </div>
     );
   }
 
@@ -92,8 +105,7 @@ export default function NewGamePage() {
 
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Header */}
         <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
           <div className="max-w-4xl mx-auto px-6 py-4">
@@ -133,6 +145,5 @@ export default function NewGamePage() {
           />
         </div>
       </div>
-    </AuthGuard>
   );
 }

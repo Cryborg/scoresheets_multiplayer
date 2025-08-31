@@ -4,7 +4,6 @@ import React, { useCallback, useMemo } from 'react';
 import { Share2, X } from 'lucide-react';
 import ScoreInput from '@/components/ui/ScoreInput';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
-import RankingSidebar from '@/components/layout/RankingSidebar';
 import { useOptimisticScores } from '@/hooks/useOptimisticScores';
 import { useScoreActions } from '@/hooks/useScoreActions';
 import { GameSessionWithCategories, Player } from '@/types/multiplayer';
@@ -18,14 +17,14 @@ interface YamsCategory {
 }
 
 const YAMS_CATEGORIES: YamsCategory[] = [
-  { id: 'ones', name: '1', description: 'Somme des 1', validValues: [0, 1, 2, 3, 4, 5] },
-  { id: 'twos', name: '2', description: 'Somme des 2', validValues: [0, 2, 4, 6, 8, 10] },
-  { id: 'threes', name: '3', description: 'Somme des 3', validValues: [0, 3, 6, 9, 12, 15] },
-  { id: 'fours', name: '4', description: 'Somme des 4', validValues: [0, 4, 8, 12, 16, 20] },
-  { id: 'fives', name: '5', description: 'Somme des 5', validValues: [0, 5, 10, 15, 20, 25] },
-  { id: 'sixes', name: '6', description: 'Somme des 6', validValues: [0, 6, 12, 18, 24, 30] },
-  { id: 'three_of_kind', name: 'Brelan', description: 'Somme des dés (3 identiques)' },
-  { id: 'four_of_kind', name: 'Carré', description: 'Somme des dés (4 identiques)' },
+  { id: 'ones', name: '1', description: '', validValues: [0, 1, 2, 3, 4, 5] },
+  { id: 'twos', name: '2', description: '', validValues: [0, 2, 4, 6, 8, 10] },
+  { id: 'threes', name: '3', description: '', validValues: [0, 3, 6, 9, 12, 15] },
+  { id: 'fours', name: '4', description: '', validValues: [0, 4, 8, 12, 16, 20] },
+  { id: 'fives', name: '5', description: '', validValues: [0, 5, 10, 15, 20, 25] },
+  { id: 'sixes', name: '6', description: '', validValues: [0, 6, 12, 18, 24, 30] },
+  { id: 'three_of_kind', name: 'Brelan', description: '3 dés identiques' },
+  { id: 'four_of_kind', name: 'Carré', description: '4 dés identiques' },
   { id: 'full_house', name: 'Full', description: '25 points (3+2 identiques)', fixedScore: 25 },
   { id: 'small_straight', name: 'Petite suite', description: '30 points (4 consécutifs)', fixedScore: 30 },
   { id: 'large_straight', name: 'Grande suite', description: '40 points (5 consécutifs)', fixedScore: 40 },
@@ -95,45 +94,40 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
     return total;
   }, [calculateUpperSectionTotal]);
 
-  const createRankingComponent = useCallback((session: GameSessionWithCategories) => {
-    const playersWithTotals = session.players.map(player => ({
-      ...player,
-      total_score: calculatePlayerTotal(session, player.id)
-    })).sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
-
-    return <RankingSidebar session={{ ...session, players: playersWithTotals }} />;
-  }, [calculatePlayerTotal]);
 
 
   return (
     <BaseScoreSheetMultiplayer<GameSessionWithCategories>
       sessionId={sessionId}
       gameSlug="yams"
-      rankingComponent={({ session }) => createRankingComponent(session)}
     >
       {({ session, gameState }) => (
         <>
-          {/* Session info header */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
-                  {session.session_name}
-                </h2>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  Code de partie: <span className="font-mono font-bold">{session.session_code}</span>
-                </p>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-blue-700 dark:text-blue-300">
-                  Manche {session.current_round || 1}
+          {/* Session info header - only show for networked sessions */}
+          {!gameState.isLocalSession && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                    {session.session_name}
+                  </h2>
+                  {session.session_code && (
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      Code de partie: <span className="font-mono font-bold">{session.session_code}</span>
+                    </p>
+                  )}
                 </div>
-                <div className="text-xs text-blue-600 dark:text-blue-400">
-                  {session.players.length} joueur{session.players.length > 1 ? 's' : ''}
+                <div className="text-right">
+                  <div className="text-sm text-blue-700 dark:text-blue-300">
+                    Manche {session.current_round || 1}
+                  </div>
+                  <div className="text-xs text-blue-600 dark:text-blue-400">
+                    {session.players.length} joueur{session.players.length > 1 ? 's' : ''}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Score grid */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">

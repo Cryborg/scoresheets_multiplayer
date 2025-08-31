@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
-import { getAuthenticatedUserId } from '@/lib/auth';
+import { getUserIdFromRequest } from '@/lib/authHelper';
 import { 
   ScoreRecord, 
   RoundsScoreData, 
@@ -19,8 +19,8 @@ export async function GET(
   try {
     const { sessionId } = await params;
     
-    // Get current user ID if authenticated
-    const currentUserId = getAuthenticatedUserId(request);
+    // Get current user ID (authenticated or guest)
+    const currentUserId = await getUserIdFromRequest(request);
 
     // Get session with simplified query for new architecture
     const sessionWithAccessResult = await db.execute({

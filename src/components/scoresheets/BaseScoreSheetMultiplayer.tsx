@@ -132,12 +132,14 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
       <GameLayout
         session={session}
         onLeaveSession={handleLeaveSession}
-        showRanking={true}
+        showRanking={!gameState.isLocalSession}
         rankingComponent={
-          rankingComponent ? (
-            rankingComponent({ session })
-          ) : (
-            <RankingSidebar session={session} />
+          !gameState.isLocalSession && (
+            rankingComponent ? (
+              rankingComponent({ session })
+            ) : (
+              <RankingSidebar session={session} />
+            )
           )
         }
       >

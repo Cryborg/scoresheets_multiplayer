@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./theme.css";
 import "./utilities.css";
-import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import ToastProviderReactHot from "@/components/providers/ToastProvider";
@@ -31,22 +30,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="fr" className="dark" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased dark`}
         suppressHydrationWarning
         data-hydrated="true"
       >
-        <ThemeProvider>
-          <AuthProvider>
-            <ToastProvider>
-              <ToastProviderReactHot />
-              <MaintenanceCheck>
-                {children}
-              </MaintenanceCheck>
-            </ToastProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <ToastProviderReactHot />
+            <MaintenanceCheck>
+              {children}
+            </MaintenanceCheck>
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );

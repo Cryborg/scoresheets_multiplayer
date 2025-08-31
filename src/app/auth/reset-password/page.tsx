@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import ThemeToggle from '@/components/ThemeToggle';
 
 function ResetPasswordContent() {
   const [password, setPassword] = useState('');
@@ -114,9 +113,6 @@ function ResetPasswordContent() {
   if (!token || !tokenValid) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-        <div className="absolute top-6 right-6 z-10">
-          <ThemeToggle />
-        </div>
 
         <div className="flex items-center justify-center min-h-screen p-6">
           <div className="w-full max-w-md">
@@ -160,9 +156,6 @@ function ResetPasswordContent() {
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-        <div className="absolute top-6 right-6 z-10">
-          <ThemeToggle />
-        </div>
 
         <div className="flex items-center justify-center min-h-screen p-6">
           <div className="w-full max-w-md">
@@ -198,9 +191,6 @@ function ResetPasswordContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-      <div className="absolute top-6 right-6 z-10">
-        <ThemeToggle />
-      </div>
 
       <div className="flex items-center justify-center min-h-screen p-6">
         <div className="w-full max-w-md">

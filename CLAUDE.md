@@ -38,6 +38,26 @@
 - ⚠️ RISKY: Change polling intervals (affects all users)
 - ❌ NEVER: Modify base session/player data structures
 
+### 🎯 CUSTOM GAMES SYSTEM (AI CRITICAL)
+
+**USER-CREATED CUSTOM GAMES**: Users can create personalized games via "Jeu libre" in sidebar
+- **Flow**: Sidebar → "Jeu libre" → Config page → Creates new game in database → Appears on dashboard
+- **NOT sessions**: Creates actual games in `games` table with `created_by_user_id`
+- **Dashboard display**: Shows custom name (e.g., "Poker entre amis") not "Jeu libre"
+- **Components**: Uses `GenericScoreSheet` automatically via `gameComponentLoader.tsx`
+- **Metadata**: Auto-generated via `isCustomGameSlug()` detection in `gameMetadata.ts`
+
+**Key APIs:**
+- `POST /api/games/custom` - Creates new custom game (NOT session)
+- `/games/jeu-libre/configure` - Configuration page for custom games
+- Detection: Custom slugs format `name-userId-timestamp` (e.g., `poker-entre-amis-123-1234567890`)
+
+**AI MUST UNDERSTAND:**
+- ✅ "Jeu libre" in sidebar = game creation interface
+- ✅ Custom games = real games in database with personal names
+- ✅ Users can create multiple parties of their custom game
+- ❌ DON'T confuse with sessions - these are persistent games
+
 ## Stack & Architecture
 
 - **Framework**: Next.js 15 + TypeScript (App Router)

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import ThemeToggle from '@/components/ThemeToggle';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -56,10 +55,6 @@ export default function ForgotPasswordPage() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-        {/* Theme Toggle */}
-        <div className="absolute top-6 right-6 z-10">
-          <ThemeToggle />
-        </div>
 
         {/* Main Content */}
         <div className="flex items-center justify-center min-h-screen p-6">
@@ -122,10 +117,6 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-      {/* Theme Toggle */}
-      <div className="absolute top-6 right-6 z-10">
-        <ThemeToggle />
-      </div>
 
       {/* Main Content */}
       <div className="flex items-center justify-center min-h-screen p-6">

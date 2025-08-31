@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { X, ChevronRight, ChevronDown, Home, LogOut, Shield, Calendar } from 'lucide-react';
-import ThemeToggle from './ThemeToggle';
 import { BRANDING } from '@/lib/branding';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 
@@ -27,8 +26,12 @@ export default function Sidebar({ isOpen, onClose, games, onLogout }: SidebarPro
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Cartes', 'Dés']));
   const { isAdmin } = useIsAdmin();
 
-  // Group games by category
-  const gamesByCategory = games.reduce((acc, game) => {
+  // Find "Jeu libre" and exclude it from categorized games
+  const jeuLibre = games.find(game => game.slug === 'jeu-libre');
+  const otherGames = games.filter(game => game.slug !== 'jeu-libre');
+  
+  // Group other games by category
+  const gamesByCategory = otherGames.reduce((acc, game) => {
     const category = game.category_name || 'Autres';
     if (!acc[category]) {
       acc[category] = [];
@@ -99,6 +102,24 @@ export default function Sidebar({ isOpen, onClose, games, onLogout }: SidebarPro
             </Link>
 
             <div className="mt-6">
+              {/* Jeu libre - displayed first, not categorized */}
+              {jeuLibre && (
+                <>
+                  <Link
+                    href="/games/jeu-libre/configure"
+                    onClick={onClose}
+                    className="flex items-center px-4 py-3 mb-4 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-colors"
+                  >
+                    <span className="text-lg mr-3">{jeuLibre.icon}</span>
+                    <div>
+                      <div className="font-medium">{jeuLibre.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Créer un jeu personnalisé</div>
+                    </div>
+                  </Link>
+                  <div className="border-t dark:border-gray-700 mb-6"></div>
+                </>
+              )}
+              
               <h3 className="px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Jeux multijoueur
               </h3>
@@ -141,11 +162,6 @@ export default function Sidebar({ isOpen, onClose, games, onLogout }: SidebarPro
 
           {/* Footer */}
           <div className="border-t dark:border-gray-700 p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Thème</span>
-              <ThemeToggle />
-            </div>
-            
             {/* Administration link - Only for admins */}
             {isAdmin && (
               <Link

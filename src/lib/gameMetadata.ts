@@ -30,12 +30,49 @@ const metadataLoaders: Record<string, () => Promise<{ default?: GameMetadata } |
 const metadataCache = new Map<string, GameMetadata>();
 
 /**
+ * Détecte si un slug correspond à un jeu personnalisé
+ * Format: nom-slug-userId-timestamp
+ */
+function isCustomGameSlug(slug: string): boolean {
+  // Custom games have format: name-userId-timestamp
+  const parts = slug.split('-');
+  if (parts.length < 3) return false;
+  
+  const lastTwoParts = parts.slice(-2);
+  const userId = lastTwoParts[0];
+  const timestamp = lastTwoParts[1];
+  
+  // Check if userId is numeric and timestamp looks like a timestamp
+  return !isNaN(Number(userId)) && !isNaN(Number(timestamp)) && timestamp.length >= 10;
+}
+
+/**
  * Charge les métadonnées d'un jeu depuis son fichier dédié
  */
 export async function loadGameMetadata(slug: string): Promise<GameMetadata | null> {
   // Vérifier le cache d'abord
   if (metadataCache.has(slug)) {
     return metadataCache.get(slug)!;
+  }
+
+  // Check if it's a custom game (contains userId and timestamp in slug)
+  if (isCustomGameSlug(slug)) {
+    const customMetadata: GameMetadata = {
+      icon: '🎯',
+      duration: '15-45 min',
+      shortDescription: 'Votre jeu personnalisé avec scores simples',
+      color: {
+        primary: 'purple',
+        accent: 'pink'
+      },
+      difficulty: 'intermédiaire',
+      keywords: ['personnalisé', 'custom', 'libre'],
+      multiplayer: true
+    };
+    
+    // Mettre en cache
+    metadataCache.set(slug, customMetadata);
+    return customMetadata;
   }
 
   // Charger depuis le fichier du jeu

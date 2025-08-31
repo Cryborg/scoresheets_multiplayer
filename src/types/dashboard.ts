@@ -13,6 +13,8 @@ export interface Game {
   difficulty: 'facile' | 'intermédiaire' | 'expert';
   variant?: string;
   multiplayer?: boolean;
+  last_opened_at?: string;
+  times_opened?: number;
 }
 
 export interface GamesAPIResponse {
@@ -24,6 +26,8 @@ export interface GamesAPIResponse {
     min_players: number;
     max_players: number;
     is_implemented: boolean;
+    last_opened_at?: string;
+    times_opened?: number;
   }>;
 }
 

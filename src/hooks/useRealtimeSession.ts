@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { getGuestId, isGuest } from '@/lib/guestAuth';
 
 interface SessionEvent {
   id: number;
@@ -134,13 +135,20 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
+      // Add guest ID header if user is a guest
+      const headers: HeadersInit = {
+        'Cache-Control': 'no-cache',
+        'X-Last-Update': lastUpdate?.toISOString() || '',
+      };
+      
+      if (isGuest()) {
+        headers['X-Guest-Id'] = getGuestId().toString();
+      }
+      
       const response = await fetch(`/api/sessions/${sessionId}/realtime`, {
         signal: controller.signal,
         credentials: 'include',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'X-Last-Update': lastUpdate?.toISOString() || '',
-        }
+        headers
       });
       
       clearTimeout(timeoutId);
