@@ -137,7 +137,8 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
         throw new Error(`HTTP ${response.status}`);
       }
 
-      // The realtime hook will pick up the status change
+      // Force immediate refresh to show the game has started
+      forceRefresh();
     } catch (error) {
       // Handle start game error silently
     }
