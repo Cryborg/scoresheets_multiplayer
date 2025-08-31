@@ -2,7 +2,7 @@
  * Tests end-to-end simplifiés pour les flux de jeux complets
  * Tests de base pour vérifier les composants sans mocks complexes
  */
-import { render } from '@testing-library/react';
+// Import removed - render not actually used in this test file
 
 describe('Flux de jeux complets - Tests E2E basiques', () => {
   
@@ -128,7 +128,7 @@ describe('Flux de jeux complets - Tests E2E basiques', () => {
       it('devrait calculer un score de contrat réussi', () => {
         // Exemple : Garde avec 2 bouts, 45 points (réussi)
         const points = 45;
-        const bouts = 2;
+        const boutsCount = 2;
         const seuil = 41; // Pour 2 bouts
         const ecart = points - seuil; // 45 - 41 = 4
         const baseScore = 25 + ecart; // 25 + 4 = 29

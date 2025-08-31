@@ -43,6 +43,19 @@ export async function POST(request: NextRequest) {
     }
 
     const trimmedName = gameName.trim();
+    
+    // Vérifier qu'un jeu avec ce nom n'existe pas déjà pour cet utilisateur
+    const existingGame = await db.execute({
+      sql: 'SELECT id FROM games WHERE name = ? AND created_by_user_id = ?',
+      args: [trimmedName, userId]
+    });
+    
+    if (existingGame.rows.length > 0) {
+      return NextResponse.json({ 
+        error: 'Vous avez déjà créé un jeu avec ce nom. Veuillez choisir un nom différent.' 
+      }, { status: 409 });
+    }
+    
     const selectedCategory = category || 'Personnalisé';
     const isTeamBased = teamBased === true ? 1 : 0;
     const gameTeamCount = parseInt(teamCount) || 2;
