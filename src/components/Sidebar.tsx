@@ -20,9 +20,10 @@ interface SidebarProps {
   onClose: () => void;
   games: Game[];
   onLogout: () => void;
+  isAuthenticated?: boolean;
 }
 
-export default function Sidebar({ isOpen, onClose, games, onLogout }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, games, onLogout, isAuthenticated = true }: SidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Cartes', 'Dés']));
   const { isAdmin } = useIsAdmin();
 
@@ -92,18 +93,21 @@ export default function Sidebar({ isOpen, onClose, games, onLogout }: SidebarPro
               Accueil
             </Link>
 
-            <Link
-              href="/sessions"
-              onClick={onClose}
-              className="flex items-center px-4 py-2 mb-2 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
-            >
-              <Calendar className="h-5 w-5 mr-3" />
-              Mes Parties
-            </Link>
+            {/* Mes Parties - seulement pour les utilisateurs connectés */}
+            {isAuthenticated && (
+              <Link
+                href="/sessions"
+                onClick={onClose}
+                className="flex items-center px-4 py-2 mb-2 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
+              >
+                <Calendar className="h-5 w-5 mr-3" />
+                Mes Parties
+              </Link>
+            )}
 
             <div className="mt-6">
-              {/* Jeu libre - displayed first, not categorized */}
-              {jeuLibre && (
+              {/* Jeu libre - seulement pour les utilisateurs connectés */}
+              {isAuthenticated && jeuLibre && (
                 <>
                   <Link
                     href="/games/jeu-libre/configure"
@@ -182,7 +186,7 @@ export default function Sidebar({ isOpen, onClose, games, onLogout }: SidebarPro
               className="flex items-center w-full px-4 py-2 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
             >
               <LogOut className="h-5 w-5 mr-3" />
-              Déconnexion
+              {isAuthenticated ? 'Déconnexion' : 'Retour à l’accueil'}
             </button>
           </div>
         </div>

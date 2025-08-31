@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Menu, Zap, Users, Clock, Gamepad2, Share2, RotateCcw, Save, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import AuthGuard from '@/components/AuthGuard';
+import OptionalAuthGuard from '@/components/OptionalAuthGuard';
 import Sidebar from '@/components/Sidebar';
 import { loadMultipleGameMetadata, defaultGameMetadata } from '@/lib/gameMetadata';
 import { Game, GamesAPIResponse } from '@/types/dashboard';
@@ -16,6 +16,16 @@ import { BRANDING } from '@/lib/branding';
 import { authenticatedFetch } from '@/lib/authClient';
 
 export default function DashboardPage() {
+  return (
+    <OptionalAuthGuard>
+      {(isAuthenticated) => (
+        <DashboardContent isAuthenticated={isAuthenticated} />
+      )}
+    </OptionalAuthGuard>
+  );
+}
+
+function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -38,9 +48,13 @@ export default function DashboardPage() {
   // Keep the hook for tracking in other parts of the app but don't use sort logic here
   const { setLastPlayedGame } = useLastPlayedGame();
 
-  // Chargement des jeux depuis l'API avec métadonnées (seulement ceux ouverts par l'utilisateur)
+  // Chargement des jeux depuis l'API avec métadonnées
   useEffect(() => {
     const fetchUserGames = async () => {
+      if (!isAuthenticated) {
+        return; // Skip user games for guests
+      }
+      
       try {
         const response = await authenticatedFetch('/api/games');
         const data: GamesAPIResponse = await response.json();
@@ -110,15 +124,22 @@ export default function DashboardPage() {
 
 
     const fetchData = async () => {
-      await Promise.all([fetchUserGames(), fetchAvailableGames()]);
+      if (isAuthenticated) {
+        await Promise.all([fetchUserGames(), fetchAvailableGames()]);
+      } else {
+        // Pour les invités, on charge seulement les jeux disponibles
+        await fetchAvailableGames();
+        setAllGames([]); // Pas de jeux utilisateur pour les invités
+      }
       setLoading(false);
     };
 
     fetchData();
-  }, []);
+  }, [isAuthenticated]);
 
   const filteredGames = useMemo(() => {
-    let games = [...allGames];
+    // Pour les invités, on utilise les jeux disponibles
+    let games = isAuthenticated ? [...allGames] : [...availableGames];
 
     if (categoryFilter !== 'all') {
       games = games.filter(game => game.category_name === categoryFilter);
@@ -137,37 +158,43 @@ export default function DashboardPage() {
       }
     }
 
-    // Sort games by last opened date (already sorted from API query ORDER BY last_opened_at DESC)
-    // Les jeux sont déjà triés par date de dernière ouverture par l'API
+    // Pour les utilisateurs connectés, les jeux sont triés par date de dernière ouverture
+    // Pour les invités, on garde l'ordre par défaut (par catégorie et nom)
 
     return games;
-  }, [allGames, categoryFilter, multiplayerFilter, playerCountFilter]);
+  }, [allGames, availableGames, isAuthenticated, categoryFilter, multiplayerFilter, playerCountFilter]);
 
-  const gameCategories = useMemo(() => 
-    ['all', ...Array.from(new Set(allGames.map(g => g.category_name)))]
-  , [allGames]);
+  const gameCategories = useMemo(() => {
+    const games = isAuthenticated ? allGames : availableGames;
+    return ['all', ...Array.from(new Set(games.map(g => g.category_name)))];
+  }, [allGames, availableGames, isAuthenticated]);
 
   const playerCounts = useMemo(() => {
+    const games = isAuthenticated ? allGames : availableGames;
     const counts = new Set<number>();
-    allGames.forEach(game => {
+    games.forEach(game => {
       for (let i = game.min_players; i <= game.max_players; i++) {
         counts.add(i);
       }
     });
     return ['all', ...Array.from(counts).sort((a, b) => a - b)];
-  }, [allGames]);
+  }, [allGames, availableGames, isAuthenticated]);
 
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-      router.push('/auth/login');
+      router.push('/'); // Redirection vers la page principale
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
+  const handleGuestReturn = () => {
+    router.push('/'); // Pour les invités, retour direct à la page principale
+  };
+
   return (
-    <AuthGuard>
+    <div>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900" suppressHydrationWarning>
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -205,6 +232,14 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {/* Guest notice */}
+        {!isAuthenticated && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+            <p className="text-blue-800 dark:text-blue-200 text-sm">
+              💡 Vous jouez en tant qu&apos;invité. <Link href="/auth/register" className="underline hover:no-underline">Créez un compte</Link> pour sauvegarder vos scores et retrouver vos parties.
+            </p>
+          </div>
+        )}
         {/* Mobile quick join - shown on small screens */}
         <div className="sm:hidden mb-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
@@ -309,8 +344,8 @@ export default function DashboardPage() {
               ))
             ) : (
               filteredGames.map((game, index) => {
-                // Le premier jeu dans la liste est le dernier joué (trié par last_opened_at DESC)
-                const isLastPlayed = index === 0 && filteredGames.length > 0;
+                // Le premier jeu dans la liste est le dernier joué (seulement pour les utilisateurs connectés)
+                const isLastPlayed = isAuthenticated && index === 0 && filteredGames.length > 0;
                 return (
                   <GameCard
                     key={game.id}
@@ -333,8 +368,14 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} games={availableGames} onLogout={handleLogout} />
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+        games={availableGames} 
+        onLogout={isAuthenticated ? handleLogout : handleGuestReturn}
+        isAuthenticated={isAuthenticated}
+      />
       </div>
-    </AuthGuard>
+    </div>
   );
 }
