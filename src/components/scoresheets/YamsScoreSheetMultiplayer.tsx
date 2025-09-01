@@ -131,7 +131,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
 
           {/* Score grid */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-        <div className={`${session.players.length <= 2 ? '' : 'overflow-x-auto'}`}>
+        <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>

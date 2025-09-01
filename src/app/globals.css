@@ -70,3 +70,85 @@
 .rotate-y-180 {
   transform: rotateY(180deg);
 }
+
+/* Mobile UX Optimizations */
+@layer utilities {
+  /* Touch targets minimum 44px */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Safe area for iPhone X+ */
+  .safe-area-inset {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Smooth scrolling with touch momentum */
+  .scroll-touch {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Prevent zoom on inputs for iOS */
+  .no-zoom {
+    font-size: 16px !important;
+    transform-origin: left top;
+  }
+  
+  /* Mobile-friendly button sizes */
+  .btn-touch-sm {
+    min-height: 40px;
+    min-width: 40px;
+    padding: 0.5rem;
+  }
+  
+  .btn-touch-md {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem;
+  }
+  
+  .btn-touch-lg {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 1rem;
+  }
+}
+
+/* Mobile-specific responsive improvements */
+@media (max-width: 640px) {
+  /* Better table readability on mobile */
+  table {
+    font-size: 14px;
+  }
+  
+  th, td {
+    padding: 0.5rem 0.25rem;
+  }
+  
+  /* Input fields at least 16px to prevent zoom on iOS */
+  input[type="text"],
+  input[type="email"], 
+  input[type="password"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+  
+  /* Larger tap targets on mobile */
+  button,
+  .btn,
+  a[role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better spacing on small screens */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}

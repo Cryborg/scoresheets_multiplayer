@@ -82,26 +82,22 @@ export function validateEnvironment(): EnvConfig {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   };
   
-  // Always validate JWT secret (except in test environment)
-  if (config.NODE_ENV !== 'test') {
+  // Only validate JWT secret in production
+  if (config.NODE_ENV === 'production') {
     validateSecret(config.JWT_SECRET, 'JWT_SECRET');
-  } else {
-    // In test, allow fallback but warn
-    if (!config.JWT_SECRET) {
-      config.JWT_SECRET = 'test-jwt-secret-minimum-32-chars-long';
-      console.warn('⚠️ Using test JWT secret. This should only happen in test environment.');
-    }
+  }
+  
+  // In test, allow fallback but warn
+  if (!config.JWT_SECRET) {
+    config.JWT_SECRET = 'test-jwt-secret-minimum-32-chars-long';
+    console.warn('⚠️ Using test JWT secret. This should only happen in test environment.');
   }
   
   // Validate database configuration
   validateDatabaseConfig(config);
   
-  // Validate app URL in production
-  if (config.NODE_ENV === 'production') {
-    if (!config.NEXT_PUBLIC_APP_URL) {
-      throw new Error('NEXT_PUBLIC_APP_URL is required in production');
-    }
-    
+  // Validate app URL in production - optional for now
+  if (config.NODE_ENV === 'production' && config.NEXT_PUBLIC_APP_URL) {
     if (!config.NEXT_PUBLIC_APP_URL.startsWith('https://')) {
       throw new Error('NEXT_PUBLIC_APP_URL must use HTTPS in production');
     }

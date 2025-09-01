@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Users, Clock, Play, Trash2, Square, Calendar, RotateCcw, Loader2 } from 'lucide-react';
-import { authenticatedFetch } from '@/lib/authClient';
-import { isAuthenticated } from '@/lib/auth';
+import { authenticatedFetch, isAuthenticated } from '@/lib/authClient';
 import Button from '@/components/ui/Button';
 
 interface Session {

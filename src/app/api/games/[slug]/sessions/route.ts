@@ -7,32 +7,17 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    // Log détaillé pour production
-    console.log('=== PRODUCTION REQUEST LOG ===');
-    console.log('API /api/games/[slug]/sessions: Starting POST request');
-    console.log('Request URL:', request.url);
-    console.log('Request method:', request.method);
-    console.log('Timestamp:', new Date().toISOString());
-    console.log('=== END PRODUCTION REQUEST LOG ===');
-    
     await initializeDatabase();
-    console.log('[PROD] Database initialized');
     
     // Read body first (can only be read once)
     const body = await request.json();
-    console.log('[PROD] Request body:', JSON.stringify(body, null, 2));
     const { sessionName, players, teams, hasScoreTarget, scoreTarget, finishCurrentRound, scoreDirection, guestId } = body;
     const { slug } = await params;
-    console.log('[PROD] Slug:', slug);
     
     // Everyone gets an ID (authenticated or guest) - simplified with new architecture
     const userId = await getUserId(request);
-    console.log('[PROD] User ID (authenticated or guest):', userId);
-    
-    console.log('[PROD] Create session request:', JSON.stringify({ slug, ...body }, null, 2));
 
     // Get game info
-    console.log('[PROD] Fetching game with slug:', slug);
     const gameResult = await db.execute({
       sql: 'SELECT * FROM games WHERE slug = ?',
       args: [slug]
@@ -47,28 +32,22 @@ export async function POST(
       max_players: number;
       score_direction: string;
     } | undefined;
-    console.log('[PROD] Game found:', JSON.stringify(game, null, 2));
     if (!game) {
-      console.log('[PROD] Game not found');
       return NextResponse.json({ error: 'Jeu non trouvé' }, { status: 404 });
     }
 
     if (!game.is_implemented) {
-      console.log('[PROD] Game not implemented');
       return NextResponse.json({ error: 'Jeu non implémenté' }, { status: 400 });
     }
 
     // Validate players based on game configuration
-    console.log('[PROD] Validating players, team_based:', game.team_based);
     const allPlayers = game.team_based 
       ? teams?.flatMap((team: { players: string[] }) => team.players).filter((p: string) => p.trim()) || []
       : players?.filter((p: string) => p.trim()) || [];
-    console.log('[PROD] All players:', JSON.stringify(allPlayers, null, 2));
 
     // Allow creating sessions with fewer than min_players (waiting room will handle the validation)
     // But still enforce max_players limit
     if (allPlayers.length > game.max_players) {
-      console.log(`[PROD] Too many players: ${allPlayers.length}, maximum allowed: ${game.max_players}`);
       return NextResponse.json(
         { error: `Maximum ${game.max_players} joueurs autorisés` },
         { status: 400 }
@@ -77,7 +56,6 @@ export async function POST(
     
     // Ensure at least 1 player (the host)
     if (allPlayers.length === 0) {
-      console.log(`[PROD] No players provided`);
       return NextResponse.json(
         { error: `Il faut au moins un joueur pour créer la partie` },
         { status: 400 }
@@ -109,17 +87,6 @@ export async function POST(
     }
 
     // Create session
-    console.log('[PROD] Creating session');
-
-    const sessionParams = {
-      userId, 
-      gameId: game.id, 
-      sessionName: sessionName || `Partie de ${game.name}`, 
-      hasScoreTarget: hasScoreTarget ? 1 : 0,
-      scoreTarget: hasScoreTarget && scoreTarget ? parseInt(scoreTarget) : null,
-      finishCurrentRound: finishCurrentRound ? 1 : 0
-    };
-    console.log('[PROD] Session parameters:', JSON.stringify(sessionParams, null, 2));
 
     // Safely handle scoreTarget to avoid NaN
     let safeScoreTarget = null;
@@ -131,15 +98,6 @@ export async function POST(
     // Generate session code
     const sessionCode = await generateUniqueSessionCode();
     
-    console.log('[PROD] Safe parameters before insert:', {
-      userId,
-      gameId: game.id,
-      sessionName: sessionName || `Partie de ${game.name}`,
-      sessionCode,
-      hasScoreTarget: hasScoreTarget ? 1 : 0,
-      safeScoreTarget,
-      finishCurrentRound: finishCurrentRound ? 1 : 0
-    });
     
     const sessionResult = await db.execute({
       sql: `INSERT INTO sessions (host_user_id, game_id, name, session_code, status, has_score_target, score_target, score_direction)
@@ -156,7 +114,6 @@ export async function POST(
       ]
     });
     
-    console.log('[PROD] Session result:', JSON.stringify(sessionResult, null, 2));
     
     // Handle Turso's lastInsertRowid issue
     let sessionId = sessionResult.lastInsertRowid;
@@ -166,7 +123,6 @@ export async function POST(
     
     // If Turso returns null for lastInsertRowid, fetch the ID manually
     if (!sessionId || sessionId === null || isNaN(sessionId)) {
-      console.log('[PROD] Turso returned null lastInsertRowid, fetching ID manually');
       const lastSessionResult = await db.execute({
         sql: `SELECT id FROM sessions 
               WHERE host_user_id = ? AND name = ? 
@@ -176,12 +132,10 @@ export async function POST(
       });
       
       const lastSession = lastSessionResult.rows[0];
-      console.log('[PROD] Manual fetch result:', lastSession);
       
       if (lastSession && lastSession.id) {
         sessionId = Number(lastSession.id);
       } else {
-        console.error('[PROD] Could not retrieve session ID after insert');
         return NextResponse.json(
           { error: 'Erreur lors de la création de la session' },
           { status: 500 }
@@ -189,7 +143,6 @@ export async function POST(
       }
     }
     
-    console.log('[PROD] Session created with ID:', sessionId);
 
     // No need for separate session_participants table - using session_player pivot instead
 
@@ -213,7 +166,6 @@ export async function POST(
         if (typeof teamId === 'bigint') {
           teamId = Number(teamId);
         }
-        console.log(`[PROD] Created team: ${teamName}, ID: ${teamId}`);
 
         // Link team to session
         await db.execute({
@@ -245,7 +197,6 @@ export async function POST(
               args: [teamId, playerId, sessionId]
             });
             
-            console.log(`[PROD] Created player: ${playerName.trim()}, position: ${position}, user_id: ${userId}, team_id: ${teamId}`);
             position++;
           }
         }
@@ -269,7 +220,6 @@ export async function POST(
             args: [sessionId, playerId, position]
           });
           
-          console.log(`[PROD] Created player: ${playerName.trim()}, position: ${position}, user_id: ${userId}`);
           position++;
         }
       }

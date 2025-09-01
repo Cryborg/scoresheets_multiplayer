@@ -3,9 +3,7 @@ import { db, initializeDatabase } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('API /api/games/available: Starting request');
     await initializeDatabase();
-    console.log('API /api/games/available: Database initialized');
     
     // Récupérer tous les jeux disponibles (comme l'ancienne API /api/games)
     const result = await db.execute(`
@@ -28,7 +26,6 @@ export async function GET(request: NextRequest) {
 
     const games = result.rows;
 
-    console.log(`API /api/games/available: Found ${games.length} total games`);
     return NextResponse.json({ games });
   } catch (error) {
     console.error('API /api/games/available: Error fetching games:', error);

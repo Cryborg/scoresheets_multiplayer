@@ -72,7 +72,7 @@ export default function GameLayout(props: GameLayoutProps) {
           </div>
         </nav>
 
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 safe-area-inset">
           <div className={`grid gap-6 ${showRanking ? 'grid-cols-1 lg:grid-cols-4' : 'grid-cols-1'}`}>
             <div className={showRanking ? 'lg:col-span-3' : 'col-span-1'}>
               {children}
@@ -117,7 +117,7 @@ export default function GameLayout(props: GameLayoutProps) {
           </div>
         </nav>
 
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 safe-area-inset">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-3">
               {children}

@@ -208,24 +208,24 @@ export default function ScoreInput({
     onBlur?.();
   };
 
-  // Size configurations
+  // Size configurations - Mobile-first with proper touch targets
   const sizeConfig = {
     sm: {
-      input: 'w-12 h-6 text-sm',
-      button: 'w-6 h-6',
-      icon: 'h-3 w-3',
+      input: 'w-12 h-10 sm:h-8 text-base sm:text-sm', // 40px height mobile, 16px font
+      button: 'w-10 h-10 sm:w-8 sm:h-8 touch-target', // 40px touch mobile
+      icon: 'h-4 w-4 sm:h-3 sm:w-3',
       spacing: 'space-x-1'
     },
     md: {
-      input: 'w-14 h-8 sm:w-16 sm:h-10 text-base sm:text-lg',
-      button: 'w-8 h-8 sm:w-10 sm:h-10',
-      icon: 'h-4 w-4 sm:h-5 sm:w-5',
-      spacing: 'space-x-1 sm:space-x-2'
+      input: 'w-16 h-12 sm:h-10 text-base', // 48px height mobile, 16px font
+      button: 'w-12 h-12 sm:w-10 sm:h-10 touch-target', // 48px touch mobile
+      icon: 'h-5 w-5 sm:h-4 sm:w-4',
+      spacing: 'space-x-2'
     },
     lg: {
-      input: 'w-16 h-10 sm:w-20 sm:h-12 text-lg sm:text-xl',
-      button: 'w-10 h-10 sm:w-12 sm:h-12',
-      icon: 'h-5 w-5 sm:h-6 sm:w-6',
+      input: 'w-20 h-12 text-lg', // Large already mobile-friendly
+      button: 'w-12 h-12 touch-target', // 48px touch targets
+      icon: 'h-6 w-6 sm:h-5 sm:w-5',
       spacing: 'space-x-2'
     }
   };

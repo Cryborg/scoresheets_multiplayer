@@ -4,16 +4,13 @@ import { getAuthenticatedUserId } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('API /api/games: Starting request');
     await initializeDatabase();
-    console.log('API /api/games: Database initialized');
     
     // Récupérer l'utilisateur authentifié
     const userId = await getAuthenticatedUserId(request);
     
     if (!userId) {
       // Si pas d'utilisateur, retourner liste vide (aucun jeu ne s'affiche de base)
-      console.log('API /api/games: No authenticated user, returning empty list');
       return NextResponse.json({ games: [] });
     }
 
@@ -45,7 +42,6 @@ export async function GET(request: NextRequest) {
 
     const games = result.rows;
 
-    console.log(`API /api/games: Found ${games.length} games for user ${userId}`);
     return NextResponse.json({ games });
   } catch (error) {
     console.error('API /api/games: Error fetching games:', error);

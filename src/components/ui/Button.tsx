@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   href?: string;
   children: ReactNode;
   leftIcon?: ReactNode;
@@ -22,9 +22,10 @@ const variants = {
 };
 
 const sizes = {
-  sm: 'px-4 py-2 text-sm',
-  md: 'px-6 py-3 text-base',
-  lg: 'px-8 py-4 text-lg',
+  xs: 'px-2 py-2 text-xs min-h-[44px] min-w-[44px] touch-target', // Mobile-first 44px touch targets
+  sm: 'px-3 py-2 text-sm min-h-[44px] min-w-[44px] touch-target sm:min-h-[36px] sm:min-w-[36px]', // 44px mobile, 36px desktop
+  md: 'px-4 py-3 text-base min-h-[48px] min-w-[48px] touch-target sm:min-h-[40px] sm:min-w-[40px]', // 48px mobile, 40px desktop
+  lg: 'px-6 py-4 text-lg min-h-[52px] min-w-[52px] touch-target sm:min-h-[44px] sm:min-w-[44px]', // 52px mobile, 44px desktop
 };
 
 export default function Button({
@@ -76,7 +77,7 @@ export default function Button({
     fullWidth: _fullWidth, 
     loading: _loading,
     ...buttonProps 
-  } = props as any;
+  } = props;
 
   return (
     <button className={baseClasses} disabled={disabled} {...buttonProps}>
