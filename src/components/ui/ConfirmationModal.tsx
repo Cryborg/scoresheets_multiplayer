@@ -2,7 +2,7 @@
 
 import { Fragment } from 'react';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
-import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { AlertTriangle, X } from 'lucide-react';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -61,7 +61,7 @@ export default function ConfirmationModal({
                     onClick={onClose}
                   >
                     <span className="sr-only">Fermer</span>
-                    <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                    <X className="h-6 w-6" aria-hidden="true" />
                   </button>
                 </div>
                 
@@ -71,7 +71,7 @@ export default function ConfirmationModal({
                       ? 'bg-red-100 dark:bg-red-900/20' 
                       : 'bg-blue-100 dark:bg-blue-900/20'
                   }`}>
-                    <ExclamationTriangleIcon 
+                    <AlertTriangle 
                       className={`h-6 w-6 ${
                         isDangerous 
                           ? 'text-red-600 dark:text-red-400' 
