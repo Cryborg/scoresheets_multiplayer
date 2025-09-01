@@ -289,11 +289,11 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
                   </div>
                   <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
                     <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                    <span>Statistiques et analyses de jeu</span>
+                    <span>Accès aux parties multijoueurs</span>
                   </div>
                   <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
                     <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                    <span>Dashboard personnalisé</span>
+                    <span>Synchronisation entre appareils</span>
                   </div>
                 </div>
                 <Link 
