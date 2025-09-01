@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserIdFromRequest } from '@/lib/authHelper';
+import { getUserId } from '@/lib/authHelper';
 import { db } from '@/lib/database';
 
 interface LeaveSessionParams {
@@ -9,12 +9,8 @@ interface LeaveSessionParams {
 export async function POST(request: NextRequest, context: LeaveSessionParams) {
   try {
     const { sessionId } = await context.params;
-    // Support both authenticated users and guests
-    const currentUserId = await getUserIdFromRequest(request);
-
-    if (!currentUserId) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    // Everyone gets an ID (authenticated or guest)
+    const currentUserId = await getUserId(request);
 
     // Check if session exists
     const sessionResult = await db.execute({

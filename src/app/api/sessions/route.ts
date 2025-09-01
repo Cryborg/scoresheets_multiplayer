@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserIdFromRequest } from '@/lib/authHelper';
+import { getUserId } from '@/lib/authHelper';
 import { db } from '@/lib/database';
 
 // GET - Récupérer les sessions de l'utilisateur
 export async function GET(request: NextRequest) {
   try {
-    // Support both authenticated users and guests
-    const userId = await getUserIdFromRequest(request);
-    if (!userId) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-    }
+    // Everyone gets an ID (authenticated or guest)
+    const userId = await getUserId(request);
 
     // Récupérer toutes les sessions où l'utilisateur est hôte ou participant
     const sessions = await db.execute({

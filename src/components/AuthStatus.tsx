@@ -3,11 +3,16 @@
 import { useEffect, useState } from 'react';
 import { isAuthenticated } from '@/lib/authClient';
 
-interface OptionalAuthGuardProps {
+interface AuthStatusProps {
   children: (isAuthenticated: boolean) => React.ReactNode;
 }
 
-export default function OptionalAuthGuard({ children }: OptionalAuthGuardProps) {
+/**
+ * AuthStatus - Provides authentication status to child components
+ * In the new guest-first paradigm, this is just used to determine
+ * what content to show (e.g. "Save your games" vs "Your account")
+ */
+export default function AuthStatus({ children }: AuthStatusProps) {
   const [isChecking, setIsChecking] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
 

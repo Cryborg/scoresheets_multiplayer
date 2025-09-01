@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
-import { getUserIdFromRequest } from '@/lib/authHelper';
+import { getUserId } from '@/lib/authHelper';
 import { 
   ScoreRecord, 
   RoundsScoreData, 
@@ -19,8 +19,8 @@ export async function GET(
   try {
     const { sessionId } = await params;
     
-    // Get current user ID (authenticated or guest)
-    const currentUserId = await getUserIdFromRequest(request);
+    // Everyone gets an ID (authenticated or guest)
+    const currentUserId = await getUserId(request);
 
     // Get session with simplified query for new architecture
     const sessionWithAccessResult = await db.execute({
@@ -70,15 +70,13 @@ export async function GET(
       accessLevel = 'host';
     }
     
-    // Check access level
+    // Check access level - simplified since everyone has an ID now
     if (accessLevel === 'denied') {
       // For sessions in waiting status, allow anyone to view (they can join)
       if (session.status === 'waiting') {
         accessLevel = 'can_join';
-      } else if (currentUserId) {
-        return NextResponse.json({ error: 'Access denied' }, { status: 403 });
       } else {
-        // Allow read-only access for guests to existing sessions
+        // Allow read-only access for non-participants to existing sessions
         accessLevel = 'viewer';
       }
     }

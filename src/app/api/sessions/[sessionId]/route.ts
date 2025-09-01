@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserIdFromRequest } from '@/lib/authHelper';
+import { getUserId } from '@/lib/authHelper';
 import { db } from '@/lib/database';
 
 // DELETE - Archive une session (seulement pour l'hôte) - PRESERVE DATA
@@ -9,11 +9,8 @@ export async function DELETE(
 ) {
   try {
     const { sessionId } = await params;
-    // Support both authenticated users and guests
-    const userId = await getUserIdFromRequest(request);
-    if (!userId) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-    }
+    // Everyone gets an ID (authenticated or guest)
+    const userId = await getUserId(request);
 
     // Vérifier que l'utilisateur est l'hôte de la session
     const session = await db.execute({

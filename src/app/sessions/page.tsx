@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Users, Clock, Play, Trash2, Square, Calendar, RotateCcw, Loader2 } from 'lucide-react';
 import { authenticatedFetch } from '@/lib/authClient';
-import AuthGuard from '@/components/AuthGuard';
+import { isAuthenticated } from '@/lib/auth';
 import Button from '@/components/ui/Button';
 
 interface Session {
@@ -24,6 +24,7 @@ interface Session {
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userIsAuthenticated, setUserIsAuthenticated] = useState(false);
   const [filter, setFilter] = useState<'active_all' | 'waiting' | 'active' | 'completed'>('active_all');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<number | null>(null);
@@ -32,6 +33,11 @@ export default function SessionsPage() {
 
   const fetchSessions = async () => {
     try {
+      // Check if user is authenticated
+      const authStatus = isAuthenticated();
+      setUserIsAuthenticated(authStatus);
+      
+      // Everyone can access their sessions now (authenticated or guest)
       const response = await authenticatedFetch('/api/sessions');
       if (response.ok) {
         const data = await response.json();
@@ -145,19 +151,16 @@ export default function SessionsPage() {
 
   if (loading) {
     return (
-      <AuthGuard>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600 dark:text-gray-400 mt-4">Chargement des parties...</p>
-          </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600 dark:text-gray-400 mt-4">Chargement des parties...</p>
         </div>
-      </AuthGuard>
+      </div>
     );
   }
 
   return (
-    <AuthGuard>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Header */}
         <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
@@ -172,10 +175,13 @@ export default function SessionsPage() {
                 </Link>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Mes Parties
+                    {userIsAuthenticated ? 'Mes Parties' : 'Mes Parties (Session temporaire)'}
                   </h1>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Gérez vos parties en cours et passées
+                    {userIsAuthenticated 
+                      ? 'Gérez vos parties en cours et passées' 
+                      : 'Parties de cette session (créez un compte pour les sauvegarder)'
+                    }
                   </p>
                 </div>
               </div>
@@ -380,6 +386,5 @@ export default function SessionsPage() {
           </div>
         )}
       </div>
-    </AuthGuard>
-  );
+    );
 }

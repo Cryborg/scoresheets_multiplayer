@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
-import { getUserIdFromRequest } from '@/lib/authHelper';
+import { getUserId } from '@/lib/authHelper';
 
 export async function POST(
   request: NextRequest,
@@ -8,12 +8,8 @@ export async function POST(
 ) {
   try {
     const { sessionId } = await params;
-    // Support both authenticated users and guests
-    const currentUserId = await getUserIdFromRequest(request);
-    
-    if (!currentUserId) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
+    // Everyone gets an ID (authenticated or guest)
+    const currentUserId = await getUserId(request);
 
     // Get session details
     const sessionResult = await db.execute({

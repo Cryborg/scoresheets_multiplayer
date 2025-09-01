@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import AuthGuard from '@/components/AuthGuard';
 import AdminGuard from '@/components/AdminGuard';
 import { 
   Users, 
@@ -64,7 +63,6 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   return (
-    <AuthGuard>
       <AdminGuard>
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 lg:flex">
           {/* Mobile sidebar overlay */}
@@ -160,6 +158,5 @@ export default function AdminLayout({
           </div>
         </div>
       </AdminGuard>
-    </AuthGuard>
   );
 }

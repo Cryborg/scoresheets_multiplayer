@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Menu, Zap, Users, Clock, Gamepad2, Share2, RotateCcw, Save, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import OptionalAuthGuard from '@/components/OptionalAuthGuard';
+import AuthStatus from '@/components/AuthStatus';
 import Sidebar from '@/components/Sidebar';
 import { loadMultipleGameMetadata, defaultGameMetadata } from '@/lib/gameMetadata';
 import { Game, GamesAPIResponse } from '@/types/dashboard';
@@ -17,11 +17,11 @@ import { authenticatedFetch } from '@/lib/authClient';
 
 export default function DashboardPage() {
   return (
-    <OptionalAuthGuard>
+    <AuthStatus>
       {(isAuthenticated) => (
         <DashboardContent isAuthenticated={isAuthenticated} />
       )}
-    </OptionalAuthGuard>
+    </AuthStatus>
   );
 }
 

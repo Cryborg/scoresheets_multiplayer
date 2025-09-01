@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getAuthenticatedUserId } from './auth';
 import { db } from './database';
+import { getGuestId } from './guestAuth';
 
 /**
  * Get user ID from request - supports both authenticated users and guests
@@ -50,6 +51,43 @@ async function ensureGuestUserExists(guestId: number): Promise<void> {
     });
     console.log('[Guest] Created guest user:', guestId);
   }
+}
+
+/**
+ * Get user ID - ALWAYS returns a valid user ID (authenticated or guest)
+ * This is the new paradigm: everyone gets an ID, auth is just a bonus
+ */
+export async function getUserId(request: NextRequest): Promise<number> {
+  // First try authenticated user
+  const authenticatedUserId = getAuthenticatedUserId(request);
+  if (authenticatedUserId) {
+    return authenticatedUserId;
+  }
+
+  // Check for existing guest ID in headers
+  const guestIdHeader = request.headers.get('x-guest-id');
+  if (guestIdHeader) {
+    const guestId = parseInt(guestIdHeader, 10);
+    if (!isNaN(guestId) && guestId >= 9000000) {
+      // Valid guest ID - ensure user exists in database
+      await ensureGuestUserExists(guestId);
+      return guestId;
+    }
+  }
+
+  // Last resort: create a new guest ID server-side
+  // This shouldn't happen often as frontend should provide guest ID
+  const newGuestId = generateGuestId();
+  await ensureGuestUserExists(newGuestId);
+  console.log('[Guest] Generated new server-side guest ID:', newGuestId);
+  return newGuestId;
+}
+
+/**
+ * Generate a new guest ID server-side
+ */
+function generateGuestId(): number {
+  return 9000000 + Math.floor(Math.random() * 999999);
 }
 
 /**
