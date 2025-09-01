@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, Zap, Users, Clock, Gamepad2, Share2, RotateCcw, Save, Plus, Grid, List } from 'lucide-react';
+import { Menu, Zap, Users, Clock, Gamepad2, Share2, RotateCcw, Save, Plus, Grid, List, X } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import AuthStatus from '@/components/AuthStatus';
 import Sidebar from '@/components/Sidebar';
@@ -15,6 +15,7 @@ import GameCard from '@/components/dashboard/GameCard';
 import GameListView from '@/components/dashboard/GameListView';
 import { BRANDING } from '@/lib/branding';
 import { authenticatedFetch } from '@/lib/authClient';
+import { shouldShowGuestBanner, dismissGuestBanner } from '@/lib/guestBannerDismiss';
 
 export default function DashboardPage() {
   return (
@@ -34,6 +35,7 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
   const [availableGames, setAvailableGames] = useState<Game[]>([]); // Pour le Sidebar
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showGuestBanner, setShowGuestBanner] = useState(false);
 
   // Filter states with localStorage persistence
   const {
@@ -49,6 +51,13 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
 
   // Keep the hook for tracking in other parts of the app but don't use sort logic here
   const { setLastPlayedGame } = useLastPlayedGame();
+
+  // Check if guest banner should be shown
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setShowGuestBanner(shouldShowGuestBanner());
+    }
+  }, [isAuthenticated]);
 
   // Chargement des jeux depuis l'API avec métadonnées
   useEffect(() => {
@@ -208,6 +217,11 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
     router.push('/'); // Pour les invités, retour direct à la page principale
   };
 
+  const handleDismissGuestBanner = () => {
+    dismissGuestBanner();
+    setShowGuestBanner(false);
+  };
+
   return (
     <div>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900" suppressHydrationWarning>
@@ -258,15 +272,24 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
       </header>
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* Guest notice with features showcase */}
-        {!isAuthenticated && (
+        {/* Guest notice with features showcase - dismissible with daily reset */}
+        {!isAuthenticated && showGuestBanner && (
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-6">
             <div className="flex items-start gap-4">
               <div className="text-2xl">🎮</div>
               <div className="flex-1">
-                <h3 className="text-blue-900 dark:text-blue-100 font-semibold mb-2">
-                  Découvrez tout le potentiel d&apos;Oh Sheet!
-                </h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-blue-900 dark:text-blue-100 font-semibold">
+                    Découvrez tout le potentiel d&apos;Oh Sheet!
+                  </h3>
+                  <button
+                    onClick={handleDismissGuestBanner}
+                    className="p-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors text-blue-600 dark:text-blue-400"
+                    title="Masquer jusqu'à demain"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
                 <p className="text-blue-800 dark:text-blue-200 text-sm mb-4">
                   En créant un compte, vous débloquez des fonctionnalités exclusives :
                 </p>
