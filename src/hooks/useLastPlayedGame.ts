@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { safeStorage } from '@/lib/cookieConsent';
 
 const STORAGE_KEY = 'last-played-game';
 
@@ -9,7 +10,7 @@ export function useLastPlayedGame() {
   // Load last played game from localStorage on mount
   useEffect(() => {
     try {
-      const savedSlug = localStorage.getItem(STORAGE_KEY);
+      const savedSlug = safeStorage.getItem(STORAGE_KEY);
       if (savedSlug) {
         setLastPlayedGameSlug(savedSlug);
       }
@@ -23,7 +24,7 @@ export function useLastPlayedGame() {
   // Function to update the last played game
   const setLastPlayedGame = useCallback((gameSlug: string) => {
     try {
-      localStorage.setItem(STORAGE_KEY, gameSlug);
+      safeStorage.setItem(STORAGE_KEY, gameSlug);
       setLastPlayedGameSlug(gameSlug);
     } catch (error) {
       console.warn('Error saving last played game to localStorage:', error);

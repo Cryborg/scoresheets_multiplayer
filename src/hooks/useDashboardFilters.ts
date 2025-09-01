@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { safeStorage } from '@/lib/cookieConsent';
 
 interface DashboardFilters {
   categoryFilter: string;
@@ -21,7 +22,7 @@ export function useDashboardFilters() {
   // Load filters from localStorage on mount
   useEffect(() => {
     try {
-      const savedFilters = localStorage.getItem(STORAGE_KEY);
+      const savedFilters = safeStorage.getItem(STORAGE_KEY);
       if (savedFilters) {
         const parsedFilters = JSON.parse(savedFilters);
         setFilters({ ...DEFAULT_FILTERS, ...parsedFilters });
@@ -37,7 +38,7 @@ export function useDashboardFilters() {
   useEffect(() => {
     if (initialized) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
+        safeStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
       } catch (error) {
         console.warn('Error saving dashboard filters to localStorage:', error);
       }
