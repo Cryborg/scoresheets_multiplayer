@@ -1,7 +1,6 @@
 'use client';
 
-import { Fragment } from 'react';
-import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
+import { useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 
 interface ConfirmationModalProps {
@@ -27,101 +26,113 @@ export default function ConfirmationModal({
   isDangerous = true,
   isLoading = false
 }: ConfirmationModalProps) {
-  return (
-    <Transition show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        <TransitionChild
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
-        </TransitionChild>
+  // Gérer l'escape key
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isLoading) {
+        onClose();
+      }
+    };
 
-        <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-            <TransitionChild
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-              enterTo="opacity-100 translate-y-0 sm:scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-              leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // Empêcher le scroll du body
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose, isLoading]);
+
+  if (!isOpen) return null;
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget && !isLoading) {
+      onClose();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        onClick={handleBackdropClick}
+      />
+      
+      {/* Modal */}
+      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-w-lg w-full mx-4 transform transition-all animate-in fade-in-0 zoom-in-95 duration-200">
+        {/* Header avec bouton fermer */}
+        <div className="absolute right-4 top-4">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+          >
+            <X className="h-5 w-5" />
+            <span className="sr-only">Fermer</span>
+          </button>
+        </div>
+
+        {/* Contenu */}
+        <div className="p-6">
+          <div className="flex items-start gap-4">
+            {/* Icône */}
+            <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
+              isDangerous 
+                ? 'bg-red-100 dark:bg-red-900/20' 
+                : 'bg-blue-100 dark:bg-blue-900/20'
+            }`}>
+              <AlertTriangle className={`h-6 w-6 ${
+                isDangerous 
+                  ? 'text-red-600 dark:text-red-400' 
+                  : 'text-blue-600 dark:text-blue-400'
+              }`} />
+            </div>
+
+            {/* Texte */}
+            <div className="flex-1 pt-1">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                {title}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                {message}
+              </p>
+            </div>
+          </div>
+
+          {/* Boutons */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-6">
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={isLoading}
+              className={`flex-1 sm:order-2 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white shadow-sm transition-all duration-200 ${
+                isDangerous
+                  ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500 disabled:bg-red-400'
+                  : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 disabled:bg-blue-400'
+              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 disabled:cursor-not-allowed`}
             >
-              <DialogPanel className="relative transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
-                <div className="absolute right-0 top-0 pr-4 pt-4">
-                  <button
-                    type="button"
-                    className="rounded-md bg-white dark:bg-gray-800 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
-                    onClick={onClose}
-                  >
-                    <span className="sr-only">Fermer</span>
-                    <X className="h-6 w-6" aria-hidden="true" />
-                  </button>
-                </div>
-                
-                <div className="sm:flex sm:items-start">
-                  <div className={`mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full sm:mx-0 sm:h-10 sm:w-10 ${
-                    isDangerous 
-                      ? 'bg-red-100 dark:bg-red-900/20' 
-                      : 'bg-blue-100 dark:bg-blue-900/20'
-                  }`}>
-                    <AlertTriangle 
-                      className={`h-6 w-6 ${
-                        isDangerous 
-                          ? 'text-red-600 dark:text-red-400' 
-                          : 'text-blue-600 dark:text-blue-400'
-                      }`} 
-                      aria-hidden="true" 
-                    />
-                  </div>
-                  <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left flex-1">
-                    <DialogTitle as="h3" className="text-base font-semibold leading-6 text-gray-900 dark:text-white">
-                      {title}
-                    </DialogTitle>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {message}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-3">
-                  <button
-                    type="button"
-                    disabled={isLoading}
-                    className={`inline-flex w-full justify-center items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 sm:w-auto ${
-                      isDangerous
-                        ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500 disabled:bg-red-400'
-                        : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 disabled:bg-blue-400'
-                    } focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed`}
-                    onClick={onConfirm}
-                  >
-                    {isLoading && (
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    )}
-                    {isLoading ? 'Suppression...' : confirmLabel}
-                  </button>
-                  <button
-                    type="button"
-                    className="mt-3 inline-flex w-full justify-center rounded-lg bg-white dark:bg-gray-700 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors sm:mt-0 sm:w-auto"
-                    onClick={onClose}
-                    disabled={isLoading}
-                  >
-                    {cancelLabel}
-                  </button>
-                </div>
-              </DialogPanel>
-            </TransitionChild>
+              {isLoading && (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+              )}
+              {isLoading ? 'Suppression...' : confirmLabel}
+            </button>
+            
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="flex-1 sm:order-1 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors shadow-sm disabled:opacity-50"
+            >
+              {cancelLabel}
+            </button>
           </div>
         </div>
-      </Dialog>
-    </Transition>
+      </div>
+    </div>
   );
 }
