@@ -2,16 +2,15 @@
 import { createClient } from '@libsql/client';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { getEnvConfig } from './env-validation.js';
 
-// Environment detection
-const isProduction = process.env.NODE_ENV === 'production';
+// Get validated environment config
+const envConfig = getEnvConfig();
 
-// Create unified Turso client
+// Create unified Turso client with validated configuration
 const tursoClient = createClient({
-  url: isProduction 
-    ? (process.env.TURSO_DATABASE_URL || 'libsql://scoresheets-cryborg.aws-eu-west-1.turso.io')
-    : 'file:./data/scoresheets.db',
-  authToken: isProduction ? process.env.TURSO_AUTH_TOKEN : undefined
+  url: envConfig.TURSO_DATABASE_URL || 'file:./data/scoresheets.db',
+  authToken: envConfig.TURSO_AUTH_TOKEN
 });
 
 // Track if database has been initialized to avoid repeated calls
@@ -327,13 +326,51 @@ async function createTables(): Promise<void> {
     )
   `);
 
-  // Create indexes for performance
+  // Create indexes for performance optimization
+  console.log('Creating database indexes for optimal performance...');
+  
+  // Critical indexes for high-frequency queries
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_host ON sessions (host_user_id)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_game ON sessions (game_id)`); // NEW: For game lookup
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_status ON sessions (status)`); // NEW: For active sessions
+  
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_session_player_session ON session_player (session_id)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_session_player_player ON session_player (player_id)`); // NEW: For player lookup
+  
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_players_session ON players (session_id)`); // NEW: Critical missing index
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_players_user ON players (user_id)`); // NEW: For user's players
+  
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_scores_session ON scores (session_id)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_scores_player ON scores (player_id)`); // NEW: For player scores
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_scores_session_player ON scores (session_id, player_id)`); // NEW: Composite for joins
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_scores_round ON scores (session_id, round_number)`); // NEW: For round queries
+  
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_session_events_session ON session_events (session_id)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_session_events_user ON session_events (user_id)`); // NEW: For user events
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_session_events_created ON session_events (created_at)`); // NEW: For recent events
+  
+  // User and authentication indexes
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_users_email ON users (email)`); // NEW: Critical for auth
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_users_username ON users (username)`); // NEW: For user lookup
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_users_online ON users (is_online)`); // NEW: For online users
+  
+  // Password reset indexes
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets (user_id)`); // NEW
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets (token)`); // NEW: Critical for reset
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_password_resets_expires ON password_resets (expires_at)`); // NEW: For cleanup
+  
+  // Game activity indexes
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_game_activity_user ON user_game_activity (user_id)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_game_activity_last_opened ON user_game_activity (user_id, last_opened_at DESC)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_game_activity_game ON user_game_activity (game_slug)`); // NEW: For popular games
+  
+  // Games catalog indexes
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_games_slug ON games (slug)`); // NEW: Critical for game lookup
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_games_category ON games (category_id)`); // NEW: For category filtering
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_games_active ON games (is_active)`); // NEW: For active games
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_games_creator ON games (created_by_user_id)`); // NEW: For custom games
+  
+  console.log('✅ Database indexes created successfully');
   
   // Add missing columns to existing tables via ALTER TABLE (for migration)
   try {
