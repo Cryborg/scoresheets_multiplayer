@@ -30,7 +30,7 @@ export async function GET(
           g.name as game_name,
           g.slug as game_slug,
           g.score_type,
-          g.score_direction,
+          g.score_direction as game_score_direction,
           g.team_based,
           g.min_players,
           g.max_players,
@@ -53,17 +53,6 @@ export async function GET(
     }
 
     const session = sessionWithAccessResult.rows[0] as SessionRecord;
-    
-    // Debug temporaire pour vérifier les données récupérées
-    console.log('=== DEBUG API REALTIME ===');
-    console.log('Session game_name:', session.game_name);
-    console.log('Session score_direction from DB:', session.score_direction);
-    console.log('Raw session data:', { 
-      game_name: session.game_name, 
-      score_direction: session.score_direction,
-      team_based: session.team_based 
-    });
-    console.log('=========================');
     
     // Check if this is a local session for access control
     const allUsersInSessionResult = await db.execute({
@@ -267,7 +256,7 @@ export async function GET(
           name: session.game_name,
           slug: session.game_slug,
           score_type: session.score_type,
-          score_direction: session.score_direction,
+          score_direction: session.game_score_direction,
           team_based: session.team_based,
           min_players: session.min_players,
           max_players: session.max_players,
