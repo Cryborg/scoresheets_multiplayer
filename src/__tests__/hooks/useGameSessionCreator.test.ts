@@ -1,8 +1,9 @@
 import { renderHook, act } from '@testing-library/react';
 
-// Mock avec le chemin relatif
-jest.mock('../../lib/authClient', () => ({
-  authenticatedFetch: jest.fn()
+// Mock avec le nouveau authHelper
+jest.mock('../../lib/authHelper', () => ({
+  getUserId: jest.fn(),
+  ensureGuestUserExists: jest.fn()
 }));
 
 // Import après le mock  
@@ -54,7 +55,8 @@ describe('useGameSessionCreator', () => {
   it('should initialize players for non-team game', () => {
     const { result } = renderHook(() => useGameSessionCreator(mockGame));
 
-    expect(result.current.state.players).toHaveLength(mockGame.min_players);
+    // gameTeamLogic now starts with 1 player for individual games (others can join via lobby)
+    expect(result.current.state.players).toHaveLength(1);
     expect(result.current.state.teams).toHaveLength(0);
   });
 
@@ -101,15 +103,15 @@ describe('useGameSessionCreator', () => {
   it('should remove player if above min limit', () => {
     const { result } = renderHook(() => useGameSessionCreator(mockGame));
 
-    // First add a player
+    // First add a player (start with 1, add 1, so we have 2)
     act(() => {
       result.current.addPlayer();
     });
 
-    const beforeLength = result.current.state.players.length;
+    const beforeLength = result.current.state.players.length; // Should be 2
 
     act(() => {
-      result.current.removePlayer(2); // Remove the extra player
+      result.current.removePlayer(1); // Remove the second player (index 1)
     });
 
     expect(result.current.state.players).toHaveLength(beforeLength - 1);
@@ -122,7 +124,8 @@ describe('useGameSessionCreator', () => {
       result.current.removePlayer(0);
     });
 
-    expect(result.current.state.players).toHaveLength(mockGame.min_players);
+    // Should not remove the last player (minimum is 1, not min_players)
+    expect(result.current.state.players).toHaveLength(1);
   });
 
   it('should update state fields', () => {
@@ -182,19 +185,19 @@ describe('useGameSessionCreator', () => {
       initialProps: { game: mockGame }
     });
 
-    expect(result.current.state.players).toHaveLength(mockGame.min_players);
+    expect(result.current.state.players).toHaveLength(1); // gameTeamLogic starts with 1 player
     expect(result.current.state.teams).toHaveLength(0);
 
     // Switch to a team-based game
     rerender({ game: mockTeamGame });
 
-    expect(result.current.state.teams).toHaveLength(mockTeamGame.min_players / 2);
+    expect(result.current.state.teams).toHaveLength(2); // 2 teams for team-based games
     expect(result.current.state.players).toHaveLength(0);
 
     // Switch back to a non-team game
     rerender({ game: mockGame });
 
-    expect(result.current.state.players).toHaveLength(mockGame.min_players);
+    expect(result.current.state.players).toHaveLength(1); // gameTeamLogic starts with 1 player
     expect(result.current.state.teams).toHaveLength(0);
   });
 });

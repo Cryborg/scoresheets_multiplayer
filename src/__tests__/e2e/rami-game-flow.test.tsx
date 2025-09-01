@@ -6,7 +6,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { jest } from '@jest/globals';
 import RamiScoreSheet from '@/components/scoresheets/RamiScoreSheet';
 
-// Mock BaseScoreSheetMultiplayer pour simuler l'état complet
+// Mock BaseScoreSheetMultiplayer directly since RoundBasedScoreSheet uses it
 jest.mock('@/components/scoresheets/BaseScoreSheetMultiplayer', () => {
   return function MockBaseScoreSheetMultiplayer({ children }: { children: (props: unknown) => React.ReactNode }) {
     console.log('MOCK APPELÉ - BaseScoreSheetMultiplayer');
@@ -35,7 +35,8 @@ jest.mock('@/components/scoresheets/BaseScoreSheetMultiplayer', () => {
     const mockGameState = {
       isHost: true,
       canStartGame: false,
-      lastUpdate: new Date().toISOString()
+      lastUpdate: new Date().toISOString(),
+      addRound: jest.fn().mockResolvedValue({ success: true })
     };
 
     return <div data-testid="mock-base-component">{children({ session: mockSession, gameState: mockGameState })}</div>;

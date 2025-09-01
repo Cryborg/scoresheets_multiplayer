@@ -33,9 +33,9 @@ describe('RankingSidebar', () => {
     expect(screen.getByText('Bob')).toBeInTheDocument();
     expect(screen.getByText('Charlie')).toBeInTheDocument();
     
-    expect(screen.getByText('150 points')).toBeInTheDocument();
-    expect(screen.getByText('120 points')).toBeInTheDocument();
-    expect(screen.getByText('200 points')).toBeInTheDocument();
+    expect(screen.getByText('150 pts')).toBeInTheDocument();
+    expect(screen.getByText('120 pts')).toBeInTheDocument();
+    expect(screen.getByText('200 pts')).toBeInTheDocument();
   });
 
   test('affiche les positions des joueurs', () => {
@@ -48,7 +48,7 @@ describe('RankingSidebar', () => {
   });
 
   test('gère le cas où players est undefined', () => {
-    render(<RankingSidebar players={undefined as any} />);
+    render(<RankingSidebar players={undefined as unknown as Player[]} />);
     
     expect(screen.getByText('Classement')).toBeInTheDocument();
     expect(screen.getByText('Aucun joueur')).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe('RankingSidebar', () => {
   });
 
   test('gère le cas où players est null', () => {
-    render(<RankingSidebar players={null as any} />);
+    render(<RankingSidebar players={null as unknown as Player[]} />);
     
     expect(screen.getByText('Classement')).toBeInTheDocument();
     expect(screen.getByText('Aucun joueur')).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe('RankingSidebar', () => {
       { id: 2, name: 'Bob', totalScore: 450 }    // En dessous du target
     ];
 
-    render(
+    const { container } = render(
       <RankingSidebar 
         players={playersWithTarget} 
         scoreTarget={500}
@@ -119,8 +119,8 @@ describe('RankingSidebar', () => {
       />
     );
     
-    // Alice devrait avoir le trophée (550 >= 500)
-    expect(screen.getByText('🏆')).toBeInTheDocument();
+    // Alice devrait avoir le trophée SVG (550 >= 500)
+    expect(container.querySelector('.lucide-trophy')).toBeInTheDocument();
   });
 
   test('gère les scores négatifs', () => {
@@ -131,8 +131,8 @@ describe('RankingSidebar', () => {
 
     render(<RankingSidebar players={playersWithNegative} />);
     
-    expect(screen.getByText('-10 points')).toBeInTheDocument();
-    expect(screen.getByText('50 points')).toBeInTheDocument();
+    expect(screen.getByText('-10 pts')).toBeInTheDocument();
+    expect(screen.getByText('50 pts')).toBeInTheDocument();
   });
 
   test('gère les très gros scores', () => {
@@ -142,7 +142,7 @@ describe('RankingSidebar', () => {
 
     render(<RankingSidebar players={playersWithBigScores} />);
     
-    expect(screen.getByText('999999 points')).toBeInTheDocument();
+    expect(screen.getByText('999999 pts')).toBeInTheDocument();
   });
 
   test('applique les bonnes classes CSS pour les positions', () => {
@@ -159,7 +159,7 @@ describe('RankingSidebar', () => {
       { id: 2, name: 'Bob', totalScore: 499 }    // Juste en dessous
     ];
 
-    render(
+    const { container } = render(
       <RankingSidebar 
         players={playersAtTarget} 
         scoreTarget={500}
@@ -167,14 +167,14 @@ describe('RankingSidebar', () => {
       />
     );
     
-    // Alice devrait avoir le trophée (500 >= 500)
-    expect(screen.getByText('🏆')).toBeInTheDocument();
+    // Alice devrait avoir le trophée SVG (500 >= 500)
+    expect(container.querySelector('.lucide-trophy')).toBeInTheDocument();
   });
 
   test('ne plante pas avec des propriétés undefined dans players', () => {
     const playersWithUndefined = [
-      { id: 1, name: undefined as any, totalScore: 100 },
-      { id: 2, name: 'Bob', totalScore: undefined as any }
+      { id: 1, name: undefined as unknown as string, totalScore: 100 },
+      { id: 2, name: 'Bob', totalScore: undefined as unknown as number }
     ];
 
     expect(() => {
@@ -182,13 +182,13 @@ describe('RankingSidebar', () => {
     }).not.toThrow();
   });
 
-  test('affiche "pts" comme unité', () => {
+  test('affiche "pts" comme unité pour les scores des joueurs', () => {
     render(<RankingSidebar players={mockPlayers} />);
     
-    // Vérifier que "points" est affiché (pas juste "pts")
-    expect(screen.getByText('150 points')).toBeInTheDocument();
-    expect(screen.getByText('120 points')).toBeInTheDocument();
-    expect(screen.getByText('200 points')).toBeInTheDocument();
+    // Vérifier que "pts" est affiché pour les scores des joueurs
+    expect(screen.getByText('150 pts')).toBeInTheDocument();
+    expect(screen.getByText('120 pts')).toBeInTheDocument();
+    expect(screen.getByText('200 pts')).toBeInTheDocument();
   });
 
   test('maintient l\'ordre des joueurs tel que fourni', () => {
@@ -207,7 +207,7 @@ describe('RankingSidebar', () => {
     render(<RankingSidebar players={singlePlayer} />);
     
     expect(screen.getByText('Solo')).toBeInTheDocument();
-    expect(screen.getByText('100 points')).toBeInTheDocument();
+    expect(screen.getByText('100 pts')).toBeInTheDocument();
     expect(screen.getByText('1')).toBeInTheDocument(); // Position 1
   });
 
@@ -216,7 +216,7 @@ describe('RankingSidebar', () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     
     expect(() => {
-      render(<RankingSidebar players={undefined as any} />);
+      render(<RankingSidebar players={undefined as unknown as Player[]} />);
     }).not.toThrow();
 
     // Vérifier qu'aucune erreur n'a été loggée

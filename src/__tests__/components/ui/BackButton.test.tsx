@@ -24,8 +24,8 @@ const mockLocation = {
 };
 
 // Mock window.location assignment
-delete (window as any).location;
-(window as any).location = {
+delete (window as typeof window & { location: unknown }).location;
+(window as typeof window & { location: Location }).location = {
   ...mockLocation,
   set href(url: string) {
     mockLocation.href = url;
@@ -124,7 +124,7 @@ describe('BackButton', () => {
   it('should handle click when window is undefined', () => {
     // Mock window as undefined
     const originalWindow = global.window;
-    (global as any).window = undefined;
+    (global as typeof global & { window: unknown }).window = undefined;
 
     render(<BackButton href="/test-page" />);
     
