@@ -7,6 +7,9 @@ import { getEnvConfig } from './env-validation';
 // Get validated environment config
 const envConfig = getEnvConfig();
 
+// Production detection
+const isProduction = envConfig.NODE_ENV === 'production';
+
 // Create unified Turso client with validated configuration
 const tursoClient = createClient({
   url: envConfig.TURSO_DATABASE_URL || 'file:./data/scoresheets.db',
