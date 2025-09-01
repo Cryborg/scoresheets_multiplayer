@@ -83,7 +83,7 @@ export async function DELETE(
         ]
       });
 
-      logger.info(`Round ${roundNum} deleted from session ${sessionId} by user ${userId}`);
+      logger.log(`Round ${roundNum} deleted from session ${sessionId} by user ${userId}`);
 
       return NextResponse.json({ 
         success: true, 
