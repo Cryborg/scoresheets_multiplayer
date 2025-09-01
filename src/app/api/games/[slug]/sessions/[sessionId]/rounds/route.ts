@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, initializeDatabase } from '@/lib/database';
-import { getAuthenticatedUserId } from '@/lib/auth';
+import { getUserId } from '@/lib/authHelper';
 import { logger } from '@/lib/logger';
 
 export async function POST(
@@ -10,10 +10,8 @@ export async function POST(
   try {
     await initializeDatabase();
     
-    const userId = getAuthenticatedUserId(request);
-    if (!userId) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-    }
+    // Everyone gets an ID (authenticated or guest)
+    const userId = await getUserId(request);
 
     const { sessionId, slug } = await params;
     const { scores } = await request.json();

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, initializeDatabase, generateUniqueSessionCode } from '@/lib/database';
-import { getAuthenticatedUserId, unauthorizedResponse } from '@/lib/auth';
+import { getUserId } from '@/lib/authHelper';
 
 export async function POST(
   request: NextRequest,
@@ -25,42 +25,9 @@ export async function POST(
     const { slug } = await params;
     console.log('[PROD] Slug:', slug);
     
-    // Get user ID - either authenticated or guest
-    let userId = getAuthenticatedUserId(request);
-    console.log('[PROD] Authenticated User ID:', userId);
-    
-    // If not authenticated, check for guest ID
-    if (!userId) {
-      if (guestId && typeof guestId === 'number' && guestId >= 9000000) {
-        // Valid guest ID - create or get guest user
-        userId = guestId;
-        console.log('[PROD] Using guest ID:', userId);
-        
-        // Check if guest user exists in database
-        const guestUserResult = await db.execute({
-          sql: 'SELECT id FROM users WHERE id = ?',
-          args: [userId]
-        });
-        
-        if (guestUserResult.rows.length === 0) {
-          // Create guest user
-          await db.execute({
-            sql: `INSERT INTO users (id, username, email, password_hash, is_admin, is_guest, created_at)
-                  VALUES (?, ?, ?, ?, 0, 1, CURRENT_TIMESTAMP)`,
-            args: [
-              userId,
-              `Guest_${userId}`,
-              `guest_${userId}@temporary.local`,
-              'NO_PASSWORD_GUEST_USER'
-            ]
-          });
-          console.log('[PROD] Created guest user:', userId);
-        }
-      } else {
-        console.log('[PROD] No user ID or guest ID, returning unauthorized');
-        return unauthorizedResponse();
-      }
-    }
+    // Everyone gets an ID (authenticated or guest) - simplified with new architecture
+    const userId = await getUserId(request);
+    console.log('[PROD] User ID (authenticated or guest):', userId);
     
     console.log('[PROD] Create session request:', JSON.stringify({ slug, ...body }, null, 2));
 

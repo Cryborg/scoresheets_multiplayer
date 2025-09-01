@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, initializeDatabase } from '@/lib/database';
-import { getAuthenticatedUserId } from '@/lib/auth';
+import { getUserId } from '@/lib/authHelper';
 
 function getCategoryIcon(category: string): string {
   const icons: Record<string, string> = {
@@ -20,10 +20,8 @@ export async function POST(request: NextRequest) {
   try {
     await initializeDatabase();
     
-    const userId = await getAuthenticatedUserId(request);
-    if (!userId) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    // Everyone gets an ID (authenticated or guest)
+    const userId = await getUserId(request);
 
     const { 
       gameName, 

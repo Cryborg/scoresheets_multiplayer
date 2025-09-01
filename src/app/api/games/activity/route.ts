@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUserId } from '@/lib/auth';
+import { getUserId } from '@/lib/authHelper';
 import { trackGameActivity } from '@/lib/gameActivity';
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getAuthenticatedUserId(request);
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    // Everyone gets an ID (authenticated or guest)
+    const userId = await getUserId(request);
 
     const { gameSlug } = await request.json();
     
