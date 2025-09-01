@@ -74,7 +74,7 @@ export async function DELETE(
 
       // Add event log
       await db.execute({
-        sql: `INSERT INTO session_events (session_id, event_type, event_data, created_by_user_id)
+        sql: `INSERT INTO session_events (session_id, event_type, event_data, user_id)
               VALUES (?, 'round_deleted', ?, ?)`,
         args: [
           sessionId, 
