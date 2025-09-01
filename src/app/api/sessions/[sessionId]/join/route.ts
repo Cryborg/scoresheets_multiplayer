@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUserId } from '@/lib/auth';
+import { getUserIdFromRequest } from '@/lib/authHelper';
 import { db } from '@/lib/database';
 
 interface JoinSessionParams {
@@ -16,8 +16,8 @@ export async function POST(request: NextRequest, context: JoinSessionParams) {
       return NextResponse.json({ error: 'Nom du joueur requis' }, { status: 400 });
     }
 
-    // Get user ID if authenticated
-    const userId = getAuthenticatedUserId(request);
+    // Get user ID (authenticated or guest)
+    const userId = await getUserIdFromRequest(request);
 
     // Check if session exists and is joinable
     const sessionResult = await db.execute({

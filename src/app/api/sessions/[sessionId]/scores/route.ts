@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
-import { getAuthenticatedUserId } from '@/lib/auth';
+import { getUserIdFromRequest } from '@/lib/authHelper';
 
 export async function POST(
   request: NextRequest,
@@ -11,8 +11,8 @@ export async function POST(
     const body = await request.json();
     const { categoryId, playerId, score } = body;
     
-    // Get current user ID if authenticated
-    const currentUserId = getAuthenticatedUserId(request);
+    // Support both authenticated users and guests
+    const currentUserId = await getUserIdFromRequest(request);
 
     // Validate required fields
     if (!categoryId || !playerId || score === undefined) {

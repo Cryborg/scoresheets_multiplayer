@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUserId } from '@/lib/auth';
+import { getUserIdFromRequest } from '@/lib/authHelper';
 import { db } from '@/lib/database';
 
 // GET - Récupérer les sessions de l'utilisateur
 export async function GET(request: NextRequest) {
   try {
-    const userId = getAuthenticatedUserId(request);
+    // Support both authenticated users and guests
+    const userId = await getUserIdFromRequest(request);
     if (!userId) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }

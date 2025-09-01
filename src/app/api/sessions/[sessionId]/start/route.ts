@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
-import { getAuthenticatedUserId } from '@/lib/auth';
+import { getUserIdFromRequest } from '@/lib/authHelper';
 
 export async function POST(
   request: NextRequest,
@@ -8,7 +8,8 @@ export async function POST(
 ) {
   try {
     const { sessionId } = await params;
-    const currentUserId = getAuthenticatedUserId(request);
+    // Support both authenticated users and guests
+    const currentUserId = await getUserIdFromRequest(request);
     
     if (!currentUserId) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
@@ -36,7 +37,7 @@ export async function POST(
     const session = sessionResult.rows[0];
 
     // Check if user is the host
-    if (session.host_user_id !== currentUserId) {
+    if (Number(session.host_user_id) !== currentUserId) {
       return NextResponse.json({ error: 'Only the host can start the game' }, { status: 403 });
     }
 
