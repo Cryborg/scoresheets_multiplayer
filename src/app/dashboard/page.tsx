@@ -61,10 +61,13 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
         const response = await authenticatedFetch('/api/games');
         const data: GamesAPIResponse = await response.json();
         
-        const slugs = data.games.map(game => game.slug);
+        // Filter out "jeu-libre" from the games list
+        const filteredGames = data.games.filter(game => game.slug !== 'jeu-libre');
+        
+        const slugs = filteredGames.map(game => game.slug);
         const metadataMap = await loadMultipleGameMetadata(slugs);
         
-        const formattedGames: Game[] = data.games.map(game => {
+        const formattedGames: Game[] = filteredGames.map(game => {
           const metadata = metadataMap[game.slug] || defaultGameMetadata;
           return {
             id: game.id,
@@ -96,10 +99,13 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
         const response = await fetch('/api/games/available');
         const data: GamesAPIResponse = await response.json();
         
-        const slugs = data.games.map(game => game.slug);
+        // Filter out "jeu-libre" from the available games list
+        const filteredGames = data.games.filter(game => game.slug !== 'jeu-libre');
+        
+        const slugs = filteredGames.map(game => game.slug);
         const metadataMap = await loadMultipleGameMetadata(slugs);
         
-        const formattedGames: Game[] = data.games.map(game => {
+        const formattedGames: Game[] = filteredGames.map(game => {
           const metadata = metadataMap[game.slug] || defaultGameMetadata;
           return {
             id: game.id,
@@ -247,6 +253,31 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
             <p className="text-blue-800 dark:text-blue-200 text-sm">
               💡 Vous jouez en tant qu&apos;invité. <Link href="/auth/register" className="underline hover:no-underline">Créez un compte</Link> pour sauvegarder vos scores et retrouver vos parties.
             </p>
+          </div>
+        )}
+
+        {/* Jeu libre - Action spéciale pour utilisateurs connectés */}
+        {isAuthenticated && (
+          <div className="mb-6">
+            <Link
+              href="/games/jeu-libre/configure"
+              className="block bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl p-6 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="text-3xl">🎨</div>
+                  <div>
+                    <h3 className="text-xl font-semibold mb-1">Créer un jeu personnalisé</h3>
+                    <p className="text-blue-100 text-sm">
+                      Définissez vos propres règles et créez un jeu sur mesure pour vos soirées
+                    </p>
+                  </div>
+                </div>
+                <div className="text-white/70">
+                  <Plus className="h-8 w-8" />
+                </div>
+              </div>
+            </Link>
           </div>
         )}
         {/* Mobile quick join - shown on small screens */}
