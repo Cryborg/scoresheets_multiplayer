@@ -45,9 +45,13 @@ export async function DELETE(
 
     const roundNum = parseInt(roundNumber);
     const currentRound = Number(session.current_round);
+    
+    // current_round est le numéro de la prochaine manche à jouer
+    // donc la dernière manche jouée est current_round - 1
+    const lastPlayedRound = currentRound - 1;
 
     // Verify we're deleting the last round only
-    if (roundNum !== currentRound) {
+    if (roundNum !== lastPlayedRound) {
       return NextResponse.json(
         { error: 'Vous ne pouvez supprimer que la dernière manche' },
         { status: 400 }
