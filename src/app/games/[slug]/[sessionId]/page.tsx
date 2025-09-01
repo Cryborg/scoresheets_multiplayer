@@ -1,5 +1,4 @@
 import { getGameComponent } from '@/lib/gameComponentLoader';
-import AuthGuard from '@/components/AuthGuard';
 import BackButton from '@/components/ui/BackButton';
 import LastPlayedGameTracker from '@/components/LastPlayedGameTracker';
 
@@ -18,8 +17,7 @@ export default async function GameSessionPage({ params }: GameSessionPageProps) 
   
   if (!ScoreSheetComponent) {
     return (
-      <AuthGuard>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           {/* Navigation Bar */}
           <nav className="bg-white dark:bg-gray-800 shadow">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,14 +44,13 @@ export default async function GameSessionPage({ params }: GameSessionPageProps) 
             </div>
           </div>
         </div>
-      </AuthGuard>
     );
   }
 
   return (
-    <AuthGuard>
+    <>
       <LastPlayedGameTracker gameSlug={slug} />
       <ScoreSheetComponent sessionId={sessionId} />
-    </AuthGuard>
+    </>
   );
 }
