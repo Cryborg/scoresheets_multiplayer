@@ -59,6 +59,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     currentUserId,
     connectionStatus,
     addRound,
+    deleteRound,
     forceRefresh,
     isLocalSession: isLocalFromServer
   } = useRealtimeSession<T>({
@@ -217,6 +218,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     handleStartGame,
     handleLeaveSession,
     addRound,
+    deleteRound,
     forceRefresh,
     
     // Navigation

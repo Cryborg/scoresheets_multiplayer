@@ -4,7 +4,8 @@ import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { GameSessionWithRounds } from '@/types/multiplayer';
 import { useState } from 'react';
 import GameCard from '@/components/layout/GameCard';
-import { Trophy, TrendingDown, Edit3, Dice6 } from 'lucide-react';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import { Trophy, TrendingDown, Edit3, Dice6, Trash2 } from 'lucide-react';
 
 interface GenericScoreSheetProps {
   sessionId: string;
@@ -15,6 +16,11 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
   const [roundScores, setRoundScores] = useState<Record<number, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // État de la modale de confirmation de suppression
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [roundToDelete, setRoundToDelete] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleScoreChange = (playerId: number, score: number) => {
     setRoundScores(prev => ({
@@ -50,6 +56,32 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
 
   const calculateTotal = (rounds: Array<{ scores: Record<number, number> }>, playerId: number) => {
     return rounds.reduce((sum, round) => sum + (round.scores[playerId] || 0), 0);
+  };
+
+  const handleDeleteRound = (roundNumber: number) => {
+    setRoundToDelete(roundNumber);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteRound = async (deleteRound: (roundNumber: number) => Promise<void>) => {
+    if (!roundToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteRound(roundToDelete);
+      setShowDeleteModal(false);
+      setRoundToDelete(null);
+    } catch (error) {
+      console.error('Error deleting round:', error);
+      // L'erreur sera gérée par le hook lui-même
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const cancelDeleteRound = () => {
+    setShowDeleteModal(false);
+    setRoundToDelete(null);
   };
 
   return (
@@ -162,21 +194,48 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
                             {player.player_name}
                           </th>
                         ))}
+                        {/* Colonne Actions pour l'hôte */}
+                        {gameState.isHost && (
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {session.rounds?.map((round, index) => (
-                        <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                            {index + 1}
-                          </td>
-                          {session.players.map(player => (
-                            <td key={player.id} className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900 dark:text-white">
-                              {round.scores[player.id] || 0}
+                      {session.rounds?.map((round, index) => {
+                        const roundNumber = index + 1;
+                        const isLastRound = index === (session.rounds?.length || 0) - 1;
+                        
+                        return (
+                          <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                              {roundNumber}
                             </td>
-                          ))}
-                        </tr>
-                      ))}
+                            {session.players.map(player => (
+                              <td key={player.id} className="px-4 py-3 whitespace-nowrap text-sm text-center text-gray-900 dark:text-white">
+                                {round.scores[player.id] || 0}
+                              </td>
+                            ))}
+                            {/* Bouton de suppression pour l'hôte (seulement dernière manche) */}
+                            {gameState.isHost && (
+                              <td className="px-4 py-3 whitespace-nowrap text-center">
+                                {isLastRound ? (
+                                  <button
+                                    onClick={() => handleDeleteRound(roundNumber)}
+                                    className="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                    title="Supprimer cette manche"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                ) : (
+                                  <div className="w-8 h-8"></div>
+                                )}
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
                       {/* Ligne des totaux */}
                       <tr className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 font-bold">
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white flex items-center gap-2">
@@ -198,6 +257,10 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
                             </td>
                           );
                         })}
+                        {/* Cellule vide pour la colonne Actions */}
+                        {gameState.isHost && (
+                          <td className="px-4 py-3"></td>
+                        )}
                       </tr>
                     </tbody>
                   </table>
@@ -219,6 +282,19 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
                 </div>
               </div>
             )}
+            
+            {/* Modale de confirmation de suppression */}
+            <ConfirmationModal
+              isOpen={showDeleteModal}
+              onClose={cancelDeleteRound}
+              onConfirm={() => confirmDeleteRound(gameState.deleteRound)}
+              title="Supprimer la manche"
+              message={`Êtes-vous sûr de vouloir supprimer la manche ${roundToDelete} ? Cette action est irréversible.`}
+              confirmLabel="Supprimer"
+              cancelLabel="Annuler"
+              isDangerous={true}
+              isLoading={isDeleting}
+            />
           </div>
         );
       }}

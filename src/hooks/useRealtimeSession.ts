@@ -19,6 +19,7 @@ interface UseRealtimeSessionReturn<T> {
   lastUpdate: Date | null;
   currentUserId: number | null;
   addRound: (scores: Array<{ playerId: number; score: number }>, details?: Record<string, unknown>) => Promise<void>;
+  deleteRound: (roundNumber: number) => Promise<void>;
   connectionStatus: 'connected' | 'connecting' | 'disconnected' | 'error';
   forceRefresh: () => Promise<void>;
   isLocalSession: boolean;
@@ -362,6 +363,33 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
     }
   }, [updateActivity]);
 
+  // Delete round function
+  const deleteRound = useCallback(async (roundNumber: number) => {
+    try {
+      const endpoint = gameSlug 
+        ? `/api/games/${gameSlug}/sessions/${sessionId}/rounds/${roundNumber}`
+        : `/api/sessions/${sessionId}/rounds/${roundNumber}`;
+        
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la suppression de la manche');
+      }
+
+      // Force refresh to get updated data
+      await forceRefresh();
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting round:', error);
+      throw error;
+    }
+  }, [gameSlug, sessionId, forceRefresh]);
+
   return {
     session,
     events,
@@ -370,6 +398,7 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
     lastUpdate,
     currentUserId,
     addRound,
+    deleteRound,
     connectionStatus,
     forceRefresh,
     isLocalSession
