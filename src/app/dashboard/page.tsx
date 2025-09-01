@@ -140,8 +140,11 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
   }, [isAuthenticated]);
 
   const filteredGames = useMemo(() => {
-    // Pour les invités, on utilise les jeux disponibles
-    let games = isAuthenticated ? [...allGames] : [...availableGames];
+    // Pour les utilisateurs connectés: jeux joués s'ils existent, sinon jeux disponibles
+    // Pour les invités: toujours les jeux disponibles
+    let games = isAuthenticated 
+      ? (allGames.length > 0 ? [...allGames] : [...availableGames])
+      : [...availableGames];
 
     if (categoryFilter !== 'all') {
       games = games.filter(game => game.category_name === categoryFilter);
@@ -167,12 +170,16 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
   }, [allGames, availableGames, isAuthenticated, categoryFilter, multiplayerFilter, playerCountFilter]);
 
   const gameCategories = useMemo(() => {
-    const games = isAuthenticated ? allGames : availableGames;
+    const games = isAuthenticated 
+      ? (allGames.length > 0 ? allGames : availableGames)
+      : availableGames;
     return ['all', ...Array.from(new Set(games.map(g => g.category_name)))];
   }, [allGames, availableGames, isAuthenticated]);
 
   const playerCounts = useMemo(() => {
-    const games = isAuthenticated ? allGames : availableGames;
+    const games = isAuthenticated 
+      ? (allGames.length > 0 ? allGames : availableGames)
+      : availableGames;
     const counts = new Set<number>();
     games.forEach(game => {
       for (let i = game.min_players; i <= game.max_players; i++) {
@@ -402,8 +409,8 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
                 </div>
               ) : (
                 filteredGames.map((game, index) => {
-                  // Le premier jeu dans la liste est le dernier joué (seulement pour les utilisateurs connectés)
-                  const isLastPlayed = isAuthenticated && index === 0 && filteredGames.length > 0;
+                  // Le premier jeu dans la liste est le dernier joué seulement si on affiche les jeux de l'utilisateur
+                  const isLastPlayed = isAuthenticated && allGames.length > 0 && index === 0 && filteredGames.length > 0;
                   return (
                     <GameCard
                       key={game.id}
@@ -432,7 +439,7 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
                   ))}
                 </div>
               ) : (
-                <GameListView games={filteredGames} isAuthenticated={isAuthenticated} />
+                <GameListView games={filteredGames} isAuthenticated={isAuthenticated} showingUserGames={allGames.length > 0} />
               )}
             </div>
           )}

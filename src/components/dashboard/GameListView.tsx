@@ -8,6 +8,7 @@ import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
 interface GameListViewProps {
   games: Game[];
   isAuthenticated: boolean;
+  showingUserGames?: boolean;
 }
 
 const difficultyStars = {
@@ -16,7 +17,7 @@ const difficultyStars = {
   'expert': 3
 } as const;
 
-export default function GameListView({ games, isAuthenticated }: GameListViewProps) {
+export default function GameListView({ games, isAuthenticated, showingUserGames = false }: GameListViewProps) {
   const { setLastPlayedGame } = useLastPlayedGame();
 
   const handleGameClick = (gameSlug: string) => {
@@ -55,7 +56,7 @@ export default function GameListView({ games, isAuthenticated }: GameListViewPro
   return (
     <div className="space-y-1">
       {games.map((game, index) => {
-        const isLastPlayed = isAuthenticated && index === 0 && games.length > 0;
+        const isLastPlayed = isAuthenticated && showingUserGames && index === 0 && games.length > 0;
         const stars = difficultyStars[game.difficulty as keyof typeof difficultyStars] || 2;
         
         return (

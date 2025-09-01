@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { X, Home, LogOut, Shield, Calendar, Gamepad2 } from 'lucide-react';
+import { X, Home, LogOut, Shield, Calendar } from 'lucide-react';
 import { BRANDING } from '@/lib/branding';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 
@@ -81,24 +81,10 @@ export default function Sidebar({ isOpen, onClose, games, onLogout, isAuthentica
               </Link>
             )}
 
-            <div className="mt-6">
-              <div className="border-t dark:border-gray-700 mb-6"></div>
-              
-              {/* Nouveau jeu - lien vers dashboard */}
-              <Link
-                href="/dashboard"
-                onClick={onClose}
-                className="flex items-center px-4 py-3 mb-4 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-500 transition-colors"
-              >
-                <Gamepad2 className="h-5 w-5 mr-3" />
-                <div>
-                  <div className="font-medium">Nouveau jeu</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Choisir et créer une partie</div>
-                </div>
-              </Link>
-
-              {/* Jeu libre - seulement pour les utilisateurs connectés */}
-              {isAuthenticated && jeuLibre && (
+            {/* Jeu libre - seulement pour les utilisateurs connectés */}
+            {isAuthenticated && jeuLibre && (
+              <div className="mt-6">
+                <div className="border-t dark:border-gray-700 mb-6"></div>
                 <Link
                   href="/games/jeu-libre/configure"
                   onClick={onClose}
@@ -110,8 +96,8 @@ export default function Sidebar({ isOpen, onClose, games, onLogout, isAuthentica
                     <div className="text-xs text-gray-500 dark:text-gray-400">Créer un jeu personnalisé</div>
                   </div>
                 </Link>
-              )}
-            </div>
+              </div>
+            )}
           </nav>
 
           {/* Footer */}
