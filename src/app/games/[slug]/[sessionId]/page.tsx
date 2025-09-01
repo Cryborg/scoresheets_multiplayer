@@ -50,7 +50,7 @@ export default async function GameSessionPage({ params }: GameSessionPageProps) 
   return (
     <>
       <LastPlayedGameTracker gameSlug={slug} />
-      <ScoreSheetComponent sessionId={sessionId} />
+      <ScoreSheetComponent sessionId={sessionId} gameSlug={slug} />
     </>
   );
 }

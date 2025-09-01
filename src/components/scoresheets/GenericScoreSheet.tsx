@@ -12,8 +12,6 @@ interface GenericScoreSheetProps {
 }
 
 export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreSheetProps) {
-  console.log('GenericScoreSheet - sessionId:', sessionId, 'gameSlug:', gameSlug);
-  
   const [roundScores, setRoundScores] = useState<Record<number, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

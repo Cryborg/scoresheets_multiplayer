@@ -224,8 +224,6 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
       const endpoint = gameSlug 
         ? `/api/games/${gameSlug}/sessions/${sessionId}/rounds`
         : `/api/sessions/${sessionId}/rounds`;
-      
-      console.log('useRealtimeSession addRound - gameSlug:', gameSlug, 'endpoint:', endpoint);
         
       const response = await fetch(endpoint, {
         method: 'POST',
