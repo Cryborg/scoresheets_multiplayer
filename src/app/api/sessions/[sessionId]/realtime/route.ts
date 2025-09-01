@@ -30,6 +30,7 @@ export async function GET(
           g.name as game_name,
           g.slug as game_slug,
           g.score_type,
+          g.score_direction,
           g.team_based,
           g.min_players,
           g.max_players,

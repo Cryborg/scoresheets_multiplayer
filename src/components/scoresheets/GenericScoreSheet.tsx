@@ -92,6 +92,9 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
       {({ session, gameState }) => {
         const scoreDirection = session?.game?.score_direction || 'higher';
         const gameTitle = session?.game?.name || "Jeu de points";
+        
+        // Debug log pour vérifier la direction du score
+        console.log('GenericScoreSheet - Game:', session?.game?.name, 'Score direction:', scoreDirection);
 
         return (
           <div className="space-y-6">
