@@ -221,8 +221,19 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{BRANDING.ui.dashboard.title}</h1>
             </div>
             
-            {/* Quick join form in header */}
+            {/* Quick join form + Custom game button in header */}
             <div className="hidden sm:flex items-center gap-2">
+              {/* Custom game button for authenticated users */}
+              {isAuthenticated && (
+                <Link
+                  href="/games/jeu-libre/configure"
+                  className="px-3 py-2 text-sm rounded-lg font-medium transition-colors flex items-center gap-1 bg-purple-500 hover:bg-purple-600 text-white"
+                >
+                  <Plus className="h-4 w-4" />
+                  Fiche personnalisée
+                </Link>
+              )}
+              
               <input 
                 type="text" 
                 placeholder="Code partie" 
@@ -247,39 +258,56 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
       </header>
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* Guest notice */}
+        {/* Guest notice with features showcase */}
         {!isAuthenticated && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-            <p className="text-blue-800 dark:text-blue-200 text-sm">
-              💡 Vous jouez en tant qu&apos;invité. <Link href="/auth/register" className="underline hover:no-underline">Créez un compte</Link> pour sauvegarder vos scores et retrouver vos parties.
-            </p>
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="text-2xl">🎮</div>
+              <div className="flex-1">
+                <h3 className="text-blue-900 dark:text-blue-100 font-semibold mb-2">
+                  Découvrez tout le potentiel d&apos;Oh Sheet!
+                </h3>
+                <p className="text-blue-800 dark:text-blue-200 text-sm mb-4">
+                  En créant un compte, vous débloquez des fonctionnalités exclusives :
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                    <span>Sauvegarde automatique de vos scores</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                    <span>Historique de toutes vos parties</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                    <span>Fiches de scores personnalisées</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                    <span>Reprendre vos parties interrompues</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                    <span>Statistiques et analyses de jeu</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm">
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                    <span>Dashboard personnalisé</span>
+                  </div>
+                </div>
+                <Link 
+                  href="/auth/register" 
+                  className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Créer mon compte gratuitement
+                </Link>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Jeu libre - Action spéciale pour utilisateurs connectés */}
-        {isAuthenticated && (
-          <div className="mb-6">
-            <Link
-              href="/games/jeu-libre/configure"
-              className="block bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl p-6 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="text-3xl">🎨</div>
-                  <div>
-                    <h3 className="text-xl font-semibold mb-1">Créer un jeu personnalisé</h3>
-                    <p className="text-blue-100 text-sm">
-                      Définissez vos propres règles et créez un jeu sur mesure pour vos soirées
-                    </p>
-                  </div>
-                </div>
-                <div className="text-white/70">
-                  <Plus className="h-8 w-8" />
-                </div>
-              </div>
-            </Link>
-          </div>
-        )}
         {/* Mobile quick join - shown on small screens */}
         <div className="sm:hidden mb-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
