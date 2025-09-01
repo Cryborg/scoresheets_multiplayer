@@ -64,7 +64,9 @@ export default function GameListView({ games, isAuthenticated, showingUserGames 
           <div className="col-span-2 text-left">Durée</div>
           <div className="col-span-1 text-center">Diff.</div>
           <div className="col-span-1 text-center">Catégorie</div>
-          <div className="col-span-1 text-right">Parties</div>
+          <div className={`col-span-1 text-right ${showingUserGames ? '' : 'opacity-0'}`}>
+            {showingUserGames ? 'Parties' : ''}
+          </div>
         </div>
       )}
       
@@ -148,15 +150,13 @@ export default function GameListView({ games, isAuthenticated, showingUserGames 
                 <span className="truncate">{game.category_name}</span>
               </div>
 
-              {/* Column 11: Times played */}
+              {/* Column 11: Times played - only for recent games */}
               <div className="col-span-1 text-right flex items-center justify-end">
-                {isAuthenticated && game.times_opened ? (
+                {isAuthenticated && showingUserGames && game.times_opened ? (
                   <div className="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap">
                     {game.times_opened}×
                   </div>
-                ) : (
-                  <div className="text-xs text-transparent">0</div>
-                )}
+                ) : null}
               </div>
             </div>
 
@@ -192,9 +192,9 @@ export default function GameListView({ games, isAuthenticated, showingUserGames 
                   </div>
                 </div>
 
-                {/* Times played */}
+                {/* Times played - only for recent games */}
                 <div className="flex-shrink-0 ml-2">
-                  {isAuthenticated && game.times_opened ? (
+                  {isAuthenticated && showingUserGames && game.times_opened ? (
                     <div className="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap">
                       {game.times_opened}×
                     </div>

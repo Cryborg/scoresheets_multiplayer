@@ -5,12 +5,14 @@ interface DashboardFilters {
   categoryFilter: string;
   multiplayerFilter: string;
   playerCountFilter: string;
+  viewMode: 'grid' | 'list';
 }
 
 const DEFAULT_FILTERS: DashboardFilters = {
   categoryFilter: 'all',
   multiplayerFilter: 'all',
-  playerCountFilter: 'all'
+  playerCountFilter: 'all',
+  viewMode: 'grid'
 };
 
 const STORAGE_KEY = 'dashboard-filters';
@@ -22,7 +24,7 @@ export function useDashboardFilters() {
   // Load filters from localStorage on mount
   useEffect(() => {
     try {
-      const savedFilters = safeStorage.getItem(STORAGE_KEY);
+      const savedFilters = safeStorage.getItem(STORAGE_KEY, 'essential');
       if (savedFilters) {
         const parsedFilters = JSON.parse(savedFilters);
         setFilters({ ...DEFAULT_FILTERS, ...parsedFilters });
@@ -38,7 +40,7 @@ export function useDashboardFilters() {
   useEffect(() => {
     if (initialized) {
       try {
-        safeStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
+        safeStorage.setItem(STORAGE_KEY, JSON.stringify(filters), 'essential');
       } catch (error) {
         console.warn('Error saving dashboard filters to localStorage:', error);
       }
@@ -58,6 +60,10 @@ export function useDashboardFilters() {
     setFilters(prev => ({ ...prev, playerCountFilter: value }));
   };
 
+  const setViewMode = (value: 'grid' | 'list') => {
+    setFilters(prev => ({ ...prev, viewMode: value }));
+  };
+
   // Reset all filters to defaults
   const resetFilters = () => {
     setFilters(DEFAULT_FILTERS);
@@ -68,11 +74,13 @@ export function useDashboardFilters() {
     categoryFilter: filters.categoryFilter,
     multiplayerFilter: filters.multiplayerFilter,
     playerCountFilter: filters.playerCountFilter,
+    viewMode: filters.viewMode,
     
     // Setters
     setCategoryFilter,
     setMultiplayerFilter,
     setPlayerCountFilter,
+    setViewMode,
     resetFilters,
     
     // State

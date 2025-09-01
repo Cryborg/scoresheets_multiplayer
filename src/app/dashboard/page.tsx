@@ -34,17 +34,18 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
   const [allGames, setAllGames] = useState<Game[]>([]);
   const [availableGames, setAvailableGames] = useState<Game[]>([]); // Pour le Sidebar
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showGuestBanner, setShowGuestBanner] = useState(false);
 
-  // Filter states with localStorage persistence
+  // Filter states and view mode with localStorage persistence
   const {
     categoryFilter,
     multiplayerFilter,
     playerCountFilter,
+    viewMode,
     setCategoryFilter,
     setMultiplayerFilter,
     setPlayerCountFilter,
+    setViewMode,
     resetFilters,
     initialized: filtersInitialized
   } = useDashboardFilters();
