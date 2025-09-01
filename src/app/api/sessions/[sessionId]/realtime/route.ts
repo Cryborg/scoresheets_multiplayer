@@ -54,6 +54,17 @@ export async function GET(
 
     const session = sessionWithAccessResult.rows[0] as SessionRecord;
     
+    // Debug temporaire pour vérifier les données récupérées
+    console.log('=== DEBUG API REALTIME ===');
+    console.log('Session game_name:', session.game_name);
+    console.log('Session score_direction from DB:', session.score_direction);
+    console.log('Raw session data:', { 
+      game_name: session.game_name, 
+      score_direction: session.score_direction,
+      team_based: session.team_based 
+    });
+    console.log('=========================');
+    
     // Check if this is a local session for access control
     const allUsersInSessionResult = await db.execute({
       sql: `SELECT DISTINCT p.user_id 
