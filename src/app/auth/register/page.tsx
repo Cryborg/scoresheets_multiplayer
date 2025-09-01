@@ -17,12 +17,20 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [hasGuestSessions, setHasGuestSessions] = useState(false);
+  const [honeypot, setHoneypot] = useState('');
+  const [csrfToken, setCsrfToken] = useState('');
   const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
     // Check if user has guest sessions to migrate
     setHasGuestSessions(hasGuestSessionsToMigrate());
+    
+    // Get CSRF token
+    fetch('/api/auth/csrf-token')
+      .then(res => res.json())
+      .then(data => setCsrfToken(data.token))
+      .catch(err => console.error('Failed to fetch CSRF token:', err));
   }, []);
 
   if (!mounted) {
@@ -52,7 +60,7 @@ export default function RegisterPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password, honeypot, csrfToken }),
       });
 
       const data = await response.json();
@@ -133,6 +141,18 @@ export default function RegisterPage() {
           {/* Register Form Card */}
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl border border-gray-200/50 dark:border-gray-700/50 p-8 shadow-xl hover:shadow-2xl transition-all duration-300">
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Honeypot field - invisible to users, visible to bots */}
+              <div style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }}>
+                <input
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                />
+              </div>
+
               {/* Username Input */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
