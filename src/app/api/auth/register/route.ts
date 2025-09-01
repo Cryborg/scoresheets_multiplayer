@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createUser, getUserByEmail } from '@/lib/auth-db';
 import { checkRegistrationRateLimit, checkSuspiciousPatterns } from '@/lib/rateLimiting';
 import { validateCSRFToken } from '@/lib/csrf';
+import { sendWelcomeEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,6 +82,12 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await createUser({ username, email, password });
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(email, username).catch(error => {
+      console.error('Failed to send welcome email:', error);
+      // Don't fail registration if email fails
+    });
 
     return NextResponse.json({
       message: 'Utilisateur créé avec succès',

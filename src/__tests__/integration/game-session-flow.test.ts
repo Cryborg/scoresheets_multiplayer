@@ -9,7 +9,8 @@ import { createMockRequest } from '../../test-utils/request-helpers';
 jest.mock('../../lib/database', () => ({
   db: {
     execute: jest.fn()
-  }
+  },
+  initializeDatabase: jest.fn().mockResolvedValue(undefined)
 }));
 
 // Mock authHelper

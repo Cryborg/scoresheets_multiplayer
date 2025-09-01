@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/database';
 import crypto from 'crypto';
+import { sendPasswordResetEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,17 +49,19 @@ export async function POST(request: NextRequest) {
       args: [userId, hashedToken, expiresAt.toISOString()]
     });
 
-    // En dev, on log le lien (en prod il faudrait envoyer un email)
+    // Generate reset URL
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`;
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('=====================================');
-      console.log('🔐 Lien de réinitialisation du mot de passe:');
-      console.log(resetUrl);
-      console.log('=====================================');
-    } else {
-      // TODO: Envoyer l'email avec un service comme Resend, SendGrid, etc.
-      console.log('Email service not configured. Would send reset link to:', email);
+    // Send email using our email service
+    const emailSent = await sendPasswordResetEmail(
+      email,
+      user.username as string,
+      resetUrl
+    );
+    
+    if (!emailSent) {
+      console.error('Failed to send password reset email to:', email);
+      // Continue anyway to not reveal if email exists
     }
 
     return NextResponse.json({
