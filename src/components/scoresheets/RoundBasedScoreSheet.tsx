@@ -35,7 +35,9 @@ export default function RoundBasedScoreSheet({
   };
 
   const handleAddRound = async (addRound: (scores: Array<{ playerId: number; score: number }>, details?: Record<string, unknown>) => Promise<void>, players: Array<{ id: number; player_name: string }>) => {
-    if (Object.keys(roundScores).length === 0) {
+    // Vérifier qu'au moins un joueur a un score non nul
+    const hasAnyScore = Object.values(roundScores).some(score => score !== 0);
+    if (!hasAnyScore) {
       setErrorMessage("Veuillez entrer au moins un score");
       return;
     }
@@ -135,7 +137,7 @@ export default function RoundBasedScoreSheet({
                 {/* Bouton de validation */}
                 <button 
                   onClick={() => handleAddRound(gameState.addRound, session.players)}
-                  disabled={isSubmitting || Object.keys(roundScores).length === 0}
+                  disabled={isSubmitting || !Object.values(roundScores).some(score => score !== 0)}
                   className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-200"
                 >
                   {isSubmitting ? 'Ajout en cours...' : 'Valider la manche'}

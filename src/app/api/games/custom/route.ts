@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       teamBased,
       teamCount,
       playersPerTeam,
+      scoreDirection,
       description 
     } = await request.json();
     
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
     
     const gameDifficulty = difficulty || 'intermédiaire';
     const gameDuration = parseInt(duration) || 30;
+    const gameScoreDirection = scoreDirection === 'lower' ? 'lower' : 'higher'; // Default to 'higher'
     const gameDescription = description?.trim() || 'Votre jeu personnalisé avec scores simples par manches';
     
     // Generate a unique slug based on the game name and user ID
@@ -186,7 +188,7 @@ export async function POST(request: NextRequest) {
         name, slug, category_id, rules, is_implemented, score_type, 
         team_based, min_players, max_players, score_direction,
         estimated_duration_minutes, created_by_user_id, team_count, players_per_team
-      ) VALUES (?, ?, ?, ?, 1, 'rounds', ?, ?, ?, 'higher', ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, 1, 'rounds', ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         trimmedName,
         slug,
@@ -195,6 +197,7 @@ export async function POST(request: NextRequest) {
         isTeamBased,
         gameMinPlayers,
         gameMaxPlayers,
+        gameScoreDirection,
         gameDuration,
         userId,
         isTeamBased ? gameTeamCount : null,

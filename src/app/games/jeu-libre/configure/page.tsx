@@ -19,6 +19,7 @@ export default function JeuLibreConfigurePage() {
   const [teamBased, setTeamBased] = useState(false);
   const [teamCount, setTeamCount] = useState(2);
   const [playersPerTeam, setPlayersPerTeam] = useState(2);
+  const [scoreDirection, setScoreDirection] = useState<'higher' | 'lower'>('higher');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const { setLastPlayedGame } = useLastPlayedGame();
@@ -53,6 +54,7 @@ export default function JeuLibreConfigurePage() {
           teamBased,
           teamCount,
           playersPerTeam,
+          scoreDirection,
           description: description.trim() || undefined
         }),
       });
@@ -298,6 +300,51 @@ export default function JeuLibreConfigurePage() {
                       </option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              {/* Direction du score */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Objectif de score
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <input
+                      type="radio"
+                      name="scoreDirection"
+                      value="higher"
+                      checked={scoreDirection === 'higher'}
+                      onChange={(e) => setScoreDirection(e.target.value as 'higher')}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <div className="ml-3 flex-1">
+                      <span className="block text-sm font-medium text-gray-900 dark:text-white">
+                        Plus haut score
+                      </span>
+                      <span className="block text-xs text-gray-500 dark:text-gray-400">
+                        Le joueur avec le plus de points gagne
+                      </span>
+                    </div>
+                  </label>
+                  <label className="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <input
+                      type="radio"
+                      name="scoreDirection"
+                      value="lower"
+                      checked={scoreDirection === 'lower'}
+                      onChange={(e) => setScoreDirection(e.target.value as 'lower')}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                    <div className="ml-3 flex-1">
+                      <span className="block text-sm font-medium text-gray-900 dark:text-white">
+                        Plus bas score
+                      </span>
+                      <span className="block text-xs text-gray-500 dark:text-gray-400">
+                        Le joueur avec le moins de points gagne
+                      </span>
+                    </div>
+                  </label>
                 </div>
               </div>
 

@@ -343,7 +343,20 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
         )}
 
         {/* Mobile quick join - shown on small screens */}
-        <div className="sm:hidden mb-6">
+        <div className="sm:hidden mb-6 space-y-4">
+          {/* Custom game button for authenticated users */}
+          {isAuthenticated && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+              <Link
+                href="/games/jeu-libre/configure"
+                className="w-full px-4 py-3 text-sm rounded-lg font-medium transition-colors flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white"
+              >
+                <Plus className="h-4 w-4" />
+                Créer une fiche personnalisée
+              </Link>
+            </div>
+          )}
+          
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
             <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Rejoindre une partie</h3>
             <div className="flex items-center gap-2">
