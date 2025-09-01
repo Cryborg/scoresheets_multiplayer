@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { authenticatedFetch } from '@/lib/authClient';
+import { authenticatedFetch, isAuthenticated } from '@/lib/authClient';
 
 interface GameSession {
   id: number;
@@ -22,6 +22,13 @@ export function useGameSessions(gameSlug: string) {
 
   useEffect(() => {
     const fetchGameSessions = async () => {
+      // Si l'utilisateur n'est pas authentifié, ne pas faire d'appel API
+      if (!isAuthenticated()) {
+        setSessions([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         const response = await authenticatedFetch('/api/sessions');

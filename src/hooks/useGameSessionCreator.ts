@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { notify } from '@/lib/toast';
 import { getGuestId, trackGuestSession, isGuest } from '@/lib/guestAuth';
-import { authenticatedFetch } from '@/lib/authClient';
+import { authenticatedFetch, isAuthenticated } from '@/lib/authClient';
 import { initializeGameSession, validateGameSession, type Game as GameTeamLogicGame } from '@/lib/gameTeamLogic';
 
 export interface Player {
@@ -55,6 +55,12 @@ export function useGameSessionCreator(game?: Game | null) {
   }, [game]);
 
   const fetchSuggestedPlayers = async () => {
+    // Ne pas fetch les suggestions pour les invités
+    if (!isAuthenticated()) {
+      setState(prev => ({ ...prev, suggestedPlayers: [] }));
+      return;
+    }
+    
     try {
       const response = await authenticatedFetch('/api/players');
       if (response.ok) {
