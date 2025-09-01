@@ -540,24 +540,15 @@ async function seedInitialData(): Promise<void> {
       estimated_duration: 45
     },
     {
-      name: 'Test Minimal',
-      slug: 'test-minimal',
-      category: 'Plateau',
-      rules: 'Jeu de test minimal pour debug',
-      score_type: 'rounds',
-      min_players: 2,
-      max_players: 4,
-      estimated_duration: 5
-    },
-    {
       name: 'Pierre Papier Ciseaux',
       slug: 'pierre-papier-ciseaux',
       category: 'Plateau',
-      rules: 'Jeu classique Pierre-Papier-Ciseaux pour 2 joueurs. Premier à 5 points gagne.',
+      rules: 'Jeu classique Pierre-Papier-Ciseaux pour 2 joueurs. Premier à atteindre le score cible gagne.',
       score_type: 'rounds',
       min_players: 2,
       max_players: 2,
-      estimated_duration: 10
+      estimated_duration: 10,
+      is_implemented: 1
     },
     {
       name: 'Rami',

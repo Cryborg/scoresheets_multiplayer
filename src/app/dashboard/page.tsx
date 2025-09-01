@@ -154,12 +154,9 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
     fetchData();
   }, [isAuthenticated]);
 
-  const filteredGames = useMemo(() => {
-    // Pour les utilisateurs connectés: jeux joués s'ils existent, sinon jeux disponibles
-    // Pour les invités: toujours les jeux disponibles
-    let games = isAuthenticated 
-      ? (allGames.length > 0 ? [...allGames] : [...availableGames])
-      : [...availableGames];
+  const { playedGames, otherGames } = useMemo(() => {
+    // Appliquer les filtres à tous les jeux disponibles
+    let games = [...availableGames];
 
     if (categoryFilter !== 'all') {
       games = games.filter(game => game.category_name === categoryFilter);
@@ -178,31 +175,45 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
       }
     }
 
-    // Pour les utilisateurs connectés, les jeux sont triés par date de dernière ouverture
-    // Pour les invités, on garde l'ordre par défaut (par catégorie et nom)
+    // Séparer les jeux joués des autres
+    if (isAuthenticated && allGames.length > 0) {
+      const playedGamesMap = new Map(allGames.map(game => [game.slug, game]));
+      
+      const played = games
+        .filter(game => playedGamesMap.has(game.slug))
+        .sort((a, b) => {
+          const aData = playedGamesMap.get(a.slug)!;
+          const bData = playedGamesMap.get(b.slug)!;
+          return new Date(bData.last_opened_at || 0).getTime() - new Date(aData.last_opened_at || 0).getTime();
+        });
+      
+      const other = games
+        .filter(game => !playedGamesMap.has(game.slug))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      
+      return { playedGames: played, otherGames: other };
+    }
 
-    return games;
+    // Pour les invités, tous les jeux dans "otherGames"
+    return { 
+      playedGames: [], 
+      otherGames: games.sort((a, b) => a.name.localeCompare(b.name))
+    };
   }, [allGames, availableGames, isAuthenticated, categoryFilter, multiplayerFilter, playerCountFilter]);
 
   const gameCategories = useMemo(() => {
-    const games = isAuthenticated 
-      ? (allGames.length > 0 ? allGames : availableGames)
-      : availableGames;
-    return ['all', ...Array.from(new Set(games.map(g => g.category_name)))];
-  }, [allGames, availableGames, isAuthenticated]);
+    return ['all', ...Array.from(new Set(availableGames.map(g => g.category_name)))];
+  }, [availableGames]);
 
   const playerCounts = useMemo(() => {
-    const games = isAuthenticated 
-      ? (allGames.length > 0 ? allGames : availableGames)
-      : availableGames;
     const counts = new Set<number>();
-    games.forEach(game => {
+    availableGames.forEach(game => {
       for (let i = game.min_players; i <= game.max_players; i++) {
         counts.add(i);
       }
     });
     return ['all', ...Array.from(counts).sort((a, b) => a - b)];
-  }, [allGames, availableGames, isAuthenticated]);
+  }, [availableGames]);
 
   const handleLogout = async () => {
     try {
@@ -458,23 +469,25 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
             </div>
           </div>
           {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-8">
               {loading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border dark:border-gray-700 animate-pulse"><div className="p-6"><div className="flex items-center justify-between mb-4"><div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded"></div><div className="w-16 h-5 bg-gray-200 dark:bg-gray-600 rounded-full"></div></div><div className="w-32 h-6 bg-gray-200 dark:bg-gray-600 rounded mb-2"></div><div className="w-full h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-24 h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-full h-10 bg-gray-200 dark:bg-gray-600 rounded"></div></div></div>
-                ))
-              ) : filteredGames.length === 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border dark:border-gray-700 animate-pulse"><div className="p-6"><div className="flex items-center justify-between mb-4"><div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded"></div><div className="w-16 h-5 bg-gray-200 dark:bg-gray-600 rounded-full"></div></div><div className="w-32 h-6 bg-gray-200 dark:bg-gray-600 rounded mb-2"></div><div className="w-full h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-24 h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-full h-10 bg-gray-200 dark:bg-gray-600 rounded"></div></div></div>
+                  ))}
+                </div>
+              ) : (playedGames.length === 0 && otherGames.length === 0) ? (
                 // Message quand aucun jeu n'est affiché
-                <div className="col-span-full text-center py-12">
+                <div className="text-center py-12">
                   <div className="max-w-md mx-auto">
                     <div className="text-6xl mb-4">🎮</div>
                     {isAuthenticated ? (
                       <>
                         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                          Vos jeux apparaîtront ici
+                          Aucun jeu ne correspond aux filtres
                         </h3>
                         <p className="text-gray-600 dark:text-gray-400 text-sm">
-                          Commencez une partie via le menu latéral pour voir vos jeux récents s&apos;afficher ici automatiquement.
+                          Ajustez vos filtres pour voir les jeux disponibles.
                         </p>
                       </>
                     ) : (
@@ -490,22 +503,61 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
                   </div>
                 </div>
               ) : (
-                filteredGames.map((game, index) => {
-                  // Le premier jeu dans la liste est le dernier joué seulement si on affiche les jeux de l'utilisateur
-                  const isLastPlayed = isAuthenticated && allGames.length > 0 && index === 0 && filteredGames.length > 0;
-                  return (
-                    <GameCard
-                      key={game.id}
-                      game={game}
-                      isLastPlayed={isLastPlayed}
-                      index={index}
-                    />
-                  );
-                })
+                <>
+                  {/* Section Jeux récents */}
+                  {isAuthenticated && playedGames.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            Vos jeux récents
+                          </h3>
+                        </div>
+                        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {playedGames.map((game, index) => (
+                          <GameCard
+                            key={game.id}
+                            game={game}
+                            isLastPlayed={index === 0}
+                            index={index}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Section Tous les jeux */}
+                  {otherGames.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Gamepad2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            {isAuthenticated && playedGames.length > 0 ? 'Tous les jeux disponibles' : 'Jeux disponibles'}
+                          </h3>
+                        </div>
+                        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {otherGames.map((game, index) => (
+                          <GameCard
+                            key={game.id}
+                            game={game}
+                            isLastPlayed={false}
+                            index={index + playedGames.length}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           ) : (
-            <div>
+            <div className="space-y-8">
               {loading ? (
                 <div className="space-y-2">
                   {Array.from({ length: 8 }).map((_, i) => (
@@ -520,8 +572,52 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
                     </div>
                   ))}
                 </div>
+              ) : (playedGames.length === 0 && otherGames.length === 0) ? (
+                <div className="text-center py-12">
+                  <div className="max-w-md mx-auto">
+                    <div className="text-6xl mb-4">🎮</div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      Aucun jeu ne correspond aux filtres
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      Ajustez vos filtres pour voir les jeux disponibles.
+                    </p>
+                  </div>
+                </div>
               ) : (
-                <GameListView games={filteredGames} isAuthenticated={isAuthenticated} showingUserGames={allGames.length > 0} />
+                <>
+                  {/* Section Jeux récents - Vue liste */}
+                  {isAuthenticated && playedGames.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            Vos jeux récents
+                          </h3>
+                        </div>
+                        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                      </div>
+                      <GameListView games={playedGames} isAuthenticated={isAuthenticated} showingUserGames={true} />
+                    </div>
+                  )}
+
+                  {/* Section Tous les jeux - Vue liste */}
+                  {otherGames.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Gamepad2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            {isAuthenticated && playedGames.length > 0 ? 'Tous les jeux disponibles' : 'Jeux disponibles'}
+                          </h3>
+                        </div>
+                        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+                      </div>
+                      <GameListView games={otherGames} isAuthenticated={isAuthenticated} showingUserGames={false} />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
