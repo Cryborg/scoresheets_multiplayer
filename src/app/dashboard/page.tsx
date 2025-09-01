@@ -269,7 +269,10 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
 
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-            <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">{BRANDING.ui.dashboard.gamesAvailable}</h3>
+            {/* Suppression du titre pour utilisateurs connectés, conservé pour invités */}
+            {!isAuthenticated && (
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">Jeux disponibles</h3>
+            )}
             
             {/* Filtres - Responsive stack */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-2">
@@ -342,6 +345,32 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
               Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border dark:border-gray-700 animate-pulse"><div className="p-6"><div className="flex items-center justify-between mb-4"><div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded"></div><div className="w-16 h-5 bg-gray-200 dark:bg-gray-600 rounded-full"></div></div><div className="w-32 h-6 bg-gray-200 dark:bg-gray-600 rounded mb-2"></div><div className="w-full h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-24 h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-full h-10 bg-gray-200 dark:bg-gray-600 rounded"></div></div></div>
               ))
+            ) : filteredGames.length === 0 ? (
+              // Message quand aucun jeu n'est affiché
+              <div className="col-span-full text-center py-12">
+                <div className="max-w-md mx-auto">
+                  <div className="text-6xl mb-4">🎮</div>
+                  {isAuthenticated ? (
+                    <>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                        Vos jeux apparaîtront ici
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">
+                        Commencez une partie via le menu latéral pour voir vos jeux récents s&apos;afficher ici automatiquement.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                        Aucun jeu disponible
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">
+                        Ajustez vos filtres pour voir les jeux disponibles.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
             ) : (
               filteredGames.map((game, index) => {
                 // Le premier jeu dans la liste est le dernier joué (seulement pour les utilisateurs connectés)
