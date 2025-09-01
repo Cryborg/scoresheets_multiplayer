@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, Zap, Users, Clock, Gamepad2, Share2, RotateCcw, Save, Plus } from 'lucide-react';
+import { Menu, Zap, Users, Clock, Gamepad2, Share2, RotateCcw, Save, Plus, Grid, List } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import AuthStatus from '@/components/AuthStatus';
 import Sidebar from '@/components/Sidebar';
@@ -12,6 +12,7 @@ import { Game, GamesAPIResponse } from '@/types/dashboard';
 import { useDashboardFilters } from '@/hooks/useDashboardFilters';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
 import GameCard from '@/components/dashboard/GameCard';
+import GameListView from '@/components/dashboard/GameListView';
 import { BRANDING } from '@/lib/branding';
 import { authenticatedFetch } from '@/lib/authClient';
 
@@ -32,6 +33,7 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
   const [allGames, setAllGames] = useState<Game[]>([]);
   const [availableGames, setAvailableGames] = useState<Game[]>([]); // Pour le Sidebar
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Filter states with localStorage persistence
   const {
@@ -274,8 +276,34 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
               <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">Jeux disponibles</h3>
             )}
             
-            {/* Filtres - Responsive stack */}
+            {/* View toggle + Filtres - Responsive stack */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-2">
+              {/* Vue toggle */}
+              <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-md">
+                <button 
+                  onClick={() => setViewMode('grid')} 
+                  className={`p-2 rounded-l-md transition-colors ${
+                    viewMode === 'grid' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                  title="Vue grille"
+                >
+                  <Grid className="h-4 w-4" />
+                </button>
+                <button 
+                  onClick={() => setViewMode('list')} 
+                  className={`p-2 rounded-r-md transition-colors ${
+                    viewMode === 'list' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                  title="Vue liste"
+                >
+                  <List className="h-4 w-4" />
+                </button>
+              </div>
+
               {/* Ligne 1 mobile : Catégorie + Multi/Solo */}
               <div className="flex items-center gap-2">
                 <select 
@@ -340,52 +368,74 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {loading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border dark:border-gray-700 animate-pulse"><div className="p-6"><div className="flex items-center justify-between mb-4"><div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded"></div><div className="w-16 h-5 bg-gray-200 dark:bg-gray-600 rounded-full"></div></div><div className="w-32 h-6 bg-gray-200 dark:bg-gray-600 rounded mb-2"></div><div className="w-full h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-24 h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-full h-10 bg-gray-200 dark:bg-gray-600 rounded"></div></div></div>
-              ))
-            ) : filteredGames.length === 0 ? (
-              // Message quand aucun jeu n'est affiché
-              <div className="col-span-full text-center py-12">
-                <div className="max-w-md mx-auto">
-                  <div className="text-6xl mb-4">🎮</div>
-                  {isAuthenticated ? (
-                    <>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                        Vos jeux apparaîtront ici
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">
-                        Commencez une partie via le menu latéral pour voir vos jeux récents s&apos;afficher ici automatiquement.
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                        Aucun jeu disponible
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">
-                        Ajustez vos filtres pour voir les jeux disponibles.
-                      </p>
-                    </>
-                  )}
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {loading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border dark:border-gray-700 animate-pulse"><div className="p-6"><div className="flex items-center justify-between mb-4"><div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded"></div><div className="w-16 h-5 bg-gray-200 dark:bg-gray-600 rounded-full"></div></div><div className="w-32 h-6 bg-gray-200 dark:bg-gray-600 rounded mb-2"></div><div className="w-full h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-24 h-4 bg-gray-200 dark:bg-gray-600 rounded mb-4"></div><div className="w-full h-10 bg-gray-200 dark:bg-gray-600 rounded"></div></div></div>
+                ))
+              ) : filteredGames.length === 0 ? (
+                // Message quand aucun jeu n'est affiché
+                <div className="col-span-full text-center py-12">
+                  <div className="max-w-md mx-auto">
+                    <div className="text-6xl mb-4">🎮</div>
+                    {isAuthenticated ? (
+                      <>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                          Vos jeux apparaîtront ici
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                          Commencez une partie via le menu latéral pour voir vos jeux récents s&apos;afficher ici automatiquement.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                          Aucun jeu disponible
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">
+                          Ajustez vos filtres pour voir les jeux disponibles.
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              filteredGames.map((game, index) => {
-                // Le premier jeu dans la liste est le dernier joué (seulement pour les utilisateurs connectés)
-                const isLastPlayed = isAuthenticated && index === 0 && filteredGames.length > 0;
-                return (
-                  <GameCard
-                    key={game.id}
-                    game={game}
-                    isLastPlayed={isLastPlayed}
-                    index={index}
-                  />
-                );
-              })
-            )}
-          </div>
+              ) : (
+                filteredGames.map((game, index) => {
+                  // Le premier jeu dans la liste est le dernier joué (seulement pour les utilisateurs connectés)
+                  const isLastPlayed = isAuthenticated && index === 0 && filteredGames.length > 0;
+                  return (
+                    <GameCard
+                      key={game.id}
+                      game={game}
+                      isLastPlayed={isLastPlayed}
+                      index={index}
+                    />
+                  );
+                })
+              )}
+            </div>
+          ) : (
+            <div>
+              {loading ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="bg-white dark:bg-gray-800 rounded-lg border dark:border-gray-700 animate-pulse p-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded"></div>
+                        <div className="flex-1">
+                          <div className="w-32 h-5 bg-gray-200 dark:bg-gray-600 rounded mb-2"></div>
+                          <div className="w-48 h-3 bg-gray-200 dark:bg-gray-600 rounded"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <GameListView games={filteredGames} isAuthenticated={isAuthenticated} />
+              )}
+            </div>
+          )}
         </div>
 
         <div className="mt-12 text-center border-t dark:border-gray-700 pt-6">

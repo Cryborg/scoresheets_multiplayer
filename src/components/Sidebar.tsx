@@ -1,8 +1,6 @@
 'use client';
-
-import { useState } from 'react';
 import Link from 'next/link';
-import { X, ChevronRight, ChevronDown, Home, LogOut, Shield, Calendar } from 'lucide-react';
+import { X, Home, LogOut, Shield, Calendar, Gamepad2 } from 'lucide-react';
 import { BRANDING } from '@/lib/branding';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 
@@ -24,32 +22,10 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose, games, onLogout, isAuthenticated = true }: SidebarProps) {
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Cartes', 'Dés']));
   const { isAdmin } = useIsAdmin();
 
-  // Find "Jeu libre" and exclude it from categorized games
+  // Find "Jeu libre" for authenticated users
   const jeuLibre = games.find(game => game.slug === 'jeu-libre');
-  const otherGames = games.filter(game => game.slug !== 'jeu-libre');
-  
-  // Group other games by category
-  const gamesByCategory = otherGames.reduce((acc, game) => {
-    const category = game.category_name || 'Autres';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(game);
-    return acc;
-  }, {} as Record<string, Game[]>);
-
-  const toggleCategory = (category: string) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(category)) {
-      newExpanded.delete(category);
-    } else {
-      newExpanded.add(category);
-    }
-    setExpandedCategories(newExpanded);
-  };
 
   return (
     <>
@@ -106,61 +82,35 @@ export default function Sidebar({ isOpen, onClose, games, onLogout, isAuthentica
             )}
 
             <div className="mt-6">
+              <div className="border-t dark:border-gray-700 mb-6"></div>
+              
+              {/* Nouveau jeu - lien vers dashboard */}
+              <Link
+                href="/dashboard"
+                onClick={onClose}
+                className="flex items-center px-4 py-3 mb-4 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-500 transition-colors"
+              >
+                <Gamepad2 className="h-5 w-5 mr-3" />
+                <div>
+                  <div className="font-medium">Nouveau jeu</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Choisir et créer une partie</div>
+                </div>
+              </Link>
+
               {/* Jeu libre - seulement pour les utilisateurs connectés */}
               {isAuthenticated && jeuLibre && (
-                <>
-                  <Link
-                    href="/games/jeu-libre/configure"
-                    onClick={onClose}
-                    className="flex items-center px-4 py-3 mb-4 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-colors"
-                  >
-                    <span className="text-lg mr-3">{jeuLibre.icon}</span>
-                    <div>
-                      <div className="font-medium">{jeuLibre.name}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Créer un jeu personnalisé</div>
-                    </div>
-                  </Link>
-                  <div className="border-t dark:border-gray-700 mb-6"></div>
-                </>
-              )}
-              
-              <h3 className="px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Jeux multijoueur
-              </h3>
-              
-              <div className="mt-3 space-y-1">
-                {Object.entries(gamesByCategory).map(([category, categoryGames]) => (
-                  <div key={category}>
-                    <button
-                      onClick={() => toggleCategory(category)}
-                      className="flex items-center justify-between w-full px-4 py-2 text-left text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
-                    >
-                      <span className="font-medium">{category}</span>
-                      {expandedCategories.has(category) ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </button>
-                    
-                    {expandedCategories.has(category) && (
-                      <div className="ml-4 mt-1 space-y-1">
-                        {categoryGames.map(game => (
-                          <Link
-                            key={game.id}
-                            href={`/games/${game.slug}/new`}
-                            onClick={onClose}
-                            className="flex items-center px-4 py-2 text-sm rounded-lg text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                          >
-                            <span className="text-lg mr-2">{game.icon}</span>
-                            {game.name}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
+                <Link
+                  href="/games/jeu-libre/configure"
+                  onClick={onClose}
+                  className="flex items-center px-4 py-3 mb-4 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-colors"
+                >
+                  <span className="text-lg mr-3">{jeuLibre.icon}</span>
+                  <div>
+                    <div className="font-medium">{jeuLibre.name}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Créer un jeu personnalisé</div>
                   </div>
-                ))}
-              </div>
+                </Link>
+              )}
             </div>
           </nav>
 
