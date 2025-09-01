@@ -252,6 +252,15 @@ export async function GET(
     const responseData: RealtimeAPIResponse = {
       session: {
         ...session,
+        game: {
+          name: session.game_name,
+          slug: session.game_slug,
+          score_type: session.score_type,
+          score_direction: session.score_direction,
+          team_based: session.team_based,
+          min_players: session.min_players,
+          max_players: session.max_players,
+        },
         players,
         teams, // Include teams in the session object
         current_players: players.length, // Add current player count
