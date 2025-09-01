@@ -135,14 +135,19 @@ export function useRealtimeSession<T>(options: UseRealtimeSessionOptions): UseRe
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-      // Add guest ID header if user is a guest
+      // Add headers including guest ID if applicable
       const headers: HeadersInit = {
         'Cache-Control': 'no-cache',
         'X-Last-Update': lastUpdate?.toISOString() || '',
       };
       
-      if (isGuest()) {
-        headers['X-Guest-Id'] = getGuestId().toString();
+      // Always try to send guest ID if not authenticated
+      // This ensures guests can access sessions even after navigation
+      if (typeof window !== 'undefined' && !document.cookie.includes('auth-token')) {
+        const guestId = getGuestId();
+        if (guestId) {
+          headers['X-Guest-Id'] = guestId.toString();
+        }
       }
       
       const response = await fetch(`/api/sessions/${sessionId}/realtime`, {

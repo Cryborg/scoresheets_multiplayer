@@ -72,10 +72,14 @@ export async function GET(
     
     // Check access level
     if (accessLevel === 'denied') {
-      if (currentUserId) {
+      // For sessions in waiting status, allow anyone to view (they can join)
+      if (session.status === 'waiting') {
+        accessLevel = 'can_join';
+      } else if (currentUserId) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });
       } else {
-        return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+        // Allow read-only access for guests to existing sessions
+        accessLevel = 'viewer';
       }
     }
 
