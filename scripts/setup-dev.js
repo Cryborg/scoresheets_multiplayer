@@ -5,8 +5,8 @@
  * Crée la base de données et l'utilisateur admin si nécessaire
  */
 
-import { initializeDatabase, db } from '../src/lib/database.ts';
-import bcrypt from 'bcrypt';
+const { initializeDatabase, db } = require('../src/lib/database.ts');
+const bcrypt = require('bcrypt');
 
 async function setupDev() {
   console.log('🚀 Setup environnement de développement...');
@@ -63,5 +63,4 @@ async function setupDev() {
   }
 }
 
-await setupDev();
-process.exit(0);
+setupDev();

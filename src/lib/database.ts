@@ -340,7 +340,7 @@ async function createTables(): Promise<void> {
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_session_player_session ON session_player (session_id)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_session_player_player ON session_player (player_id)`); // NEW: For player lookup
   
-  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_players_session ON players (session_id)`); // NEW: Critical missing index
+  // idx_players_session removed - players table doesn't have session_id (uses session_player table instead)
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_players_user ON players (user_id)`); // NEW: For user's players
   
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_scores_session ON scores (session_id)`);
@@ -370,8 +370,8 @@ async function createTables(): Promise<void> {
   // Games catalog indexes
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_games_slug ON games (slug)`); // NEW: Critical for game lookup
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_games_category ON games (category_id)`); // NEW: For category filtering
-  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_games_active ON games (is_active)`); // NEW: For active games
-  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_games_creator ON games (created_by_user_id)`); // NEW: For custom games
+  // idx_games_active removed - games table doesn't have is_active column
+  // idx_games_creator moved after migrations (created_by_user_id added via ALTER TABLE)
   
   console.log('✅ Database indexes created successfully');
   
@@ -475,6 +475,14 @@ async function createTables(): Promise<void> {
     if (error instanceof Error && !error.message?.includes('duplicate column name')) {
       console.log('ℹ️ players_per_team column already exists or table is new');
     }
+  }
+
+  // Create indexes that depend on migrated columns
+  try {
+    await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_games_creator ON games (created_by_user_id)`);
+    console.log('✅ Created idx_games_creator index');
+  } catch (error) {
+    console.log('ℹ️ idx_games_creator index already exists or column not available');
   }
 }
 

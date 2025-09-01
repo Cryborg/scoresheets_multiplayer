@@ -7,7 +7,7 @@
     "dev": "next dev --turbopack",
     "dev:clean": "rm -rf .next && rm -rf node_modules/.cache && next dev --turbopack",
     "dev:fresh": "rm -rf .next && rm -rf node_modules/.cache && rm -f ./data/scoresheets.db && npm run dev:setup && next dev --turbopack",
-    "dev:setup": "node scripts/setup-dev.mjs",
+    "dev:setup": "node scripts/setup-dev-simple.js",
     "dev:watch": "nodemon",
     "prebuild": "rm -rf .next",
     "build": "next build",
