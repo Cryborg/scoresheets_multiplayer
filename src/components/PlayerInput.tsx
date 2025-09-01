@@ -8,6 +8,7 @@ interface PlayerInputProps {
   value: string;
   onChange: (value: string) => void;
   onRemove?: () => void;
+  onFocus?: () => void;
   placeholder: string;
   suggestions: string[];
   canRemove?: boolean;
@@ -18,6 +19,7 @@ export default function PlayerInput({
   value,
   onChange,
   onRemove,
+  onFocus,
   placeholder,
   suggestions,
   canRemove = false,
@@ -83,7 +85,10 @@ export default function PlayerInput({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          onFocus={() => setShowSuggestions(true)}
+          onFocus={() => {
+            setShowSuggestions(true);
+            onFocus && onFocus();
+          }}
           onBlur={() => {
             // Délai suffisant pour permettre le clic sur les suggestions
             setTimeout(() => {

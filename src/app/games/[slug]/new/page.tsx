@@ -24,7 +24,8 @@ export default function NewGamePage() {
     updateTeamPlayer,
     addPlayer,
     removePlayer,
-    createSession
+    createSession,
+    clearFocus
   } = useGameSessionCreator(game);
 
   const { setLastPlayedGame } = useLastPlayedGame();
@@ -141,6 +142,7 @@ export default function NewGamePage() {
             onAddPlayer={addPlayer}
             onRemovePlayer={removePlayer}
             onSubmit={handleSubmit}
+            onClearFocus={clearFocus}
             submitButtonText={`Commencer la partie de ${game.name}`}
           />
         </div>

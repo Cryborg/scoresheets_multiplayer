@@ -20,6 +20,7 @@ interface GameSessionFormProps {
   onAddPlayer: () => void;
   onRemovePlayer: (index: number) => void;
   onSubmit: (e: React.FormEvent) => void;
+  onClearFocus: () => void;
   submitButtonText?: string;
 }
 
@@ -32,6 +33,7 @@ export default function GameSessionForm({
   onAddPlayer,
   onRemovePlayer,
   onSubmit,
+  onClearFocus,
   submitButtonText = "Créer la partie"
 }: GameSessionFormProps) {
   
@@ -108,7 +110,8 @@ export default function GameSessionForm({
                 placeholder={`Joueur ${index + 1}`}
                 suggestions={getAvailableSuggestions(player.name)}
                 canRemove={game ? state.players.length > game.min_players : state.players.length > 2}
-                autoFocus={index === 0}
+                autoFocus={state.focusPlayerIndex === index}
+                onFocus={() => state.focusPlayerIndex === index && onClearFocus()}
               />
             ))}
             

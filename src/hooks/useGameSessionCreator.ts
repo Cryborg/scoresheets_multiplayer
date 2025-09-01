@@ -28,6 +28,7 @@ export interface GameSessionCreatorState {
   scoreDirection: 'higher' | 'lower';
   loading: boolean;
   suggestedPlayers: string[];
+  focusPlayerIndex: number | null; // Index du joueur qui doit recevoir le focus
 }
 
 export function useGameSessionCreator(game?: Game | null) {
@@ -41,7 +42,8 @@ export function useGameSessionCreator(game?: Game | null) {
     finishCurrentRound: false,
     scoreDirection: 'higher',
     loading: false,
-    suggestedPlayers: []
+    suggestedPlayers: [],
+    focusPlayerIndex: 0 // Focus sur le premier joueur au début
   });
 
   useEffect(() => {
@@ -106,9 +108,11 @@ export function useGameSessionCreator(game?: Game | null) {
   const addPlayer = useCallback(() => {
     setState(prev => {
       if (!game || prev.players.length >= game.max_players) return prev;
+      const newPlayerIndex = prev.players.length;
       return {
         ...prev,
-        players: [...prev.players, { name: '' }]
+        players: [...prev.players, { name: '' }],
+        focusPlayerIndex: newPlayerIndex // Focus sur le nouveau joueur ajouté
       };
     });
   }, [game]);
@@ -119,9 +123,14 @@ export function useGameSessionCreator(game?: Game | null) {
       if (prev.players.length <= 1) return prev;
       return {
         ...prev,
-        players: prev.players.filter((_, i) => i !== index)
+        players: prev.players.filter((_, i) => i !== index),
+        focusPlayerIndex: null // Reset focus après suppression
       };
     });
+  }, []);
+
+  const clearFocus = useCallback(() => {
+    setState(prev => ({ ...prev, focusPlayerIndex: null }));
   }, []);
 
   const validateSession = useCallback((game?: Game | null) => {
@@ -228,6 +237,7 @@ export function useGameSessionCreator(game?: Game | null) {
     addPlayer,
     removePlayer,
     createSession,
-    validateSession
+    validateSession,
+    clearFocus
   };
 }
