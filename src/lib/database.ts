@@ -2,7 +2,7 @@
 import { createClient } from '@libsql/client';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { getEnvConfig } from './env-validation.js';
+import { getEnvConfig } from './env-validation';
 
 // Get validated environment config
 const envConfig = getEnvConfig();

@@ -27,7 +27,7 @@ export const HTTP_STATUS = {
 } as const;
 
 // Configuration JWT - Validated and secure
-import { getEnvConfig } from './env-validation.js';
+import { getEnvConfig } from './env-validation';
 
 // Get JWT secret with proper validation
 export const JWT_SECRET = (() => {
