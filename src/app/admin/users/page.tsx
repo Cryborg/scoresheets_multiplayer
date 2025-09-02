@@ -188,11 +188,11 @@ export default function UsersPage() {
                     <td className="p-4 text-gray-900 dark:text-white">{user.email}</td>
                     <td className="p-4">
                       <div className="flex flex-col gap-1">
-                        {user.is_admin && (
+                        {user.is_admin ? (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
                             Admin
                           </span>
-                        )}
+                        ) : null}
                         {user.is_blocked ? (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
                             Bloqué
