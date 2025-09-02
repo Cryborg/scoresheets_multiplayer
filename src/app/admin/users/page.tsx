@@ -295,7 +295,7 @@ export default function AdminUsersPage() {
                                 setSelectedUser(user);
                                 setActionType('reset');
                               }}
-                              className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                              className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors cursor-pointer"
                               title="Réinitialiser le mot de passe"
                             >
                               <KeyRound className="h-4 w-4" />
@@ -305,7 +305,7 @@ export default function AdminUsersPage() {
                                 setSelectedUser(user);
                                 setActionType(user.is_blocked ? 'unblock' : 'block');
                               }}
-                              className={`p-2 rounded transition-colors ${
+                              className={`p-2 rounded transition-colors cursor-pointer ${
                                 user.is_blocked 
                                   ? 'text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20' 
                                   : 'text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20'
@@ -319,7 +319,7 @@ export default function AdminUsersPage() {
                                 setSelectedUser(user);
                                 setActionType('delete');
                               }}
-                              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors cursor-pointer"
                               title="Supprimer"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -356,8 +356,8 @@ export default function AdminUsersPage() {
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleResetPassword}>
+            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetPassword} className="cursor-pointer">
               Réinitialiser
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -384,10 +384,10 @@ export default function AdminUsersPage() {
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
             <AlertDialogAction 
               onClick={() => handleBlockUnblock('block')}
-              className="bg-destructive text-destructive-foreground"
+              className="bg-destructive text-destructive-foreground cursor-pointer"
             >
               Bloquer
             </AlertDialogAction>
@@ -405,8 +405,8 @@ export default function AdminUsersPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleBlockUnblock('unblock')}>
+            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleBlockUnblock('unblock')} className="cursor-pointer">
               Débloquer
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -426,10 +426,10 @@ export default function AdminUsersPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground"
+              className="bg-destructive text-destructive-foreground cursor-pointer"
             >
               Supprimer définitivement
             </AlertDialogAction>

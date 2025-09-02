@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import CategoryEditModal from '@/components/admin/CategoryEditModal';
 
 interface Category {
   id: number;
@@ -15,13 +16,8 @@ interface Category {
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    icon: ''
-  });
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
   useEffect(() => {
@@ -42,9 +38,7 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSaveCategory = async (categoryData: Omit<Category, 'id'>) => {
     try {
       const isEditing = !!editingCategory;
       const url = isEditing 
@@ -54,15 +48,17 @@ export default function CategoriesPage() {
       const response = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(categoryData)
       });
 
-      if (response.ok) {
-        await fetchCategories();
-        resetForm();
+      if (!response.ok) {
+        throw new Error('Failed to save category');
       }
+
+      await fetchCategories();
     } catch (error) {
       console.error('Error saving category:', error);
+      throw error;
     }
   };
 
@@ -94,18 +90,17 @@ export default function CategoriesPage() {
 
   const startEdit = (category: Category) => {
     setEditingCategory(category);
-    setFormData({
-      name: category.name,
-      description: category.description,
-      icon: category.icon
-    });
-    setShowCreateForm(true);
+    setShowModal(true);
   };
 
-  const resetForm = () => {
-    setShowCreateForm(false);
+  const handleCreateNew = () => {
     setEditingCategory(null);
-    setFormData({ name: '', description: '', icon: '' });
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingCategory(null);
   };
 
   if (loading) {
@@ -131,87 +126,21 @@ export default function CategoriesPage() {
           </p>
         </div>
         <button
-          onClick={() => setShowCreateForm(true)}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          onClick={handleCreateNew}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           Nouvelle catégorie
         </button>
       </div>
 
-      {/* Create/Edit Form */}
-      {showCreateForm && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            {editingCategory ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
-          </h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nom
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Ex: Cartes"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Icône (Emoji)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.icon}
-                  onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="🎴"
-                  maxLength={2}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Description de la catégorie"
-                />
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <button
-                type="submit"
-                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-              >
-                <Save className="h-4 w-4" />
-                {editingCategory ? 'Sauvegarder' : 'Créer'}
-              </button>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-              >
-                <X className="h-4 w-4" />
-                Annuler
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      {/* Category Edit Modal */}
+      <CategoryEditModal
+        isOpen={showModal}
+        onClose={handleCloseModal}
+        onSave={handleSaveCategory}
+        category={editingCategory}
+      />
 
       {/* Categories List */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">
@@ -238,13 +167,13 @@ export default function CategoriesPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => startEdit(category)}
-                      className="p-1 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                      className="p-1 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded cursor-pointer"
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(category.id)}
-                      className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                      className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded cursor-pointer"
                       disabled={category.games_count && category.games_count > 0}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -268,8 +197,8 @@ export default function CategoriesPage() {
                 Créez votre première catégorie pour organiser vos jeux.
               </p>
               <button
-                onClick={() => setShowCreateForm(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2"
+                onClick={handleCreateNew}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
                 Créer une catégorie
