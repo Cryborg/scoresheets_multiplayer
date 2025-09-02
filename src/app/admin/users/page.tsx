@@ -1,23 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Label } from '@/components/ui/label';
 import { 
   Lock, Unlock, Trash2, KeyRound, Search, 
-  AlertCircle, User, Calendar, Clock
+  User, Calendar, Clock, ArrowLeft
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import UserActionModal from '@/components/admin/UserActionModal';
 
 interface User {
   id: number;
@@ -25,141 +15,76 @@ interface User {
   email: string;
   is_admin: number;
   is_blocked: number;
-  blocked_at: string | null;
-  blocked_reason: string | null;
+  blocked_reason?: string;
   created_at: string;
-  last_seen: string | null;
-  display_name: string | null;
+  last_seen?: string;
+  display_name?: string;
 }
 
-export default function AdminUsersPage() {
+export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [actionType, setActionType] = useState<'reset' | 'block' | 'unblock' | 'delete' | null>(null);
-  const [newPassword, setNewPassword] = useState('');
-  const [blockReason, setBlockReason] = useState('');
-  const router = useRouter();
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
-  useEffect(() => {
-    checkAdminAndLoadUsers();
-  }, []);
-
-  const checkAdminAndLoadUsers = async () => {
+  const checkAdminAndLoadUsers = useCallback(async () => {
     try {
-      // Vérifier si l'utilisateur est admin
-      const checkResponse = await fetch('/api/admin/check');
-      const { isAdmin } = await checkResponse.json();
-
-      if (!isAdmin) {
-        router.push('/dashboard');
+      setLoading(true);
+      const response = await fetch('/api/admin/users');
+      
+      if (response.status === 401) {
+        router.push('/auth/login');
+        return;
+      }
+      
+      if (response.status === 403) {
+        router.push('/');
         return;
       }
 
-      // Charger les utilisateurs
-      const usersResponse = await fetch('/api/admin/users');
-      if (!usersResponse.ok) throw new Error('Erreur lors du chargement');
-
-      const data = await usersResponse.json();
-      setUsers(data.users);
+      const data = await response.json();
+      setUsers(data.users || []);
     } catch (error) {
-      console.error('Error loading users:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les utilisateurs",
-        variant: "destructive"
-      });
+      console.error('Erreur lors du chargement:', error);
+      router.push('/');
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
-  const handleResetPassword = async () => {
-    if (!selectedUser || !newPassword) return;
+  useEffect(() => {
+    checkAdminAndLoadUsers();
+  }, [checkAdminAndLoadUsers]);
 
-    try {
-      const response = await fetch(`/api/admin/users/${selectedUser.id}/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword })
-      });
+  const handleModalSuccess = async () => {
+    const actionLabels = {
+      reset: 'Mot de passe réinitialisé',
+      block: 'Utilisateur bloqué', 
+      unblock: 'Utilisateur débloqué',
+      delete: 'Utilisateur supprimé'
+    };
 
-      if (!response.ok) throw new Error('Erreur lors de la réinitialisation');
-
+    if (selectedUser && actionType) {
       toast({
         title: "Succès",
-        description: `Mot de passe réinitialisé pour ${selectedUser.username}`
-      });
-
-      setActionType(null);
-      setSelectedUser(null);
-      setNewPassword('');
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de réinitialiser le mot de passe",
-        variant: "destructive"
+        description: `${actionLabels[actionType]} pour ${selectedUser.username}`
       });
     }
+
+    await checkAdminAndLoadUsers();
   };
 
-  const handleBlockUnblock = async (action: 'block' | 'unblock') => {
-    if (!selectedUser) return;
-
-    try {
-      const response = await fetch(`/api/admin/users/${selectedUser.id}/block`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, reason: blockReason })
-      });
-
-      if (!response.ok) throw new Error('Erreur lors de l\'opération');
-
-      toast({
-        title: "Succès",
-        description: `Utilisateur ${action === 'block' ? 'bloqué' : 'débloqué'} avec succès`
-      });
-
-      await checkAdminAndLoadUsers();
-      setActionType(null);
-      setSelectedUser(null);
-      setBlockReason('');
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: `Impossible de ${action === 'block' ? 'bloquer' : 'débloquer'} l'utilisateur`,
-        variant: "destructive"
-      });
-    }
+  const openActionModal = (type: 'reset' | 'block' | 'unblock' | 'delete', user: User) => {
+    setSelectedUser(user);
+    setActionType(type);
   };
 
-  const handleDelete = async () => {
-    if (!selectedUser) return;
-
-    try {
-      const response = await fetch(`/api/admin/users/${selectedUser.id}/delete`, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) throw new Error('Erreur lors de la suppression');
-
-      toast({
-        title: "Succès",
-        description: `Utilisateur ${selectedUser.username} supprimé`
-      });
-
-      await checkAdminAndLoadUsers();
-      setActionType(null);
-      setSelectedUser(null);
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer l'utilisateur",
-        variant: "destructive"
-      });
-    }
+  const closeModal = () => {
+    setActionType(null);
+    setSelectedUser(null);
   };
 
   const filteredUsers = users.filter(user => 
@@ -194,15 +119,24 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header avec bouton retour */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Utilisateurs
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Gestion des comptes utilisateurs
-          </p>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push('/admin')}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-600 dark:text-gray-400 cursor-pointer"
+            title="Retour au tableau de bord"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Utilisateurs
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Gestion des comptes utilisateurs
+            </p>
+          </div>
         </div>
       </div>
 
@@ -249,193 +183,98 @@ export default function AdminUsersPage() {
                             <div className="text-sm text-gray-600 dark:text-gray-400">{user.display_name}</div>
                           )}
                         </div>
-                        {user.is_admin === 1 && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 ml-2">
+                      </div>
+                    </td>
+                    <td className="p-4 text-gray-900 dark:text-white">{user.email}</td>
+                    <td className="p-4">
+                      <div className="flex flex-col gap-1">
+                        {user.is_admin ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
                             Admin
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                            Utilisateur
+                          </span>
+                        )}
+                        {user.is_blocked ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
+                            Bloqué
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                            Actif
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{user.email}</td>
                     <td className="p-4">
-                      {user.is_blocked === 1 ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
-                          <Lock className="h-3 w-3" />
-                          Bloqué
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-                          <Unlock className="h-3 w-3" />
-                          Actif
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3 text-gray-400" />
+                      <div className="flex items-center gap-1 text-gray-900 dark:text-white">
+                        <Calendar className="h-4 w-4 text-gray-400" />
                         {formatDate(user.created_at)}
                       </div>
                     </td>
-                    <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 text-gray-400" />
-                        {formatDate(user.last_seen)}
+                    <td className="p-4">
+                      <div className="flex items-center gap-1 text-gray-900 dark:text-white">
+                        <Clock className="h-4 w-4 text-gray-400" />
+                        {formatDate(user.last_seen || null)}
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="flex gap-2 justify-end">
-                        {user.is_admin === 1 ? (
-                          <span className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1">
-                            Administrateur
-                          </span>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setActionType('reset');
-                              }}
-                              className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors cursor-pointer"
-                              title="Réinitialiser le mot de passe"
-                            >
-                              <KeyRound className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setActionType(user.is_blocked ? 'unblock' : 'block');
-                              }}
-                              className={`p-2 rounded transition-colors cursor-pointer ${
-                                user.is_blocked 
-                                  ? 'text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20' 
-                                  : 'text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20'
-                              }`}
-                              title={user.is_blocked ? 'Débloquer' : 'Bloquer'}
-                            >
-                              {user.is_blocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setActionType('delete');
-                              }}
-                              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors cursor-pointer"
-                              title="Supprimer"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </>
-                        )}
+                      <div className="flex items-center gap-1 justify-end">
+                        <button
+                          onClick={() => openActionModal('reset', user)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors cursor-pointer"
+                          title="Réinitialiser le mot de passe"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => openActionModal(user.is_blocked ? 'unblock' : 'block', user)}
+                          className={`p-2 rounded transition-colors cursor-pointer ${
+                            user.is_blocked
+                              ? 'text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                              : 'text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
+                          }`}
+                          title={user.is_blocked ? 'Débloquer l\'utilisateur' : 'Bloquer l\'utilisateur'}
+                        >
+                          {user.is_blocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                        </button>
+                        <button
+                          onClick={() => openActionModal('delete', user)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors cursor-pointer"
+                          title="Supprimer l'utilisateur"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
-                    </tr>
-                  ))}
+                  </tr>
+                ))}
               </tbody>
             </table>
+
+            {filteredUsers.length === 0 && (
+              <div className="text-center py-8">
+                <User className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">Aucun utilisateur</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  {searchTerm ? 'Aucun utilisateur ne correspond à votre recherche.' : 'Aucun utilisateur inscrit.'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Dialog pour réinitialiser le mot de passe */}
-      <AlertDialog open={actionType === 'reset'} onOpenChange={() => setActionType(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Réinitialiser le mot de passe</AlertDialogTitle>
-            <AlertDialogDescription>
-              Définir un nouveau mot de passe pour {selectedUser?.username}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            <Label>Nouveau mot de passe</Label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Minimum 6 caractères"
-              className="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleResetPassword} className="cursor-pointer">
-              Réinitialiser
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Dialog pour bloquer un utilisateur */}
-      <AlertDialog open={actionType === 'block'} onOpenChange={() => setActionType(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Bloquer l&apos;utilisateur</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bloquer l&apos;accès pour {selectedUser?.username}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            <Label>Raison du blocage (optionnel)</Label>
-            <input
-              type="text"
-              value={blockReason}
-              onChange={(e) => setBlockReason(e.target.value)}
-              placeholder="Ex: Comportement inapproprié"
-              className="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => handleBlockUnblock('block')}
-              className="bg-destructive text-destructive-foreground cursor-pointer"
-            >
-              Bloquer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Dialog pour débloquer */}
-      <AlertDialog open={actionType === 'unblock'} onOpenChange={() => setActionType(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Débloquer l&apos;utilisateur</AlertDialogTitle>
-            <AlertDialogDescription>
-              Restaurer l&apos;accès pour {selectedUser?.username}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleBlockUnblock('unblock')} className="cursor-pointer">
-              Débloquer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Dialog pour supprimer */}
-      <AlertDialog open={actionType === 'delete'} onOpenChange={() => setActionType(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-              Supprimer définitivement
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible. Toutes les données de {selectedUser?.username} seront supprimées.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground cursor-pointer"
-            >
-              Supprimer définitivement
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Modal d'action utilisateur */}
+      <UserActionModal
+        isOpen={actionType !== null}
+        onClose={closeModal}
+        onSuccess={handleModalSuccess}
+        user={selectedUser}
+        actionType={actionType}
+      />
     </div>
   );
 }
