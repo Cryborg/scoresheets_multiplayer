@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, initializeDatabase } from '@/lib/database';
+import { db, ensureDatabaseExists } from '@/lib/database';
 import { getUserId } from '@/lib/authHelper';
 import { logger } from '@/lib/logger';
 
@@ -8,7 +8,7 @@ export async function POST(
   { params }: { params: Promise<{ slug: string; sessionId: string }> }
 ) {
   try {
-    await initializeDatabase();
+    await ensureDatabaseExists();
     
     // Everyone gets an ID (authenticated or guest)
     const userId = await getUserId(request);

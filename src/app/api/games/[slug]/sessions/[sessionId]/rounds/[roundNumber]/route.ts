@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, initializeDatabase } from '@/lib/database';
+import { db, ensureDatabaseExists } from '@/lib/database';
 import { getUserId } from '@/lib/authHelper';
 import { logger } from '@/lib/logger';
 
@@ -8,7 +8,7 @@ export async function DELETE(
   { params }: { params: Promise<{ slug: string; sessionId: string; roundNumber: string }> }
 ) {
   try {
-    await initializeDatabase();
+    await ensureDatabaseExists();
     
     const userId = await getUserId(request);
     const { sessionId, slug, roundNumber } = await params;

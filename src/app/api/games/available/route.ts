@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, initializeDatabase } from '@/lib/database';
+import { db, ensureDatabaseExists } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
-    await initializeDatabase();
+    await ensureDatabaseExists();
     
     // Récupérer tous les jeux disponibles (comme l'ancienne API /api/games)
     const result = await db.execute(`

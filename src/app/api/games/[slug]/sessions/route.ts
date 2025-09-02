@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, initializeDatabase, generateUniqueSessionCode } from '@/lib/database';
+import { db, ensureDatabaseExists, generateUniqueSessionCode } from '@/lib/database';
 import { getUserId } from '@/lib/authHelper';
 
 export async function POST(
@@ -7,7 +7,7 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    await initializeDatabase();
+    await ensureDatabaseExists();
     
     // Read body first (can only be read once)
     const body = await request.json();

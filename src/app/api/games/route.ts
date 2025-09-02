@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, initializeDatabase } from '@/lib/database';
+import { db, ensureDatabaseExists } from '@/lib/database';
 import { getAuthenticatedUserId } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    await initializeDatabase();
+    await ensureDatabaseExists();
     
     // Récupérer l'utilisateur authentifié
     const userId = await getAuthenticatedUserId(request);

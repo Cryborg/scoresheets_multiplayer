@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, initializeDatabase } from '@/lib/database';
+import { db, ensureDatabaseExists } from '@/lib/database';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string; sessionId: string }> }
 ) {
   try {
-    await initializeDatabase();
+    await ensureDatabaseExists();
     
     const { slug, sessionId } = await params;
     console.log(`[API] GET /api/games/${slug}/sessions/${sessionId}`);

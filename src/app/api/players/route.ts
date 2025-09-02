@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, initializeDatabase } from '@/lib/database';
+import { db, ensureDatabaseExists } from '@/lib/database';
 
 function getUserIdFromRequest(request: NextRequest): number | null {
   const token = request.cookies.get('auth-token')?.value;
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    await initializeDatabase();
+    await ensureDatabaseExists();
     
     const players = await db.execute({ sql: `
       SELECT player_name, games_played, last_played 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await initializeDatabase();
+    await ensureDatabaseExists();
     
     const { playerNames } = await request.json();
     

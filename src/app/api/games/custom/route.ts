@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, initializeDatabase } from '@/lib/database';
+import { db, ensureDatabaseExists } from '@/lib/database';
 import { getUserId } from '@/lib/authHelper';
 import { calculatePlayerLimits, generateCustomGameSlug, validateGameData } from '@/lib/gameValidation';
 import { ensureCategoryExists, createCustomGame } from '@/lib/databaseUtils';
@@ -20,7 +20,7 @@ function getCategoryIcon(category: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    await initializeDatabase();
+    await ensureDatabaseExists();
     
     // Everyone gets an ID (authenticated or guest)
     const userId = await getUserId(request);

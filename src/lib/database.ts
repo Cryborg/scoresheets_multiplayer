@@ -20,6 +20,7 @@ const tursoClient = createClient({
 let databaseInitialized = false;
 
 // Database initialization with Laravel-style architecture
+// Full database initialization (for migrations and first setup)
 export async function initializeDatabase(): Promise<void> {
   // Skip if already initialized in this process
   if (databaseInitialized) {
@@ -63,6 +64,20 @@ export async function initializeDatabase(): Promise<void> {
   } catch (error) {
     console.error('Database initialization error:', error);
     throw error;
+  }
+}
+
+// Lightweight database check (for regular API calls)
+export async function ensureDatabaseExists(): Promise<void> {
+  try {
+    // Quick check if core tables exist
+    await db.execute('SELECT 1 FROM users LIMIT 1');
+    await db.execute('SELECT 1 FROM games LIMIT 1');
+    await db.execute('SELECT 1 FROM sessions LIMIT 1');
+  } catch (error) {
+    // If tables don't exist, database needs initialization
+    console.log('⚠️ Database not initialized, redirecting to migration endpoint');
+    throw new Error('Database not initialized. Please run /api/admin/migrate first.');
   }
 }
 
