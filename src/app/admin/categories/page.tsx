@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 interface Category {
   id: number;
@@ -21,6 +22,7 @@ export default function CategoriesPage() {
     description: '',
     icon: ''
   });
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   useEffect(() => {
     fetchCategories();
@@ -65,7 +67,15 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
+    const confirmed = await confirm({
+      title: 'Supprimer la catégorie',
+      message: 'Êtes-vous sûr de vouloir supprimer cette catégorie ? Cette action est irréversible.',
+      confirmLabel: 'Supprimer',
+      cancelLabel: 'Annuler',
+      isDangerous: true
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -107,7 +117,9 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+      <ConfirmDialog />
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -267,5 +279,6 @@ export default function CategoriesPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

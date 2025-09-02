@@ -5,6 +5,7 @@ import { LogOut } from 'lucide-react';
 import GameCard from '@/components/layout/GameCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import PlayerInput from '@/components/PlayerInput';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 interface LoadingStateProps {
   message?: string;
@@ -167,14 +168,26 @@ interface LeaveSessionButtonProps {
 }
 
 export function LeaveSessionButton({ onLeave, disabled = false, className = "" }: LeaveSessionButtonProps) {
-  const handleClick = () => {
-    if (confirm('Êtes-vous sûr de vouloir quitter cette partie ?')) {
+  const { confirm, ConfirmDialog } = useConfirmDialog();
+  
+  const handleClick = async () => {
+    const confirmed = await confirm({
+      title: 'Quitter la partie',
+      message: 'Êtes-vous sûr de vouloir quitter cette partie ? Vous pourrez la rejoindre à nouveau plus tard.',
+      confirmLabel: 'Quitter',
+      cancelLabel: 'Rester',
+      isDangerous: true
+    });
+    
+    if (confirmed) {
       onLeave();
     }
   };
 
   return (
-    <button
+    <>
+      <ConfirmDialog />
+      <button
       onClick={handleClick}
       disabled={disabled}
       className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
@@ -182,5 +195,6 @@ export function LeaveSessionButton({ onLeave, disabled = false, className = "" }
       <LogOut className="w-4 h-4" />
       Quitter
     </button>
+    </>
   );
 }

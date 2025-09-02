@@ -4,6 +4,8 @@ import { Plus, RotateCcw, Trophy, Users } from 'lucide-react';
 import GameCard from '@/components/layout/GameCard';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { GameSessionWithRounds } from '@/types/multiplayer';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import type { GameState } from '@/hooks/useMultiplayerGame';
 
 export default function PierrePapierCiseauxScoreSheet({ sessionId }: { sessionId: string }) {
   return (
@@ -23,9 +25,10 @@ function GameInterface({
   gameState 
 }: { 
   session: GameSessionWithRounds; 
-  gameState: any;
+  gameState: GameState<GameSessionWithRounds>;
 }) {
   const { addRound, isHost } = gameState;
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   // Calculer les scores totaux depuis les rounds
   const getTotalScore = (playerId: number): number => {
@@ -57,7 +60,17 @@ function GameInterface({
 
   // Réinitialiser la partie
   const resetGame = async () => {
-    if (!isHost || !confirm('Voulez-vous vraiment réinitialiser les scores ?')) return;
+    if (!isHost) return;
+    
+    const confirmed = await confirm({
+      title: 'Réinitialiser la partie',
+      message: 'Voulez-vous vraiment réinitialiser tous les scores ? Cette action est irréversible.',
+      confirmLabel: 'Réinitialiser',
+      cancelLabel: 'Annuler',
+      isDangerous: true
+    });
+    
+    if (!confirmed) return;
     
     // Pour réinitialiser, on devrait avoir une fonction dans gameState
     // Pour l'instant on peut juste recharger la page
@@ -89,7 +102,9 @@ function GameInterface({
   const leader = getLeader();
 
   return (
-    <div className="space-y-6">
+    <>
+      <ConfirmDialog />
+      <div className="space-y-6">
       {/* Carte de scores avec boutons */}
       <GameCard 
         title="Scores" 
@@ -191,5 +206,6 @@ function GameInterface({
       </GameCard>
 
     </div>
+    </>
   );
 }

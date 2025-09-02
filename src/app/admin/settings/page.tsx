@@ -266,12 +266,6 @@ export default function AdminSettingsPage() {
               </label>
             </div>
           </div>
-          
-          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>Note :</strong> Le nombre maximum de joueurs est défini individuellement pour chaque jeu dans la section &quot;Jeux&quot;.
-            </p>
-          </div>
         </div>
       </div>
 

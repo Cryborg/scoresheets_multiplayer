@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Eye, EyeOff } from 'lucide-react';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 interface Game {
   id: number;
@@ -45,6 +46,7 @@ export default function GamesPage() {
     estimated_duration_minutes: 30,
     supports_realtime: 1
   });
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   useEffect(() => {
     fetchGames();
@@ -102,7 +104,15 @@ export default function GamesPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce jeu ?')) {
+    const confirmed = await confirm({
+      title: 'Supprimer le jeu',
+      message: 'Êtes-vous sûr de vouloir supprimer ce jeu ? Cette action est irréversible et supprimera également toutes les parties associées.',
+      confirmLabel: 'Supprimer',
+      cancelLabel: 'Annuler',
+      isDangerous: true
+    });
+    
+    if (!confirmed) {
       return;
     }
 
@@ -199,7 +209,9 @@ export default function GamesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+      <ConfirmDialog />
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -536,5 +548,6 @@ export default function GamesPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

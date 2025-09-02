@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await db.execute({
-      sql: 'SELECT id, username, email, is_admin, is_blocked, created_at FROM users ORDER BY created_at DESC',
+      sql: 'SELECT id, username, email, is_admin, is_blocked, created_at, last_seen, display_name FROM users ORDER BY created_at DESC',
       args: []
     });
 

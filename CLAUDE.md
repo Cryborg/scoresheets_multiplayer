@@ -645,6 +645,26 @@ JWT_SECRET=long-random-string
 - **ErrorState**: Error message + back to dashboard button
 - **JoinSessionForm**: Player name entry (supports team games)
 
+### ConfirmationModal & useConfirmDialog
+- **Location**: `src/components/ui/ConfirmationModal.tsx` & `src/hooks/useConfirmDialog.tsx`
+- **Purpose**: Remplace les `confirm()` JavaScript natifs par une modale personnalisée
+- **Usage**: 
+```typescript
+// ❌ NEVER use native confirm
+if (confirm('Delete?')) { ... }
+
+// ✅ ALWAYS use the custom modal
+const { confirm, ConfirmDialog } = useConfirmDialog();
+const confirmed = await confirm({
+  title: 'Supprimer',
+  message: 'Êtes-vous sûr?',
+  confirmLabel: 'Supprimer',
+  isDangerous: true
+});
+if (confirmed) { ... }
+// Don't forget to render <ConfirmDialog /> in the component
+```
+
 ### useRealtimeSession Hook
 - **Location**: `src/hooks/useRealtimeSession.ts`  
 - **Purpose**: Real-time session data via HTTP polling
