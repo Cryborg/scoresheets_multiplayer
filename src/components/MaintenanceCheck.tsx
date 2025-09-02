@@ -8,6 +8,9 @@ interface MaintenanceStatus {
   isAdmin: boolean;
 }
 
+// Chemins autorisés même en mode maintenance
+const ALLOWED_MAINTENANCE_PATHS = ['/maintenance', '/login', '/register', '/api/auth'];
+
 export default function MaintenanceCheck({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<MaintenanceStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,8 +27,7 @@ export default function MaintenanceCheck({ children }: { children: React.ReactNo
           
           // Handle redirects based on maintenance status
           // Allow access to login/register pages even in maintenance mode
-          const allowedPaths = ['/maintenance', '/login', '/register', '/api/auth'];
-          const isAllowedPath = allowedPaths.some(path => pathname.startsWith(path));
+          const isAllowedPath = ALLOWED_MAINTENANCE_PATHS.some(path => pathname.startsWith(path));
           
           if (data.maintenanceMode && !data.isAdmin && !isAllowedPath) {
             router.push('/maintenance');
@@ -59,8 +61,7 @@ export default function MaintenanceCheck({ children }: { children: React.ReactNo
   }
 
   // If in maintenance mode and not admin, don't render children (except for allowed paths)
-  const allowedPaths = ['/maintenance', '/login', '/register'];
-  const isAllowedPath = allowedPaths.some(path => pathname.startsWith(path));
+  const isAllowedPath = ALLOWED_MAINTENANCE_PATHS.some(path => pathname.startsWith(path));
   
   if (status?.maintenanceMode && !status?.isAdmin && !isAllowedPath) {
     return null; // Router will handle the redirect

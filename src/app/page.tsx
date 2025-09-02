@@ -11,9 +11,28 @@ export default function HomePage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingMaintenance, setCheckingMaintenance] = useState(true);
 
   useEffect(() => {
     setMounted(true);
+    
+    // Check maintenance mode first
+    async function checkMaintenance() {
+      try {
+        const response = await fetch('/api/admin/maintenance-check');
+        if (response.ok) {
+          const { maintenanceMode, isAdmin } = await response.json();
+          if (maintenanceMode && !isAdmin) {
+            router.push('/maintenance');
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking maintenance mode:', error);
+      } finally {
+        setCheckingMaintenance(false);
+      }
+    }
     
     // Check if user is already authenticated
     const token = document.cookie
@@ -23,13 +42,15 @@ export default function HomePage() {
     if (token) {
       setIsAuthenticated(true);
     }
-  }, []);
+
+    checkMaintenance();
+  }, [router]);
 
   const handlePlayAsGuest = () => {
     router.push('/dashboard');
   };
 
-  if (!mounted) {
+  if (!mounted || checkingMaintenance) {
     return (
       <div suppressHydrationWarning className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -37,8 +58,9 @@ export default function HomePage() {
             {BRANDING.name}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            {BRANDING.loading.text}
+            {checkingMaintenance ? 'Vérification du système...' : BRANDING.loading.text}
           </p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mt-4"></div>
         </div>
       </div>
     );
