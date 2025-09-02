@@ -12,7 +12,8 @@ import {
   Tags, 
   Shield,
   Menu,
-  X
+  X,
+  Database
 } from 'lucide-react';
 
 const adminSections = [
@@ -51,6 +52,12 @@ const adminSections = [
     href: '/admin/settings',
     icon: Settings,
     description: 'Paramètres de l\'application'
+  },
+  {
+    name: 'Migrations',
+    href: '/admin/migrations',
+    icon: Database,
+    description: 'Gestion de la base de données'
   }
 ];
 
