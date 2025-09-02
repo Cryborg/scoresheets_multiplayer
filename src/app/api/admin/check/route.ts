@@ -2,28 +2,45 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUserId } from '@/lib/auth';
 import { db } from '@/lib/database';
 
+// GET - Quick admin check without full database initialization
 export async function GET(request: NextRequest) {
   try {
+    // Get user ID from JWT (fast - no DB call)
     const userId = getAuthenticatedUserId(request);
     
     if (!userId) {
-      return NextResponse.json({ isAdmin: false }, { status: 401 });
+      return NextResponse.json({ 
+        isAuthenticated: false, 
+        isAdmin: false 
+      }, { status: 401 });
     }
 
-    const userResult = await db.execute({
-      sql: 'SELECT is_admin FROM users WHERE id = ?',
+    // Simple admin check with minimal DB query
+    const result = await db.execute({
+      sql: 'SELECT is_admin, username FROM users WHERE id = ?',
       args: [userId]
     });
 
-    if (userResult.rows.length === 0) {
-      return NextResponse.json({ isAdmin: false }, { status: 404 });
+    const user = result.rows[0] as { is_admin: number; username: string } | undefined;
+    
+    if (!user) {
+      return NextResponse.json({ 
+        isAuthenticated: false, 
+        isAdmin: false 
+      }, { status: 401 });
     }
 
-    const isAdmin = userResult.rows[0].is_admin === 1;
-
-    return NextResponse.json({ isAdmin });
+    return NextResponse.json({
+      isAuthenticated: true,
+      isAdmin: Boolean(user.is_admin),
+      username: user.username
+    });
   } catch (error) {
-    console.error('Error checking admin status:', error);
-    return NextResponse.json({ isAdmin: false }, { status: 500 });
+    console.error('Admin check error:', error);
+    return NextResponse.json({ 
+      isAuthenticated: false, 
+      isAdmin: false,
+      error: 'Vérification échouée'
+    }, { status: 500 });
   }
 }

@@ -21,8 +21,8 @@ export default function AdminGuard({ children }: AdminGuardProps) {
           return;
         }
 
-        // Check admin status via API
-        const response = await fetch('/api/auth/me', {
+        // Use fast admin check API (no database initialization)
+        const response = await fetch('/api/admin/check', {
           credentials: 'include'
         });
         
@@ -32,7 +32,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
         }
 
         const data = await response.json();
-        if (!data.user || !data.user.is_admin) {
+        if (!data.isAuthenticated || !data.isAdmin) {
           router.push('/dashboard');
           return;
         }
