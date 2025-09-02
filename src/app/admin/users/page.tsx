@@ -188,13 +188,9 @@ export default function UsersPage() {
                     <td className="p-4 text-gray-900 dark:text-white">{user.email}</td>
                     <td className="p-4">
                       <div className="flex flex-col gap-1">
-                        {user.is_admin ? (
+                        {user.is_admin && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
                             Admin
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                            Utilisateur
                           </span>
                         )}
                         {user.is_blocked ? (
@@ -222,24 +218,31 @@ export default function UsersPage() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-1 justify-end">
-                        <button
-                          onClick={() => openActionModal('reset', user)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors cursor-pointer"
-                          title="Réinitialiser le mot de passe"
-                        >
-                          <KeyRound className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => openActionModal(user.is_blocked ? 'unblock' : 'block', user)}
-                          className={`p-2 rounded transition-colors cursor-pointer ${
-                            user.is_blocked
-                              ? 'text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
-                              : 'text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
-                          }`}
-                          title={user.is_blocked ? 'Débloquer l\'utilisateur' : 'Bloquer l\'utilisateur'}
-                        >
-                          {user.is_blocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-                        </button>
+                        {/* Seuls les utilisateurs avec compte peuvent avoir leur mot de passe réinitialisé */}
+                        {user.email && (
+                          <button
+                            onClick={() => openActionModal('reset', user)}
+                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors cursor-pointer"
+                            title="Réinitialiser le mot de passe"
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </button>
+                        )}
+                        {/* Seuls les utilisateurs avec compte peuvent être bloqués */}
+                        {user.email && (
+                          <button
+                            onClick={() => openActionModal(user.is_blocked ? 'unblock' : 'block', user)}
+                            className={`p-2 rounded transition-colors cursor-pointer ${
+                              user.is_blocked
+                                ? 'text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
+                                : 'text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
+                            }`}
+                            title={user.is_blocked ? 'Débloquer l\'utilisateur' : 'Bloquer l\'utilisateur'}
+                          >
+                            {user.is_blocked ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                          </button>
+                        )}
+                        {/* La suppression est possible pour tous les utilisateurs */}
                         <button
                           onClick={() => openActionModal('delete', user)}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors cursor-pointer"
