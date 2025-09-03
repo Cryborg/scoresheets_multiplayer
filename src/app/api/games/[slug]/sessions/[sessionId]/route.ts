@@ -50,8 +50,8 @@ export async function GET(
     }));
 
     // Get scores based on game type
-    let scores = {};
-    let rounds: any[] = [];
+    const scores = {};
+    let rounds: Array<Record<string, unknown>> = [];
 
     if (session.score_type === 'categories') {
       // For games like Yams - scores by category
@@ -61,7 +61,7 @@ export async function GET(
       });
 
       // Group scores by category_id, then by player_id
-      scoresResult.rows.forEach((score: any) => {
+      scoresResult.rows.forEach((score: Record<string, unknown>) => {
         if (!scores[score.category_id]) {
           scores[score.category_id] = {};
         }
@@ -81,7 +81,7 @@ export async function GET(
 
       // Group by round_number
       const roundsMap = new Map();
-      roundsResult.rows.forEach((score: any) => {
+      roundsResult.rows.forEach((score: Record<string, unknown>) => {
         if (!roundsMap.has(score.round_number)) {
           roundsMap.set(score.round_number, {
             round_number: score.round_number,

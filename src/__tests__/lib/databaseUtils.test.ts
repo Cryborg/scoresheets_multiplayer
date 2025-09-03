@@ -16,7 +16,7 @@ import { toSafeNumber } from '@/lib/databaseUtils';
 // We'll skip the database-dependent functions for now since they need proper mocking
 // import { ensureCategoryExists, createCustomGame } from '@/lib/databaseUtils';
 
-const { db } = require('@/lib/database');
+import { db } from '@/lib/database';
 const mockDb = db as jest.Mocked<typeof db>;
 
 describe('databaseUtils', () => {

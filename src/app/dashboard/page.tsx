@@ -106,7 +106,12 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
 
     const fetchAvailableGames = async () => {
       try {
-        const response = await fetch('/api/games/available');
+        const response = await fetch('/api/games/available', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
         const data: GamesAPIResponse = await response.json();
         
         // Filter out "jeu-libre" from the available games list

@@ -25,7 +25,7 @@ jest.mock('next/server', () => {
   };
 
   const MockNextResponse = class {
-    static json(data: any, init: any = {}) {
+    static json(data: unknown, init: { status?: number } = {}) {
       return {
         json: () => Promise.resolve(data),
         status: init.status || 200
@@ -44,7 +44,8 @@ import { getAuthenticatedUserId } from '@/lib/auth';
 
 // Helper to create mock request
 function createMockRequest(token?: string) {
-  const { NextRequest } = require('next/server');
+  // @ts-expect-error - Mocked NextRequest from jest setup above
+  const { NextRequest } = jest.requireMock('next/server');
   const cookies = token ? { 'auth-token': token } : {};
   return new NextRequest(cookies);
 }

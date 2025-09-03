@@ -26,7 +26,14 @@ export async function GET(request: NextRequest) {
 
     const games = result.rows;
 
-    return NextResponse.json({ games });
+    const response = NextResponse.json({ games });
+    
+    // Désactiver le cache pour éviter les problèmes de synchronisation
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    
+    return response;
   } catch (error) {
     console.error('API /api/games/available: Error fetching games:', error);
     console.error('API /api/games/available: Error details:', error instanceof Error ? error.message : 'Unknown error');

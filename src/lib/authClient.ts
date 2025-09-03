@@ -36,7 +36,12 @@ export function redirectToLogin(): void {
 export async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const response = await fetch(url, {
     ...options,
-    credentials: 'include'
+    credentials: 'include',
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache',
+      ...options.headers
+    }
   });
   
   if (response.status === 401) {

@@ -11,7 +11,11 @@ export async function GET(request: NextRequest) {
     
     if (!userId) {
       // Si pas d'utilisateur, retourner liste vide (aucun jeu ne s'affiche de base)
-      return NextResponse.json({ games: [] });
+      const response = NextResponse.json({ games: [] });
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+      response.headers.set('Pragma', 'no-cache'); 
+      response.headers.set('Expires', '0');
+      return response;
     }
 
     // Récupérer seulement les jeux que l'utilisateur a ouverts au moins une fois
@@ -42,7 +46,14 @@ export async function GET(request: NextRequest) {
 
     const games = result.rows;
 
-    return NextResponse.json({ games });
+    const response = NextResponse.json({ games });
+    
+    // Désactiver le cache pour éviter les problèmes de synchronisation
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    
+    return response;
   } catch (error) {
     console.error('API /api/games: Error fetching games:', error);
     console.error('API /api/games: Error details:', error instanceof Error ? error.message : 'Unknown error');

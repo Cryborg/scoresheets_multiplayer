@@ -3,19 +3,19 @@ import { db } from '@/lib/database';
 import { getAuthenticatedUserId } from '@/lib/auth';
 import { clearSettingsCache } from '@/lib/settings';
 
-// Type for the settings API response
-interface AppSettings {
-  siteName: string;
-  siteDescription: string;
-  maintenanceMode: boolean;
-  allowRegistration: boolean;
-  defaultTheme: 'light' | 'dark' | 'system';
-  sessionTimeout: number;
-  autoCleanupOldSessions: boolean;
-}
+// Type definitions (kept for future use)
+// interface AppSettings {
+//   siteName: string;
+//   siteDescription: string;
+//   maintenanceMode: boolean;
+//   allowRegistration: boolean;
+//   defaultTheme: 'light' | 'dark' | 'system';
+//   sessionTimeout: number;
+//   autoCleanupOldSessions: boolean;
+// }
 
 // Helper function to convert database value to proper type
-function convertValue(value: string, type: string): any {
+function convertValue(value: string, type: string): string | boolean | number | unknown {
   switch (type) {
     case 'boolean':
       return value === 'true';
@@ -29,7 +29,7 @@ function convertValue(value: string, type: string): any {
 }
 
 // Helper function to convert value to string for database storage
-function convertToString(value: any): string {
+function convertToString(value: unknown): string {
   if (typeof value === 'boolean') {
     return value.toString();
   }
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Convert to object format
-    const settings: Record<string, any> = {};
+    const settings: Record<string, string | boolean | number | unknown> = {};
     for (const row of result.rows) {
       const key = row.key as string;
       const value = row.value as string;

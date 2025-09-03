@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         sql: 'UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE id = ?',
         args: [user.id]
       });
-    } catch (error) {
+    } catch {
       // Ignore error if last_seen column doesn't exist yet (migration pending)
       console.log('Note: Could not update last_seen (column may not exist yet)');
     }

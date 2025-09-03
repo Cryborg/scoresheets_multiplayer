@@ -1,4 +1,4 @@
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { useRealtimeSession } from '../../hooks/useRealtimeSession';
 
 // Mock usePollingService
