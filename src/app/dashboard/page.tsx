@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { Menu, Clock, Gamepad2, Share2, RotateCcw, Save, Plus, Grid, List, X } from 'lucide-react';
 import AuthStatus from '@/components/AuthStatus';
 import Sidebar from '@/components/Sidebar';
-import { loadMultipleGameMetadata, defaultGameMetadata } from '@/lib/gameMetadata';
 import { Game, GamesAPIResponse } from '@/types/dashboard';
+import { validateGamesResponse, processGamesWithMetadata } from '@/lib/gameDataHelpers';
 import { useDashboardFilters } from '@/hooks/useDashboardFilters';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
 import GameCard from '@/components/dashboard/GameCard';
@@ -73,102 +73,42 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
       try {
         const timestamp = Date.now();
         const response = await authenticatedFetch(`/api/games?t=${timestamp}`);
-        const data: GamesAPIResponse = await response.json();
+        const data = await response.json();
         
-        if (!data || !Array.isArray(data.games)) {
+        const rawGames = validateGamesResponse(data);
+        if (!rawGames) {
           console.error('🎮 [Dashboard] Invalid user games response:', data);
           return;
         }
         
-        // Filter out "jeu-libre" from the games list
-        const filteredGames = data.games.filter(game => game.slug !== 'jeu-libre');
-        
-        const slugs = filteredGames.map(game => game.slug);
-        const metadataMap = await loadMultipleGameMetadata(slugs);
-        
-        const formattedGames: Game[] = filteredGames.map(game => {
-          const metadata = metadataMap[game.slug] || defaultGameMetadata;
-          return {
-            id: game.id,
-            name: game.name,
-            slug: game.slug,
-            category_name: game.category_name,
-            rules: metadata.shortDescription,
-            min_players: game.min_players,
-            max_players: game.max_players,
-            duration: metadata.duration,
-            icon: metadata.icon,
-            is_implemented: game.is_implemented,
-            difficulty: metadata.difficulty,
-            variant: metadata.variant,
-            multiplayer: metadata.multiplayer,
-            last_opened_at: game.last_opened_at,
-            times_opened: game.times_opened
-          };
-        });
-        
+        const formattedGames = await processGamesWithMetadata(rawGames);
         setAllGames(formattedGames);
       } catch (error) {
-        console.error('Erreur lors du chargement des jeux utilisateur:', error);
+        console.error('🎮 [Dashboard] Error loading user games:', error);
       }
     };
 
     const fetchAvailableGames = async () => {
       try {
-        console.log('🎮 [Dashboard] Fetching available games...');
         const timestamp = Date.now();
         const response = await fetch(`/api/games/available?t=${timestamp}`, {
           cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
+          headers: { 'Cache-Control': 'no-cache' }
         });
-        console.log('🎮 [Dashboard] Available games response:', response.status, response.headers.get('cache-control'));
-        const data: GamesAPIResponse = await response.json();
-        console.log('🎮 [Dashboard] Available games data:', data.games?.length, 'games loaded');
         
-        if (!data || !Array.isArray(data.games)) {
+        const data = await response.json();
+        
+        const rawGames = validateGamesResponse(data);
+        if (!rawGames) {
           console.error('🎮 [Dashboard] Invalid available games response:', data);
-          console.error('🎮 [Dashboard] Response status:', response.status);
-          if (data && data.error) {
-            console.error('🎮 [Dashboard] API Error:', data.error, data.details);
-          }
           return;
         }
         
-        // Filter out "jeu-libre" from the available games list
-        const filteredGames = data.games.filter(game => game.slug !== 'jeu-libre');
-        
-        const slugs = filteredGames.map(game => game.slug);
-        const metadataMap = await loadMultipleGameMetadata(slugs);
-        
-        const formattedGames: Game[] = filteredGames.map(game => {
-          const metadata = metadataMap[game.slug] || defaultGameMetadata;
-          return {
-            id: game.id,
-            name: game.name,
-            slug: game.slug,
-            category_name: game.category_name,
-            rules: metadata.shortDescription,
-            min_players: game.min_players,
-            max_players: game.max_players,
-            duration: metadata.duration,
-            icon: metadata.icon,
-            is_implemented: game.is_implemented,
-            difficulty: metadata.difficulty,
-            variant: metadata.variant,
-            multiplayer: metadata.multiplayer
-          };
-        });
-        
-        console.log('🎮 [Dashboard] Setting available games:', formattedGames.length, 'games');
+        const formattedGames = await processGamesWithMetadata(rawGames);
         setAvailableGames(formattedGames);
       } catch (error) {
         console.error('🎮 [Dashboard] Error loading available games:', error);
-        // En cas d'erreur, on garde les jeux déjà chargés si il y en a
         if (availableGames.length === 0) {
-          console.log('🎮 [Dashboard] Trying to load basic games as fallback...');
-          // Fallback avec les jeux de base
           setAvailableGames([]);
         }
       }
@@ -176,7 +116,6 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
 
 
     const fetchData = async () => {
-      console.log('🎮 [Dashboard] Starting data fetch, authenticated:', isAuthenticated);
       if (isAuthenticated) {
         await Promise.all([fetchUserGames(), fetchAvailableGames()]);
       } else {
@@ -184,7 +123,6 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
         await fetchAvailableGames();
         setAllGames([]); // Pas de jeux utilisateur pour les invités
       }
-      console.log('🎮 [Dashboard] Data fetch completed, setting loading to false');
       setLoading(false);
     };
 
@@ -192,7 +130,6 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
   }, [isAuthenticated]);
 
   const { playedGames, otherGames } = useMemo(() => {
-    console.log('🎮 [Dashboard] Computing games with availableGames:', availableGames.length, 'allGames:', allGames.length);
     // Appliquer les filtres à tous les jeux disponibles
     let games = [...availableGames];
 
@@ -233,12 +170,10 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
     }
 
     // Pour les invités, tous les jeux dans "otherGames"
-    const result = { 
+    return { 
       playedGames: [], 
       otherGames: games.sort((a, b) => a.name.localeCompare(b.name))
     };
-    console.log('🎮 [Dashboard] Final games result:', result.playedGames.length, 'played,', result.otherGames.length, 'other');
-    return result;
   }, [allGames, availableGames, isAuthenticated, categoryFilter, multiplayerFilter, playerCountFilter]);
 
   const gameCategories = useMemo(() => {
