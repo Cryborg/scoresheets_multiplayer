@@ -59,7 +59,7 @@ describe('SessionStorageManager', () => {
       };
 
       const mockDate = new Date('2024-01-01T11:00:00.000Z');
-      jest.spyOn(global, 'Date').mockImplementation(() => mockDate as any);
+      jest.spyOn(global, 'Date').mockImplementation(() => mockDate as unknown as Date);
       Date.prototype.toISOString = jest.fn(() => '2024-01-01T11:00:00.000Z');
 
       sessionStorage.saveSession(sessionData);
@@ -108,7 +108,7 @@ describe('SessionStorageManager', () => {
       sessionStorage.saveSession(sessionData);
 
       const mockDate = new Date('2024-01-01T12:00:00.000Z');
-      jest.spyOn(global, 'Date').mockImplementation(() => mockDate as any);
+      jest.spyOn(global, 'Date').mockImplementation(() => mockDate as unknown as Date);
       Date.prototype.toISOString = jest.fn(() => '2024-01-01T12:00:00.000Z');
 
       sessionStorage.updateSessionActivity('test-session-123');
@@ -196,7 +196,7 @@ describe('SessionStorageManager', () => {
 
       // Mock current time to be 25+ hours later
       const mockNow = new Date('2024-01-02T12:00:00.000Z'); // 26 hours later
-      jest.spyOn(global, 'Date').mockImplementation((arg?: any) => {
+      jest.spyOn(global, 'Date').mockImplementation((arg?: unknown) => {
         if (arg) return new Date(arg);
         return mockNow as any;
       });

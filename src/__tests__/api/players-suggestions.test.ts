@@ -150,7 +150,7 @@ describe('/api/players/suggestions', () => {
       expect(data.players[3]).toBe('undefined'); // Converted to string
       
       // Verify all results are strings
-      data.players.forEach((player: any) => {
+      data.players.forEach((player: unknown) => {
         expect(typeof player).toBe('string');
       });
     });

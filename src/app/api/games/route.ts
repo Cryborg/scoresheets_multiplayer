@@ -4,10 +4,12 @@ import { getAuthenticatedUserId } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔧 [API] /api/games called');
     await ensureDatabaseExists();
     
     // Récupérer l'utilisateur authentifié
     const userId = await getAuthenticatedUserId(request);
+    console.log('🔧 [API] /api/games userId:', userId);
     
     if (!userId) {
       // Si pas d'utilisateur, retourner liste vide (aucun jeu ne s'affiche de base)
@@ -45,6 +47,7 @@ export async function GET(request: NextRequest) {
     });
 
     const games = result.rows;
+    console.log('🔧 [API] /api/games returning', games.length, 'user games');
 
     const response = NextResponse.json({ games });
     
@@ -55,8 +58,19 @@ export async function GET(request: NextRequest) {
     
     return response;
   } catch (error) {
-    console.error('API /api/games: Error fetching games:', error);
-    console.error('API /api/games: Error details:', error instanceof Error ? error.message : 'Unknown error');
-    return NextResponse.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
+    console.error('🔧 [API] /api/games: Error fetching games:', error);
+    console.error('🔧 [API] /api/games: Error details:', error instanceof Error ? error.message : 'Unknown error');
+    
+    const response = NextResponse.json({ 
+      games: [], // Fallback pour éviter les undefined
+      error: 'Erreur serveur', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    }, { status: 500 });
+    
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    
+    return response;
   }
 }

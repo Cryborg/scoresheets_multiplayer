@@ -247,7 +247,7 @@ describe('Team Detection Logic', () => {
 
   describe('Error Handling', () => {
     it('should return defaults when no session provided', () => {
-      const session = null as any;
+      const session = null as unknown;
 
       render(<TeamDetectionTest session={session} currentUserId={123} />);
 

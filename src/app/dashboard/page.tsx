@@ -71,6 +71,11 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
         const response = await authenticatedFetch(`/api/games?t=${timestamp}`);
         const data: GamesAPIResponse = await response.json();
         
+        if (!data || !Array.isArray(data.games)) {
+          console.error('🎮 [Dashboard] Invalid user games response:', data);
+          return;
+        }
+        
         // Filter out "jeu-libre" from the games list
         const filteredGames = data.games.filter(game => game.slug !== 'jeu-libre');
         
@@ -117,6 +122,11 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
         console.log('🎮 [Dashboard] Available games response:', response.status, response.headers.get('cache-control'));
         const data: GamesAPIResponse = await response.json();
         console.log('🎮 [Dashboard] Available games data:', data.games?.length, 'games loaded');
+        
+        if (!data || !Array.isArray(data.games)) {
+          console.error('🎮 [Dashboard] Invalid available games response:', data);
+          return;
+        }
         
         // Filter out "jeu-libre" from the available games list
         const filteredGames = data.games.filter(game => game.slug !== 'jeu-libre');

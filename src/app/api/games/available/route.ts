@@ -3,6 +3,7 @@ import { db, ensureDatabaseExists } from '@/lib/database';
 
 export async function GET() {
   try {
+    console.log('🔧 [API] /api/games/available called');
     await ensureDatabaseExists();
     
     // Récupérer tous les jeux disponibles (comme l'ancienne API /api/games)
@@ -25,6 +26,7 @@ export async function GET() {
     `);
 
     const games = result.rows;
+    console.log('🔧 [API] /api/games/available returning', games.length, 'games');
 
     const response = NextResponse.json({ games });
     
@@ -35,8 +37,19 @@ export async function GET() {
     
     return response;
   } catch (error) {
-    console.error('API /api/games/available: Error fetching games:', error);
-    console.error('API /api/games/available: Error details:', error instanceof Error ? error.message : 'Unknown error');
-    return NextResponse.json({ error: 'Erreur serveur', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
+    console.error('🔧 [API] /api/games/available: Error fetching games:', error);
+    console.error('🔧 [API] /api/games/available: Error details:', error instanceof Error ? error.message : 'Unknown error');
+    
+    const response = NextResponse.json({ 
+      games: [], // Fallback pour éviter les undefined
+      error: 'Erreur serveur', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    }, { status: 500 });
+    
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    
+    return response;
   }
 }
