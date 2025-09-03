@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, ensureDatabaseExists } from '@/lib/database';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     await ensureDatabaseExists();
     

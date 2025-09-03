@@ -3,8 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, Zap, Users, Clock, Gamepad2, Share2, RotateCcw, Save, Plus, Grid, List, X } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import { Menu, Clock, Gamepad2, Share2, RotateCcw, Save, Plus, Grid, List, X } from 'lucide-react';
 import AuthStatus from '@/components/AuthStatus';
 import Sidebar from '@/components/Sidebar';
 import { loadMultipleGameMetadata, defaultGameMetadata } from '@/lib/gameMetadata';
@@ -68,7 +67,8 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
       }
       
       try {
-        const response = await authenticatedFetch('/api/games');
+        const timestamp = Date.now();
+        const response = await authenticatedFetch(`/api/games?t=${timestamp}`);
         const data: GamesAPIResponse = await response.json();
         
         // Filter out "jeu-libre" from the games list
@@ -106,13 +106,17 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
 
     const fetchAvailableGames = async () => {
       try {
-        const response = await fetch('/api/games/available', {
+        console.log('🎮 [Dashboard] Fetching available games...');
+        const timestamp = Date.now();
+        const response = await fetch(`/api/games/available?t=${timestamp}`, {
           cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache'
           }
         });
+        console.log('🎮 [Dashboard] Available games response:', response.status, response.headers.get('cache-control'));
         const data: GamesAPIResponse = await response.json();
+        console.log('🎮 [Dashboard] Available games data:', data.games?.length, 'games loaded');
         
         // Filter out "jeu-libre" from the available games list
         const filteredGames = data.games.filter(game => game.slug !== 'jeu-libre');
@@ -139,14 +143,16 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
           };
         });
         
+        console.log('🎮 [Dashboard] Setting available games:', formattedGames.length, 'games');
         setAvailableGames(formattedGames);
       } catch (error) {
-        console.error('Erreur lors du chargement des jeux disponibles:', error);
+        console.error('🎮 [Dashboard] Error loading available games:', error);
       }
     };
 
 
     const fetchData = async () => {
+      console.log('🎮 [Dashboard] Starting data fetch, authenticated:', isAuthenticated);
       if (isAuthenticated) {
         await Promise.all([fetchUserGames(), fetchAvailableGames()]);
       } else {
@@ -154,6 +160,7 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
         await fetchAvailableGames();
         setAllGames([]); // Pas de jeux utilisateur pour les invités
       }
+      console.log('🎮 [Dashboard] Data fetch completed, setting loading to false');
       setLoading(false);
     };
 
@@ -161,6 +168,7 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
   }, [isAuthenticated]);
 
   const { playedGames, otherGames } = useMemo(() => {
+    console.log('🎮 [Dashboard] Computing games with availableGames:', availableGames.length, 'allGames:', allGames.length);
     // Appliquer les filtres à tous les jeux disponibles
     let games = [...availableGames];
 
@@ -201,10 +209,12 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
     }
 
     // Pour les invités, tous les jeux dans "otherGames"
-    return { 
+    const result = { 
       playedGames: [], 
       otherGames: games.sort((a, b) => a.name.localeCompare(b.name))
     };
+    console.log('🎮 [Dashboard] Final games result:', result.playedGames.length, 'played,', result.otherGames.length, 'other');
+    return result;
   }, [allGames, availableGames, isAuthenticated, categoryFilter, multiplayerFilter, playerCountFilter]);
 
   const gameCategories = useMemo(() => {
