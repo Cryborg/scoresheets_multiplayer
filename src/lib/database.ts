@@ -69,14 +69,26 @@ export async function initializeDatabase(): Promise<void> {
 
 // Lightweight database check (for regular API calls)
 export async function ensureDatabaseExists(): Promise<void> {
+  // Skip if already initialized in this process
+  if (databaseInitialized) {
+    return;
+  }
+
   try {
-    // Quick check if core tables exist
-    await db.execute('SELECT 1 FROM users LIMIT 1');
-    await db.execute('SELECT 1 FROM games LIMIT 1');
-    await db.execute('SELECT 1 FROM sessions LIMIT 1');
+    // Test basic connection and core table existence
+    const result = await db.execute('SELECT COUNT(*) as count FROM sqlite_master WHERE type="table" AND name IN ("users", "games", "sessions")');
+    const tableCount = result.rows[0]?.count as number;
+    
+    if (tableCount < 3) {
+      console.log('⚠️ Missing core tables, auto-initializing...');
+      await initializeDatabase();
+      console.log('✅ Database auto-initialized successfully');
+    } else {
+      console.log('✅ Database tables verified');
+      databaseInitialized = true;
+    }
   } catch (error) {
-    // If tables don't exist, auto-initialize database
-    console.log('⚠️ Database not initialized, auto-initializing...');
+    console.log('⚠️ Database connection error, attempting initialization...', error);
     try {
       await initializeDatabase();
       console.log('✅ Database auto-initialized successfully');

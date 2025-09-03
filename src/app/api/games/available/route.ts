@@ -7,6 +7,7 @@ export async function GET() {
     await ensureDatabaseExists();
     
     // Récupérer tous les jeux disponibles (comme l'ancienne API /api/games)
+    console.log('🔧 [API] /api/games/available executing query...');
     const result = await db.execute(`
       SELECT 
         g.id,

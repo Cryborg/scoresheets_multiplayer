@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Récupérer seulement les jeux que l'utilisateur a ouverts au moins une fois
+    console.log('🔧 [API] /api/games executing query for userId:', userId);
     const result = await db.execute({
       sql: `
         SELECT 
