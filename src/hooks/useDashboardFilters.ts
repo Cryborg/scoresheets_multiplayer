@@ -20,9 +20,17 @@ const STORAGE_KEY = 'dashboard-filters';
 export function useDashboardFilters() {
   const [filters, setFilters] = useState<DashboardFilters>(DEFAULT_FILTERS);
   const [initialized, setInitialized] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Load filters from localStorage on mount
+  // Track when component is mounted (client-side only)
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Load filters from localStorage on mount (only after hydration)
+  useEffect(() => {
+    if (!isMounted) return;
+    
     try {
       const savedFilters = safeStorage.getItem(STORAGE_KEY, 'essential');
       if (savedFilters) {
@@ -34,7 +42,7 @@ export function useDashboardFilters() {
     } finally {
       setInitialized(true);
     }
-  }, []);
+  }, [isMounted]);
 
   // Save filters to localStorage whenever they change (but not on initial load)
   useEffect(() => {

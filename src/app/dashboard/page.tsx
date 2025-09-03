@@ -52,10 +52,14 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
   // Keep the hook for tracking in other parts of the app but don't use sort logic here
   const { setLastPlayedGame } = useLastPlayedGame();
 
-  // Check if guest banner should be shown
+  // Check if guest banner should be shown (only client-side to avoid hydration)
   useEffect(() => {
     if (!isAuthenticated) {
-      setShowGuestBanner(shouldShowGuestBanner());
+      // Delay check to avoid hydration mismatch
+      const timer = setTimeout(() => {
+        setShowGuestBanner(shouldShowGuestBanner());
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated]);
 
