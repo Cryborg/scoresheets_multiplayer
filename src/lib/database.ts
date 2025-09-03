@@ -75,9 +75,15 @@ export async function ensureDatabaseExists(): Promise<void> {
     await db.execute('SELECT 1 FROM games LIMIT 1');
     await db.execute('SELECT 1 FROM sessions LIMIT 1');
   } catch (error) {
-    // If tables don't exist, database needs initialization
-    console.log('⚠️ Database not initialized, redirecting to migration endpoint');
-    throw new Error('Database not initialized. Please run /api/admin/migrate first.');
+    // If tables don't exist, auto-initialize database
+    console.log('⚠️ Database not initialized, auto-initializing...');
+    try {
+      await initializeDatabase();
+      console.log('✅ Database auto-initialized successfully');
+    } catch (initError) {
+      console.error('❌ Failed to auto-initialize database:', initError);
+      throw new Error('Database not initialized. Please run /api/admin/migrate first.');
+    }
   }
 }
 

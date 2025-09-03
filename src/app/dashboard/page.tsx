@@ -125,6 +125,10 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
         
         if (!data || !Array.isArray(data.games)) {
           console.error('🎮 [Dashboard] Invalid available games response:', data);
+          console.error('🎮 [Dashboard] Response status:', response.status);
+          if (data && data.error) {
+            console.error('🎮 [Dashboard] API Error:', data.error, data.details);
+          }
           return;
         }
         
@@ -157,6 +161,12 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
         setAvailableGames(formattedGames);
       } catch (error) {
         console.error('🎮 [Dashboard] Error loading available games:', error);
+        // En cas d'erreur, on garde les jeux déjà chargés si il y en a
+        if (availableGames.length === 0) {
+          console.log('🎮 [Dashboard] Trying to load basic games as fallback...');
+          // Fallback avec les jeux de base
+          setAvailableGames([]);
+        }
       }
     };
 
