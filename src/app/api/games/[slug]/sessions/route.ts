@@ -11,7 +11,7 @@ export async function POST(
     
     // Read body first (can only be read once)
     const body = await request.json();
-    const { sessionName, players, teams, hasScoreTarget, scoreTarget, finishCurrentRound, scoreDirection, guestId } = body;
+    const { sessionName, players, teams, hasScoreTarget, scoreTarget, scoreDirection } = body;
     const { slug } = await params;
     
     // Everyone gets an ID (authenticated or guest) - simplified with new architecture

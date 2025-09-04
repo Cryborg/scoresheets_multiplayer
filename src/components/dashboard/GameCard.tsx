@@ -12,9 +12,9 @@ interface GameCardProps {
   index: number;
 }
 
-export default function GameCard({ game, isLastPlayed, index }: GameCardProps) {
+export default function GameCard({ game, isLastPlayed }: GameCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
-  const { sessions, hasSessions, activeSessions, completedSessions } = useGameSessions(game.slug);
+  const { sessions, activeSessions, completedSessions } = useGameSessions(game.slug);
 
   const handleFlip = () => {
     if (activeSessions.length > 0) {

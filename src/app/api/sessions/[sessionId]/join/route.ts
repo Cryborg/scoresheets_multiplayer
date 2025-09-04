@@ -40,7 +40,16 @@ export async function POST(request: NextRequest, context: JoinSessionParams) {
       return NextResponse.json({ error: 'Session non trouvée ou non ouverte' }, { status: 404 });
     }
 
-    const session = sessionResult.rows[0] as any;
+    const session = sessionResult.rows[0] as {
+      id: number;
+      host_user_id: number;
+      game_id: number;
+      status: string;
+      current_players: number;
+      max_players: number;
+      team_based: number;
+      game_slug: string;
+    };
 
     // Check if session is full
     if (session.current_players >= session.max_players) {

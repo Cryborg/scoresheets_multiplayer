@@ -277,7 +277,7 @@ describe('SQL Injection Prevention', () => {
         }
       ];
 
-      examples.forEach(({ description, sql, args }) => {
+      examples.forEach(({ sql, args }) => {
         // Verify query uses placeholders
         const placeholders = (sql.match(/\?/g) || []).length;
         expect(placeholders).toBe(args.length);

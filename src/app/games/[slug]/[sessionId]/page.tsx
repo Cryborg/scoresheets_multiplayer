@@ -34,7 +34,7 @@ export default async function GameSessionPage({ params }: GameSessionPageProps) 
                 Jeu non trouvé
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Le jeu "{slug}" n'est pas encore implémenté.
+                Le jeu &quot;{slug}&quot; n&apos;est pas encore implémenté.
               </p>
               <BackButton 
                 href="/dashboard" 

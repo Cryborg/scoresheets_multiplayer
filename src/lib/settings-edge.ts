@@ -18,7 +18,7 @@ function getEdgeClient() {
 }
 
 // Helper function to convert database value to proper type
-function convertValue(value: string, type: string): any {
+function convertValue(value: string, type: string): unknown {
   switch (type) {
     case 'boolean':
       return value === 'true';
@@ -32,13 +32,13 @@ function convertValue(value: string, type: string): any {
 }
 
 // Get a specific setting value (Edge Runtime compatible)
-export async function getSettingEdge(key: string, defaultValue: any = null): Promise<any> {
+export async function getSettingEdge(key: string, defaultValue: unknown = null): Promise<unknown> {
   try {
     const client = getEdgeClient();
     
     if (!client) {
       // In development, return default values
-      const devDefaults: Record<string, any> = {
+      const devDefaults: Record<string, unknown> = {
         maintenanceMode: false,
         allowRegistration: true,
         sessionTimeout: 3600,

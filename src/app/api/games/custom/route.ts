@@ -4,20 +4,6 @@ import { getUserId } from '@/lib/authHelper';
 import { calculatePlayerLimits, generateCustomGameSlug, validateGameData } from '@/lib/gameValidation';
 import { ensureCategoryExists, createCustomGame } from '@/lib/databaseUtils';
 
-function getCategoryIcon(category: string): string {
-  const icons: Record<string, string> = {
-    'Cartes': '🃏',
-    'Dés': '🎲',
-    'Stratégie': '🧠',
-    'Party Games': '🎉',
-    'Sport': '⚽',
-    'Quiz': '🧩',
-    'Créatif': '🎨',
-    'Personnalisé': '🎯'
-  };
-  return icons[category] || '🎮';
-}
-
 export async function POST(request: NextRequest) {
   try {
     await ensureDatabaseExists();
@@ -29,9 +15,7 @@ export async function POST(request: NextRequest) {
       gameName, 
       category, 
       minPlayers, 
-      maxPlayers, 
-      difficulty, 
-      duration,
+      maxPlayers,
       teamBased,
       teamCount,
       playersPerTeam,

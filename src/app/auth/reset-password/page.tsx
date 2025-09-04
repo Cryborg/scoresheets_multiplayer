@@ -30,7 +30,7 @@ function ResetPasswordContent() {
         const response = await fetch(`/api/auth/reset-password?token=${token}`);
         const data = await response.json();
         setTokenValid(data.valid);
-      } catch (error) {
+      } catch {
         setTokenValid(false);
       } finally {
         setValidating(false);
@@ -88,7 +88,7 @@ function ResetPasswordContent() {
           variant: "destructive"
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Erreur",
         description: "Impossible de réinitialiser le mot de passe",

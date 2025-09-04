@@ -60,7 +60,7 @@ export function createMockGetRequest(
  */
 export const mockDataFactories = {
   // Session basique
-  session: (overrides: Partial<any> = {}) => ({
+  session: (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 1,
     session_name: 'Test Game',
     status: 'active',
@@ -74,7 +74,7 @@ export const mockDataFactories = {
   }),
 
   // Joueur basique
-  player: (overrides: Partial<any> = {}) => ({
+  player: (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 1,
     player_name: 'Alice',
     user_id: 123,
@@ -83,7 +83,7 @@ export const mockDataFactories = {
   }),
 
   // Jeu basique
-  game: (overrides: Partial<any> = {}) => ({
+  game: (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 1,
     name: 'Test Game',
     slug: 'test-game',
@@ -96,7 +96,7 @@ export const mockDataFactories = {
   }),
 
   // Équipe basique
-  team: (overrides: Partial<any> = {}) => ({
+  team: (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 1,
     session_id: 1,
     team_name: 'Équipe 1',
@@ -104,7 +104,7 @@ export const mockDataFactories = {
   }),
 
   // Événement basique
-  event: (overrides: Partial<any> = {}) => ({
+  event: (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 1,
     session_id: 1,
     user_id: 123,
@@ -115,7 +115,7 @@ export const mockDataFactories = {
   }),
 
   // Manche basique
-  round: (overrides: Partial<any> = {}) => ({
+  round: (overrides: Partial<Record<string, unknown>> = {}) => ({
     id: 1,
     session_id: 1,
     round_number: 1,
@@ -186,7 +186,7 @@ export const asyncTestHelpers = {
   waitForResolve: async (promise: Promise<unknown>) => {
     try {
       await promise;
-    } catch (error) {
+    } catch {
       // Expected behavior for some tests
     }
   },

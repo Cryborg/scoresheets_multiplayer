@@ -158,7 +158,7 @@ export default function GameSessionForm({
                     />
                     <div>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">Score élevé gagne</span>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Plus on a de points, mieux c'est</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Plus on a de points, mieux c&apos;est</p>
                     </div>
                   </label>
                   <label className="flex items-center space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -172,7 +172,7 @@ export default function GameSessionForm({
                     />
                     <div>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">Score faible gagne</span>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Moins on a de points, mieux c'est</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Moins on a de points, mieux c&apos;est</p>
                     </div>
                   </label>
                 </div>

@@ -214,8 +214,8 @@ describe('useGamePermissions', () => {
     it('should handle null/undefined session', () => {
       const { result } = renderHook(() => useGamePermissions(mockUserId));
 
-      expect(result.current.canJoinSession(null as unknown as any)).toBe(false);
-      expect(result.current.canJoinSession(undefined as unknown as any)).toBe(false);
+      expect(result.current.canJoinSession(null as unknown as never)).toBe(false);
+      expect(result.current.canJoinSession(undefined as unknown as never)).toBe(false);
     });
 
     it('should handle player without user_id', () => {

@@ -198,7 +198,7 @@ describe('SessionStorageManager', () => {
       const mockNow = new Date('2024-01-02T12:00:00.000Z'); // 26 hours later
       jest.spyOn(global, 'Date').mockImplementation((arg?: unknown) => {
         if (arg) return new Date(arg);
-        return mockNow as any;
+        return mockNow as unknown as Date;
       });
       Date.now = jest.fn(() => mockNow.getTime());
 

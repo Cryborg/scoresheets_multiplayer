@@ -70,7 +70,7 @@ export default function NewGamePage() {
     } finally {
       setLoading(false);
     }
-  }, [slug, router]);
+  }, [slug, router, setLastPlayedGame]);
 
   useEffect(() => {
     fetchGame();

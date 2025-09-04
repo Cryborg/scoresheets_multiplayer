@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Menu, Clock, Gamepad2, Share2, RotateCcw, Save, Plus, Grid, List, X } from 'lucide-react';
 import AuthStatus from '@/components/AuthStatus';
 import Sidebar from '@/components/Sidebar';
-import { Game, GamesAPIResponse } from '@/types/dashboard';
+import { Game } from '@/types/dashboard';
 import { validateGamesResponse, processGamesWithMetadata } from '@/lib/gameDataHelpers';
 import { useDashboardFilters } from '@/hooks/useDashboardFilters';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
@@ -50,7 +50,7 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
   } = useDashboardFilters();
 
   // Keep the hook for tracking in other parts of the app but don't use sort logic here
-  const { setLastPlayedGame } = useLastPlayedGame();
+  useLastPlayedGame();
 
   // Check if guest banner should be shown (only client-side to avoid hydration)
   useEffect(() => {
@@ -127,7 +127,7 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
     };
 
     fetchData();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, availableGames.length]);
 
   const { playedGames, otherGames } = useMemo(() => {
     // Appliquer les filtres à tous les jeux disponibles

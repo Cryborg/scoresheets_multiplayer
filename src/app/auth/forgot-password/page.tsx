@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
           variant: "destructive"
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Erreur",
         description: "Impossible de contacter le serveur",

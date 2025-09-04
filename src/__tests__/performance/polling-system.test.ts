@@ -3,7 +3,7 @@
  * Ces tests valident les performances et l'optimisation du système
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 
 // Mock du hook de polling
 jest.mock('../../hooks/usePollingService', () => ({
@@ -160,7 +160,7 @@ describe('Polling System Performance Tests', () => {
           lastFetch: new Date().toISOString()
         });
 
-      const { rerender } = renderHook(() => useRealtimeSession({ 
+      renderHook(() => useRealtimeSession({ 
         sessionId: '123', 
         gameSlug: 'test-game' 
       }));
@@ -213,7 +213,7 @@ describe('Polling System Performance Tests', () => {
 
   describe('Memory and Resource Management', () => {
     it('should not cause memory leaks with rapid state changes', () => {
-      const initialMemoryUsage = (performance as any).memory?.usedJSHeapSize || 0;
+      const initialMemoryUsage = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0;
       
       mockUseVisibilityOptimization.mockReturnValue({
         isVisible: true,
@@ -252,7 +252,7 @@ describe('Polling System Performance Tests', () => {
         global.gc();
       }
 
-      const finalMemoryUsage = (performance as any).memory?.usedJSHeapSize || 0;
+      const finalMemoryUsage = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0;
       
       // Memory shouldn't grow dramatically (allow some variance for test overhead)
       if (initialMemoryUsage > 0 && finalMemoryUsage > 0) {
@@ -323,7 +323,7 @@ describe('Polling System Performance Tests', () => {
       let callCount = 0;
 
       // Mock polling service to track calls
-      mockUsePollingService.mockImplementation((options) => {
+      mockUsePollingService.mockImplementation(() => {
         callCount++;
         return {
           data: mockData,
@@ -402,7 +402,7 @@ describe('Polling System Performance Tests', () => {
 
       // Test multiple hook instances (simulating multiple game sessions)
       const hookCount = 5;
-      const hooks: any[] = [];
+      const hooks: Array<{ current: unknown }> = [];
 
       for (let i = 0; i < hookCount; i++) {
         const startTime = performance.now();

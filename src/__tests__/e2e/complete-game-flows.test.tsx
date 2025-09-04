@@ -128,8 +128,7 @@ describe('Flux de jeux complets - Tests E2E basiques', () => {
       it('devrait calculer un score de contrat réussi', () => {
         // Exemple : Garde avec 2 bouts, 45 points (réussi)
         const points = 45;
-        const boutsCount = 2;
-        const seuil = 41; // Pour 2 bouts
+        const seuil = 41; // Pour 2 bouts (boutsCount = 2)
         const ecart = points - seuil; // 45 - 41 = 4
         const baseScore = 25 + ecart; // 25 + 4 = 29
         const multiplicateur = 2; // Garde

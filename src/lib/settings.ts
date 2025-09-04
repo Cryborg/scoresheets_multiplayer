@@ -1,12 +1,12 @@
 import { db } from '@/lib/database';
 
 // Cache pour éviter trop de requêtes DB
-let settingsCache: Record<string, any> = {};
+let settingsCache: Record<string, unknown> = {};
 let cacheTimestamp = 0;
 const CACHE_DURATION = 60000; // 1 minute
 
 // Helper function to convert database value to proper type
-function convertValue(value: string, type: string): any {
+function convertValue(value: string, type: string): unknown {
   switch (type) {
     case 'boolean':
       return value === 'true';
@@ -20,7 +20,7 @@ function convertValue(value: string, type: string): any {
 }
 
 // Get a specific setting value
-export async function getSetting(key: string, defaultValue: any = null): Promise<any> {
+export async function getSetting(key: string, defaultValue: unknown = null): Promise<unknown> {
   try {
     // Check cache first
     const now = Date.now();
@@ -53,7 +53,7 @@ export async function getSetting(key: string, defaultValue: any = null): Promise
 }
 
 // Get all settings
-export async function getAllSettings(): Promise<Record<string, any>> {
+export async function getAllSettings(): Promise<Record<string, unknown>> {
   try {
     // Check cache first
     const now = Date.now();
@@ -67,7 +67,7 @@ export async function getAllSettings(): Promise<Record<string, any>> {
       args: []
     });
 
-    const settings: Record<string, any> = {};
+    const settings: Record<string, unknown> = {};
     for (const row of result.rows) {
       const key = row.key as string;
       const value = convertValue(row.value as string, row.type as string);

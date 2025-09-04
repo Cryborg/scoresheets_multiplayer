@@ -130,7 +130,6 @@ export async function PUT(request: NextRequest) {
         continue;
       }
 
-      const type = existingSetting.rows[0].type as string;
       const stringValue = convertToString(value);
 
       // Update the setting

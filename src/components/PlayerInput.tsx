@@ -87,7 +87,7 @@ export default function PlayerInput({
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => {
             setShowSuggestions(true);
-            onFocus && onFocus();
+            onFocus?.();
           }}
           onBlur={() => {
             // Délai suffisant pour permettre le clic sur les suggestions

@@ -68,7 +68,7 @@ export default function SessionsPage() {
         const data = await response.json();
         setMessage({type: 'error', text: data.error || 'Impossible de terminer la partie'});
       }
-    } catch (error) {
+    } catch {
       setMessage({type: 'error', text: 'Erreur de connexion'});
     }
   };
@@ -95,7 +95,7 @@ export default function SessionsPage() {
         const data = await response.json();
         setMessage({type: 'error', text: data.error || 'Impossible de supprimer la partie'});
       }
-    } catch (error) {
+    } catch {
       setMessage({type: 'error', text: 'Erreur de connexion'});
     } finally {
       setIsDeleting(false);

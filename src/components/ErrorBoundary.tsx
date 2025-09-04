@@ -73,18 +73,18 @@ class ErrorBoundary extends Component<Props, State> {
             </div>
             
             <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              Oups ! Quelque chose s'est mal passé
+              Oups ! Quelque chose s&apos;est mal passé
             </h1>
             
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Une erreur inattendue s'est produite dans l'application.
+              Une erreur inattendue s&apos;est produite dans l&apos;application.
             </p>
 
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 <details className="text-left">
                   <summary className="font-medium text-red-800 dark:text-red-200 cursor-pointer">
-                    Détails de l'erreur (développement)
+                    Détails de l&apos;erreur (développement)
                   </summary>
                   <div className="mt-2 text-sm text-red-700 dark:text-red-300 font-mono">
                     <div className="mb-2">

@@ -5,7 +5,7 @@ import { Crown, Target, Users } from 'lucide-react';
 import ScoreInput from '@/components/ui/ScoreInput';
 import GameCard from '@/components/layout/GameCard';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
-import { GameSessionWithRounds, Player } from '@/types/multiplayer';
+import { GameSessionWithRounds } from '@/types/multiplayer';
 
 interface BeloteGameSession extends GameSessionWithRounds {
   score_target?: number;
@@ -49,7 +49,10 @@ function BeloteGameInterface({
   gameState 
 }: { 
   session: BeloteGameSession;
-  gameState: any;
+  gameState: {
+    addRound: (data: unknown) => Promise<void>;
+    isHost: boolean;
+  };
 }) {
   const { addRound, isHost } = gameState;
 
@@ -187,7 +190,6 @@ function BeloteGameInterface({
   }, [session?.players, getTotalScore]);
 
   const currentRound = (session?.rounds?.length || 0) + 1;
-  const scoreTarget = session?.score_target || 1000;
 
   // Organiser les joueurs par équipe
   const team1Players = session?.players?.filter(p => p.position === 0 || p.position === 2) || [];
