@@ -23,12 +23,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: BRANDING.fullTitle,
   description: BRANDING.description.full,
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-  },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({
