@@ -6,7 +6,8 @@ import ScoreInput from '@/components/ui/ScoreInput';
 import GameCard from '@/components/layout/GameCard';
 import MilleBornesRulesHelper from '@/components/ui/MilleBornesRulesHelper';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
-import { GameSessionWithRounds, Player } from '@/types/multiplayer';
+import { GameSessionWithRounds } from '@/types/multiplayer';
+import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
 import { TeamRecord } from '@/types/realtime';
 
 interface MilleBornesGameSession extends GameSessionWithRounds {
@@ -70,7 +71,7 @@ function MilleBornesGameInterface({
   gameState 
 }: { 
   session: MilleBornesGameSession;
-  gameState: any;
+  gameState: ReturnType<typeof useMultiplayerGame>;
 }) {
   const { addRound, isHost } = gameState;
 
@@ -86,7 +87,7 @@ function MilleBornesGameInterface({
   useEffect(() => {
     if (session?.players) {
       const initialDistances: { [key: number]: number } = {};
-      const initialPrimes: { [key: number]: any } = {};
+      const initialPrimes: MilleBornesRoundData['primes'] = {};
 
       session.players.forEach(player => {
         initialDistances[player.id] = 0;
@@ -174,7 +175,7 @@ function MilleBornesGameInterface({
 
       // Reset form
       const resetDistances: { [key: number]: number } = {};
-      const resetPrimes: { [key: number]: any } = {};
+      const resetPrimes: MilleBornesRoundData['primes'] = {};
 
       session.players.forEach(player => {
         resetDistances[player.id] = 0;

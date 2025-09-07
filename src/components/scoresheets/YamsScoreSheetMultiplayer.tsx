@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
-import { Share2, X } from 'lucide-react';
+import React, { useCallback } from 'react';
+import { X } from 'lucide-react';
 import ScoreInput from '@/components/ui/ScoreInput';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { useOptimisticScores } from '@/hooks/useOptimisticScores';
 import { useScoreActions } from '@/hooks/useScoreActions';
-import { GameSessionWithCategories, Player } from '@/types/multiplayer';
+import { GameSessionWithCategories } from '@/types/multiplayer';
 
 interface YamsCategory {
   id: string;
@@ -42,8 +42,7 @@ export default function YamsScoreSheetMultiplayer({ sessionId }: YamsScoreSheetM
     currentScores, 
     handleScoreChange, 
     handleScoreFocus, 
-    handleScoreBlur, 
-    clearOptimisticScore 
+    handleScoreBlur
   } = useOptimisticScores();
 
   const scoreActions = useScoreActions({ sessionId });

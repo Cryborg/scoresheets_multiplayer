@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Crown, Shield, Target, Users } from 'lucide-react';
+import { Crown, Shield } from 'lucide-react';
 import ScoreInput from '@/components/ui/ScoreInput';
 import GameCard from '@/components/layout/GameCard';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
-import { GameSessionWithRounds, Player } from '@/types/multiplayer';
+import { GameSessionWithRounds } from '@/types/multiplayer';
+import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
 
 interface BridgeGameSession extends GameSessionWithRounds {
   rounds: Array<{
@@ -64,7 +65,7 @@ function BridgeGameInterface({
   gameState 
 }: { 
   session: BridgeGameSession;
-  gameState: any;
+  gameState: ReturnType<typeof useMultiplayerGame>;
 }) {
   const { addRound, isHost } = gameState;
 

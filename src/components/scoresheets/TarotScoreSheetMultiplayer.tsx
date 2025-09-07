@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Users, Crown } from 'lucide-react';
+import { Crown } from 'lucide-react';
 import ScoreInput from '@/components/ui/ScoreInput';
 import GameCard from '@/components/layout/GameCard';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
-import { GameSessionWithRounds, Player } from '@/types/multiplayer';
+import { GameSessionWithRounds } from '@/types/multiplayer';
+import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
 
 // Extension spécifique pour Tarot avec details typés
 interface TarotGameSession extends GameSessionWithRounds {
@@ -62,9 +63,9 @@ function TarotGameInterface({
   gameState 
 }: { 
   session: TarotGameSession;
-  gameState: any;
+  gameState: ReturnType<typeof useMultiplayerGame>;
 }) {
-  const { addRound, isConnected, events, isHost } = gameState;
+  const { addRound, isHost } = gameState;
   
   const [newRound, setNewRound] = useState<TarotRoundData>({
     takerId: 0,
@@ -243,7 +244,7 @@ function TarotGameInterface({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Nombre d'oudlers</label>
+                <label className="block text-sm font-medium mb-2">Nombre d&apos;oudlers</label>
                 <select
                   value={newRound.oudlers}
                   onChange={(e) => setNewRound(prev => ({ ...prev, oudlers: parseInt(e.target.value) }))}
