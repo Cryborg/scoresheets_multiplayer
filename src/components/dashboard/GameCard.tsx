@@ -63,9 +63,7 @@ export default function GameCard({ game, isLastPlayed }: GameCardProps) {
   };
 
   return (
-    <>
-      <ConfirmDialog />
-      <div className={`relative h-80 w-full perspective-1000 ${isLastPlayed ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`}>
+    <div className={`relative h-80 w-full perspective-1000 ${isLastPlayed ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`}>
       <div className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
         
         {/* Face avant - Info du jeu */}
@@ -167,7 +165,10 @@ export default function GameCard({ game, isLastPlayed }: GameCardProps) {
                           <Play className="h-3 w-3" />
                         </Button>
                         <Button
-                          onClick={() => handleDeleteSession(session.id, session.session_name)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSession(session.id, session.session_name);
+                          }}
                           variant="danger"
                           size="xs"
                           title="Supprimer cette partie"
@@ -210,7 +211,10 @@ export default function GameCard({ game, isLastPlayed }: GameCardProps) {
                           <Play className="h-3 w-3" />
                         </Button>
                         <Button
-                          onClick={() => handleDeleteSession(session.id, session.session_name)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSession(session.id, session.session_name);
+                          }}
                           variant="danger"
                           size="xs"
                           title="Supprimer cette partie"
@@ -239,7 +243,9 @@ export default function GameCard({ game, isLastPlayed }: GameCardProps) {
           </div>
         </div>
       </div>
-      </div>
-    </>
+      
+      {/* Modal de confirmation placée au niveau global */}
+      <ConfirmDialog />
+    </div>
   );
 }
