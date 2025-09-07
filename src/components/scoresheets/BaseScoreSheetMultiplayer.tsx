@@ -105,6 +105,16 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
     );
   }
 
+  // Validate that the URL gameSlug matches the actual session game
+  if (session.game_slug && gameSlug !== session.game_slug) {
+    return (
+      <ErrorState 
+        error={`Cette session est pour le jeu "${session.game_name}" (${session.game_slug}), pas pour "${gameSlug}". Vérifiez l'URL.`}
+        onBack={goToDashboard}
+      />
+    );
+  }
+
   // Waiting room state
   if (session.status === 'waiting') {
     return (
