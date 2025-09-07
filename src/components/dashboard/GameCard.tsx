@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Clock, Plus, Play, RotateCw, ArrowLeft } from 'lucide-react';
+import { Users, Clock, Plus, Play, RotateCw, ArrowLeft, Trash2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useGameSessions } from '@/hooks/useGameSessions';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { Game } from '@/types/dashboard';
 
 interface GameCardProps {
@@ -14,7 +15,8 @@ interface GameCardProps {
 
 export default function GameCard({ game, isLastPlayed }: GameCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
-  const { sessions, activeSessions, completedSessions } = useGameSessions(game.slug);
+  const { sessions, activeSessions, completedSessions, refetch } = useGameSessions(game.slug);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const handleFlip = () => {
     if (activeSessions.length > 0) {
@@ -31,8 +33,39 @@ export default function GameCard({ game, isLastPlayed }: GameCardProps) {
     });
   };
 
+  const handleDeleteSession = async (sessionId: number, sessionName: string) => {
+    const confirmed = await confirm({
+      title: 'Supprimer la partie',
+      message: `Êtes-vous sûr de vouloir supprimer la partie "${sessionName}" ? Cette action ne peut pas être annulée.`,
+      confirmLabel: 'Supprimer',
+      cancelLabel: 'Annuler',
+      isDangerous: true
+    });
+
+    if (confirmed) {
+      try {
+        const response = await fetch(`/api/sessions/${sessionId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          // Actualiser la liste des sessions
+          refetch();
+        } else {
+          const data = await response.json();
+          alert(data.error || 'Erreur lors de la suppression');
+        }
+      } catch (error) {
+        console.error('Error deleting session:', error);
+        alert('Erreur lors de la suppression');
+      }
+    }
+  };
+
   return (
-    <div className={`relative h-80 w-full perspective-1000 ${isLastPlayed ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`}>
+    <>
+      <ConfirmDialog />
+      <div className={`relative h-80 w-full perspective-1000 ${isLastPlayed ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`}>
       <div className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
         
         {/* Face avant - Info du jeu */}
@@ -125,14 +158,23 @@ export default function GameCard({ game, isLastPlayed }: GameCardProps) {
                           {session.players.join(', ')}
                         </p>
                       </div>
-                      <Button
-                        href={`/games/${game.slug}/${session.id}`}
-                        variant="primary"
-                        size="xs"
-                        className="ml-2 flex-shrink-0"
-                      >
-                        <Play className="h-3 w-3" />
-                      </Button>
+                      <div className="ml-2 flex-shrink-0 flex gap-1">
+                        <Button
+                          href={`/games/${game.slug}/${session.id}`}
+                          variant="primary"
+                          size="xs"
+                        >
+                          <Play className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteSession(session.id, session.session_name)}
+                          variant="danger"
+                          size="xs"
+                          title="Supprimer cette partie"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -159,14 +201,23 @@ export default function GameCard({ game, isLastPlayed }: GameCardProps) {
                           {session.players.join(', ')}
                         </p>
                       </div>
-                      <Button
-                        href={`/games/${game.slug}/${session.id}`}
-                        variant="secondary"
-                        size="xs"
-                        className="ml-2 flex-shrink-0"
-                      >
-                        <Play className="h-3 w-3" />
-                      </Button>
+                      <div className="ml-2 flex-shrink-0 flex gap-1">
+                        <Button
+                          href={`/games/${game.slug}/${session.id}`}
+                          variant="secondary"
+                          size="xs"
+                        >
+                          <Play className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteSession(session.id, session.session_name)}
+                          variant="danger"
+                          size="xs"
+                          title="Supprimer cette partie"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -188,6 +239,7 @@ export default function GameCard({ game, isLastPlayed }: GameCardProps) {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
