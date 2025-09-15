@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Users, Clock, Plus, Play, RotateCw, ArrowLeft, Trash2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useGameSessions } from '@/hooks/useGameSessions';
-import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { useGlobalConfirm } from '@/contexts/ConfirmationContext';
 import { Game } from '@/types/dashboard';
 
 interface GameCardProps {
@@ -16,10 +16,11 @@ interface GameCardProps {
 export default function GameCard({ game, isLastPlayed }: GameCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
   const { sessions, activeSessions, completedSessions, refetch } = useGameSessions(game.slug);
-  const { confirm, ConfirmDialog } = useConfirmDialog();
+  const { confirm } = useGlobalConfirm();
 
   const handleFlip = () => {
-    if (activeSessions.length > 0) {
+    // Allow flipping back to front even if no active sessions (user might have deleted the last session)
+    if (activeSessions.length > 0 || isFlipped) {
       setIsFlipped(!isFlipped);
     }
   };
@@ -244,8 +245,6 @@ export default function GameCard({ game, isLastPlayed }: GameCardProps) {
         </div>
       </div>
       
-      {/* Modal de confirmation placée au niveau global */}
-      <ConfirmDialog />
     </div>
   );
 }

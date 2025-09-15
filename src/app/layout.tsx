@@ -5,6 +5,7 @@ import "./theme.css";
 import "./utilities.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ToastProvider } from "@/contexts/ToastContext";
+import { ConfirmationProvider } from "@/contexts/ConfirmationContext";
 import ToastProviderReactHot from "@/components/providers/ToastProvider";
 import MaintenanceCheck from "@/components/MaintenanceCheck";
 import CookieConsent from "@/components/CookieConsent";
@@ -49,11 +50,13 @@ export default function RootLayout({
       >
         <AuthProvider>
           <ToastProvider>
-            <ToastProviderReactHot />
-            <MaintenanceCheck>
-              {children}
-            </MaintenanceCheck>
-            <CookieConsent />
+            <ConfirmationProvider>
+              <ToastProviderReactHot />
+              <MaintenanceCheck>
+                {children}
+              </MaintenanceCheck>
+              <CookieConsent />
+            </ConfirmationProvider>
           </ToastProvider>
         </AuthProvider>
       </body>

@@ -110,7 +110,7 @@ export async function createCustomGame(data: {
   });
 
   return {
-    id: toSafeNumber(result.lastInsertRowId),
+    id: result.lastInsertRowId !== undefined ? toSafeNumber(result.lastInsertRowId) : null,
     slug: data.slug,
     name: data.name
   };

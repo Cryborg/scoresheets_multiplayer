@@ -510,6 +510,26 @@ async function createTables(): Promise<void> {
     }
   }
 
+  // Add is_active column to games table
+  try {
+    await tursoClient.execute(`ALTER TABLE games ADD COLUMN is_active INTEGER DEFAULT 1`);
+    console.log('✅ Added is_active column to games');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ is_active column already exists or table is new');
+    }
+  }
+
+  // Add custom_config column to games table for custom games
+  try {
+    await tursoClient.execute(`ALTER TABLE games ADD COLUMN custom_config TEXT`);
+    console.log('✅ Added custom_config column to games');
+  } catch (error: any) {
+    if (!error.message?.includes('duplicate column name')) {
+      console.log('ℹ️ custom_config column already exists or table is new');
+    }
+  }
+
   // Create indexes that depend on migrated columns
   try {
     await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_games_creator ON games (created_by_user_id)`);
