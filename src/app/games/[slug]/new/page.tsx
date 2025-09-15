@@ -8,6 +8,7 @@ import { useGameSessionCreator, Game } from '@/hooks/useGameSessionCreator';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
 import GameSessionForm from '@/components/GameSessionForm';
 import { authenticatedFetch } from '@/lib/authClient';
+import { getGuestId } from '@/lib/guestAuth';
 
 export default function NewGamePage() {
   const params = useParams();
@@ -55,7 +56,7 @@ export default function NewGamePage() {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ gameSlug: slug }),
+            body: JSON.stringify({ gameSlug: slug, guestId: getGuestId() }),
           });
         } catch (activityError) {
           // Don't fail if activity tracking fails

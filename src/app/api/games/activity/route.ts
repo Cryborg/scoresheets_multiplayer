@@ -4,10 +4,10 @@ import { trackGameActivity } from '@/lib/gameActivity';
 
 export async function POST(request: NextRequest) {
   try {
-    // Everyone gets an ID (authenticated or guest)
-    const userId = await getUserId(request);
+    const { gameSlug, guestId } = await request.json();
 
-    const { gameSlug } = await request.json();
+    // Everyone gets an ID (authenticated or guest)
+    const userId = await getUserId(request, guestId);
     
     if (!gameSlug) {
       return NextResponse.json({ error: 'gameSlug requis' }, { status: 400 });

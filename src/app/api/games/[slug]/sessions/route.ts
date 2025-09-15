@@ -11,11 +11,11 @@ export async function POST(
     
     // Read body first (can only be read once)
     const body = await request.json();
-    const { sessionName, players, teams, hasScoreTarget, scoreTarget, scoreDirection } = body;
+    const { sessionName, players, teams, hasScoreTarget, scoreTarget, scoreDirection, guestId } = body;
     const { slug } = await params;
-    
+
     // Everyone gets an ID (authenticated or guest) - simplified with new architecture
-    const userId = await getUserId(request);
+    const userId = await getUserId(request, guestId);
 
     // Get game info
     const gameResult = await db.execute({
@@ -239,7 +239,13 @@ export async function POST(
       }
     }
 
-    // No need to update current_players - we'll calculate dynamically from session_player
+    // Update current_players to match the actual number of players added
+    if (position > 0) {
+      await db.execute({
+        sql: 'UPDATE sessions SET current_players = ? WHERE id = ?',
+        args: [position, sessionId]
+      });
+    }
 
     return NextResponse.json({
       message: 'Partie créée avec succès',

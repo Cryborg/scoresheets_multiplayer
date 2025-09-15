@@ -6,6 +6,7 @@ import { useRealtimeSession } from './useRealtimeSession';
 import { useGamePermissions } from './useGamePermissions';
 import { GameSession, Player } from '@/types/multiplayer';
 import { notify } from '@/lib/toast';
+import { getGuestId } from '@/lib/guestAuth';
 
 /**
  * Détermine si une session est "locale" (un seul utilisateur connecté)
@@ -105,7 +106,8 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
         credentials: 'include',
         body: JSON.stringify({
           playerName: playerName.trim(),
-          player2Name: player2Name.trim() || undefined
+          player2Name: player2Name.trim() || undefined,
+          guestId: getGuestId()
         }),
       });
 
@@ -132,6 +134,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
           'Content-Type': 'application/json',
         },
         credentials: 'include',
+        body: JSON.stringify({ guestId: getGuestId() }),
       });
 
       if (!response.ok) {
@@ -154,6 +157,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
           'Content-Type': 'application/json',
         },
         credentials: 'include',
+        body: JSON.stringify({ guestId: getGuestId() }),
       });
 
       if (!response.ok) {

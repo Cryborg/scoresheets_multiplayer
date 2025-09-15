@@ -76,7 +76,7 @@ export async function ensureDatabaseExists(): Promise<void> {
 
   try {
     // Test basic connection and core table existence
-    const result = await db.execute('SELECT COUNT(*) as count FROM sqlite_master WHERE type="table" AND name IN ("users", "games", "sessions")');
+    const result = await db.execute('SELECT COUNT(*) as count FROM sqlite_master WHERE type=\'table\' AND name IN (\'users\', \'games\', \'sessions\')');
     const tableCount = result.rows[0]?.count as number;
     
     if (tableCount < 3) {

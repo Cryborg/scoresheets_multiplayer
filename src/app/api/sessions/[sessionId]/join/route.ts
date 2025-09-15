@@ -10,14 +10,14 @@ export async function POST(request: NextRequest, context: JoinSessionParams) {
   try {
     const { sessionId } = await context.params;
     const body = await request.json();
-    const { playerName, player2Name } = body;
+    const { playerName, player2Name, guestId } = body;
 
     if (!playerName?.trim()) {
       return NextResponse.json({ error: 'Nom du joueur requis' }, { status: 400 });
     }
 
     // Everyone gets an ID (authenticated or guest)
-    const userId = await getUserId(request);
+    const userId = await getUserId(request, guestId);
 
     // Check if session exists and is joinable
     const sessionResult = await db.execute({

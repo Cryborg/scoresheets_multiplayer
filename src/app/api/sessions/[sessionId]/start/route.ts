@@ -8,8 +8,11 @@ export async function POST(
 ) {
   try {
     const { sessionId } = await params;
+    const body = await request.json();
+    const { guestId } = body;
+
     // Everyone gets an ID (authenticated or guest)
-    const currentUserId = await getUserId(request);
+    const currentUserId = await getUserId(request, guestId);
 
     // Get session details
     const sessionResult = await db.execute({

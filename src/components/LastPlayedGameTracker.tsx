@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
 import { authenticatedFetch, isAuthenticated } from '@/lib/authClient';
+import { getGuestId } from '@/lib/guestAuth';
 
 interface LastPlayedGameTrackerProps {
   gameSlug: string;
@@ -19,25 +20,23 @@ export default function LastPlayedGameTracker({ gameSlug }: LastPlayedGameTracke
     if (gameSlug) {
       setLastPlayedGame(gameSlug);
       
-      // Track game activity (seulement pour les utilisateurs connectés)
-      if (isAuthenticated()) {
-        const trackActivity = async () => {
-          try {
-            await authenticatedFetch('/api/games/activity', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ gameSlug }),
-            });
-          } catch (error) {
-            // Don't fail if activity tracking fails
-            console.warn('Failed to track game activity:', error);
-          }
-        };
-        
-        trackActivity();
-      }
+      // Track game activity (pour tous les utilisateurs - connectés ou guests)
+      const trackActivity = async () => {
+        try {
+          await authenticatedFetch('/api/games/activity', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ gameSlug, guestId: getGuestId() }),
+          });
+        } catch (error) {
+          // Don't fail if activity tracking fails
+          console.warn('Failed to track game activity:', error);
+        }
+      };
+
+      trackActivity();
     }
   }, [gameSlug, setLastPlayedGame]);
 

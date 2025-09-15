@@ -9,8 +9,11 @@ interface LeaveSessionParams {
 export async function POST(request: NextRequest, context: LeaveSessionParams) {
   try {
     const { sessionId } = await context.params;
+    const body = await request.json();
+    const { guestId } = body;
+
     // Everyone gets an ID (authenticated or guest)
-    const currentUserId = await getUserId(request);
+    const currentUserId = await getUserId(request, guestId);
 
     // Check if session exists
     const sessionResult = await db.execute({
