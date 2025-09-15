@@ -2,6 +2,15 @@
 
 > 🤖 **META-INSTRUCTION** : Ce fichier est optimisé pour l'IA Claude. Toute addition doit améliorer la compréhension de Claude et accélérer son développement. Rédigez POUR l'IA, pas pour les humains. Privilégiez les patterns, décisions critiques, et pièges à éviter.
 
+## 📚 DETAILED GUIDES AVAILABLE
+
+**⚠️ IMPORTANT**: This CLAUDE.md provides the overview. For detailed information, see the specialized guides:
+
+- **[📊 DATABASE GUIDE](./docs/ai-guide/DATABASE.md)** - Complete table structure, relationships, queries
+- **[📡 API GUIDE](./docs/ai-guide/API.md)** - All endpoints, request/response formats, testing
+- **[🚨 TROUBLESHOOTING](./docs/ai-guide/TROUBLESHOOTING.md)** - Common issues, solutions, debugging
+- **[🎮 GAME IMPLEMENTATION](./docs/ai-guide/GAME_IMPLEMENTATION.md)** - Step-by-step game creation guide
+
 ## 🚨 CRITICAL CONTEXT FOR AI
 
 **PROJECT**: Oh Sheet! - Real-time multiplayer game scoring web app ("Score like a pro")
@@ -164,88 +173,19 @@ interface Game {
 
 ## 🔧 NEW GAME IMPLEMENTATION (AI CHECKLIST)
 
-**Location**: `src/lib/database.ts` → `seedInitialData()`
-```typescript
-// TEMPLATE (AI MUST adapt values):
-const existingGame = await db.execute({
-  sql: 'SELECT id FROM games WHERE slug = ?',
-  args: ['game-slug']
-});
-if (existingGame.rows.length === 0) {
-  await db.execute(`INSERT INTO games VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-    'Game Name', 'game-slug', 1, 'Rules text', 1, 'rounds', 0, 2, 6, 'higher'
-  ]);
-}
-```
+**⚠️ For complete implementation guide**: See **[GAME IMPLEMENTATION GUIDE](./docs/ai-guide/GAME_IMPLEMENTATION.md)**
 
-### Step 2: Component Structure (AI COPY THIS EXACTLY)
-```typescript
-// src/components/scoresheets/GameNameScoreSheet.tsx
-import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
-import { GameSessionWithRounds } from '@/types/multiplayer'; // or WithCategories
+### Quick Steps:
+1. Add to `database.ts` → `seedInitialData()` with `is_implemented = 1`
+2. Create component using `BaseScoreSheetMultiplayer`
+3. Add to `gameComponentLoader.tsx`
+4. Create metadata file
+5. **NEVER create static game folders** - use dynamic `[slug]` route
 
-export default function GameNameScoreSheet({ sessionId }: { sessionId: string }) {
-  return (
-    <BaseScoreSheetMultiplayer<GameSessionWithRounds>
-      sessionId={sessionId} 
-      gameSlug="game-slug"
-    >
-      {({ session, gameState }) => (
-        <div>Game-specific UI here</div>
-      )}
-    </BaseScoreSheetMultiplayer>
-  );
-}
-```
-
-### Step 3: Page Route
-```typescript
-// ⚠️ CRITICAL: Use DYNAMIC routes only - NEVER create game-specific folders!
-// ❌ WRONG: src/app/games/belote/[sessionId]/page.tsx (breaks routing)
-// ✅ CORRECT: Use existing src/app/games/[slug]/[sessionId]/page.tsx
-
-// The dynamic route already exists and handles ALL games automatically
-// via gameComponentLoader.tsx - NO NEED to create new page files!
-```
-
-### Step 4: Component Loader (AI MUST ADD)
-```typescript  
-// src/lib/gameComponentLoader.tsx - ADD TO EXISTING MAP
-'game-slug': dynamic(() => import('@/components/scoresheets/GameNameScoreSheet')),
-```
-
-### Step 5: Game Metadata (AI MUST CREATE)
-```typescript
-// src/games/game-slug/metadata.ts
-export const gameNameMetadata = {
-  icon: '🎮',
-  duration: '30-45 min',
-  shortDescription: 'Description du jeu',
-  color: {
-    primary: 'blue',
-    accent: 'orange'
-  },
-  difficulty: 'intermédiaire', // 'facile' | 'intermédiaire' | 'expert'
-  keywords: ['mots', 'clés', 'pertinents'],
-  variant: 'optionnel', // Si c'est une variante
-  multiplayer: true // ⚠️ IMPORTANT: Ajoute le bandeau jaune "Multi" sur dashboard
-} as const;
-```
-
-**⚠️ Ensuite ajouter dans gameMetadata.ts** :
-```typescript
-// src/lib/gameMetadata.ts - ADD TO EXISTING MAP
-'game-slug': () => import('@/games/game-slug/metadata').then(m => ({ default: m.gameNameMetadata })),
-```
-
-### ❌ AI MUST NOT CREATE THESE
-- New API routes (`/api/games/[game]/*`) - USE GENERICS
-- New creation pages (`/games/[game]/new/page.tsx`) - USE EXISTING  
-- Custom hooks for basic session management - USE `useMultiplayerGame`
-- **Static game folders** (`/games/belote/`, `/games/tarot/`) - BREAKS ROUTING!
-  - Next.js prioritizes static routes over dynamic `[slug]` routes
-  - Creating `/games/belote/[sessionId]/page.tsx` breaks `/games/belote/new`
-  - ALWAYS use the existing dynamic route: `/games/[slug]/[sessionId]/page.tsx`
+### ❌ AI MUST NOT CREATE:
+- Static game folders (`/games/belote/`) - BREAKS ROUTING!
+- New API routes - USE GENERICS
+- Custom session hooks - USE `useMultiplayerGame`
 
 ## 🔄 SCORESHEET MIGRATION PATTERN (AI CRITICAL)
 
@@ -518,36 +458,13 @@ permissions.isHost(hostId, userId)      // Host privileges?
 
 ## 📡 API ROUTES (AI MUST USE EXISTING)
 
-### Real-time Session Data  
-```
-GET /api/sessions/[sessionId]/realtime
-→ Returns: session + players + scores + events + permissions
-→ Used by: useRealtimeSession (polling every 2-30s)
-```
+**⚠️ For complete API documentation**: See **[API GUIDE](./docs/ai-guide/API.md)**
 
-### Session Management
-```
-POST /api/sessions/[sessionId]/join
-Body: { playerName, player2Name? } // player2Name for team games
-→ Adds player(s) to session, creates teams if needed
-
-POST /api/sessions/[sessionId]/leave
-→ Removes player, transfers host if needed
-
-POST /api/sessions/[sessionId]/start  
-→ Changes status to 'active' (host only)
-```
-
-### Score Updates (Game-specific)
-```
-// ROUNDS games (Tarot, Mille Bornes, etc.)
-POST /api/games/[slug]/sessions/[sessionId]/rounds
-Body: { scores: [{ playerId: number, score: number }] }
-
-// CATEGORIES games (Yams)
-POST /api/games/[slug]/sessions/[sessionId]/scores
-Body: { categoryId: string, playerId: number, score: number }
-```
+### Key Points:
+- Players array must be **strings**, not objects: `["Alice", "Bob"]`
+- Custom games automatically get `is_implemented = 1`
+- Always include `gameSlug` parameter in hooks
+- Use generic routes, never create game-specific APIs
 
 ### ⚠️ AI CRITICAL: gameSlug Routing
 ```typescript
@@ -560,31 +477,20 @@ const { session } = useMultiplayerGame({ sessionId, gameSlug: 'tarot' });
 
 ## 🗄️ DATABASE (AI REFERENCE)
 
-### Key Tables & Structure
-```sql
--- Games catalog  
-games: slug, score_type, team_based, min/max_players
+**⚠️ For complete database documentation**: See **[DATABASE GUIDE](./docs/ai-guide/DATABASE.md)**
 
--- Sessions (parties)
-sessions: id, game_id, host_user_id, status, session_name
+### Key Tables:
+- `games` - Game catalog (MUST set `is_implemented = 1` for custom games)
+- `sessions` - Game sessions/parties
+- `players` - Global player catalog
+- `session_player` - Junction table linking players to sessions
+- `teams` / `team_player` - Team support for team-based games
+- `scores` - Flexible scoring (rounds or categories)
 
--- Players in sessions
-players: session_id, user_id, player_name, position, team_id
-
--- Scores (flexible structure)
-scores: session_id, player_id, round_number/category_id, score
-
--- Teams (for team-based games)
-teams: session_id, team_name
-```
-
-### Critical Relationships
-```sql
-players.session_id → sessions.id  
-players.team_id → teams.id (nullable)
-scores.session_id → sessions.id
-scores.player_id → players.id
-```
+### Critical Rules:
+- Use junction tables for relationships (`session_player`, not direct links)
+- Custom games need `is_implemented = 1` and `is_active = 1`
+- Add migrations in `database.ts` for new columns
 
 ## 🎯 TEAM GAMES SPECIAL LOGIC (AI IMPORTANT)
 
@@ -936,29 +842,23 @@ Spinner  JoinForm   WaitRoom  GameUI   Results
 
 ## 🚨 COMMON ISSUES & FIXES (AI QUICK REFERENCE)
 
+**⚠️ For complete troubleshooting guide**: See **[TROUBLESHOOTING GUIDE](./docs/ai-guide/TROUBLESHOOTING.md)**
+
+### 🔴 TOP CRITICAL ISSUES:
+1. **Custom games "not implemented"** → Set `is_implemented = 1` in database
+2. **Missing database columns** → Add migrations in `database.ts`
+3. **API data format errors** → Use string arrays: `["Alice", "Bob"]`
+4. **Table confusion** → Use junction tables (`session_player`)
+5. **Missing gameSlug** → Always include in hooks/APIs
+
 ### Missing gameSlug → 404 Errors
 ```typescript
 // WRONG:
 const gameState = useMultiplayerGame({ sessionId });
 
-// CORRECT:  
+// CORRECT:
 const gameState = useMultiplayerGame({ sessionId, gameSlug: 'game-name' });
 ```
-
-### Join Form Not Showing
-- Check `canJoinSession` logic in `useGamePermissions`
-- For team games, verify team count calculation  
-- Ensure `BaseScoreSheetMultiplayer` gets correct props
-
-### Polling Not Working
-- Verify `/api/sessions/[sessionId]/realtime` returns data
-- Check console for 403/404 errors
-- Confirm user permissions (host/player/guest)
-
-### Team Games Issues
-- Mille Bornes Équipes needs special join logic (2 player names)
-- Check team creation in `/api/sessions/[sessionId]/join`
-- Verify `team_based=1` in database
 
 ## 🎯 AI QUICK WIN PATTERNS
 
