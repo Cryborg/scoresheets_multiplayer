@@ -90,15 +90,16 @@ export async function createCustomGame(data: {
   const result = await db.execute({
     sql: `
       INSERT INTO games (
-        name, slug, category_id, rules, is_active, score_type, team_based,
+        name, slug, category_id, rules, is_implemented, is_active, score_type, team_based,
         min_players, max_players, score_direction, created_by_user_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     args: [
       data.name,
       data.slug,
       data.categoryId,
       data.rules,
+      1, // is_implemented = 1 pour les jeux personnalisés (ils utilisent GenericScoreSheet)
       data.isActive ? 1 : 0,
       data.scoreType,
       data.teamBased ? 1 : 0,
