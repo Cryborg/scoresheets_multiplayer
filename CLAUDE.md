@@ -10,6 +10,7 @@
 - **[📡 API GUIDE](./docs/ai-guide/API.md)** - All endpoints, request/response formats, testing
 - **[🚨 TROUBLESHOOTING](./docs/ai-guide/TROUBLESHOOTING.md)** - Common issues, solutions, debugging
 - **[🎮 GAME IMPLEMENTATION](./docs/ai-guide/GAME_IMPLEMENTATION.md)** - Step-by-step game creation guide
+- **[🚀 TECHNICAL ROADMAP](./docs/ai-guide/TECHNICAL_ROADMAP.md)** - Dette technique, plan d'amélioration, roadmap
 
 ## 🚨 CRITICAL CONTEXT FOR AI
 
