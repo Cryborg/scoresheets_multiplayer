@@ -6,6 +6,7 @@ import "./utilities.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { ConfirmationProvider } from "@/contexts/ConfirmationContext";
+import { ErrorProvider } from "@/contexts/ErrorContext";
 import ToastProviderReactHot from "@/components/providers/ToastProvider";
 import MaintenanceCheck from "@/components/MaintenanceCheck";
 import CookieConsent from "@/components/CookieConsent";
@@ -48,17 +49,19 @@ export default function RootLayout({
         suppressHydrationWarning
         data-hydrated="true"
       >
-        <AuthProvider>
-          <ToastProvider>
-            <ConfirmationProvider>
-              <ToastProviderReactHot />
-              <MaintenanceCheck>
-                {children}
-              </MaintenanceCheck>
-              <CookieConsent />
-            </ConfirmationProvider>
-          </ToastProvider>
-        </AuthProvider>
+        <ErrorProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <ConfirmationProvider>
+                <ToastProviderReactHot />
+                <MaintenanceCheck>
+                  {children}
+                </MaintenanceCheck>
+                <CookieConsent />
+              </ConfirmationProvider>
+            </ToastProvider>
+          </AuthProvider>
+        </ErrorProvider>
       </body>
     </html>
   );

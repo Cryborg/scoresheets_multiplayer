@@ -7,6 +7,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { usePollingService } from './usePollingService';
 import { useVisibilityOptimization } from './useVisibilityOptimization';
 import { useConnectionManager } from './useConnectionManager';
+import { useErrorHandler } from '@/contexts/ErrorContext';
 import { getGuestId } from '@/lib/guestAuth';
 import type { GameSessionWithRounds, GameSessionWithCategories } from '@/types/multiplayer';
 
@@ -38,6 +39,7 @@ export function useSimpleRealtimeSession<T extends GameSessionWithRounds | GameS
   onConnectionChange
 }: UseSimpleRealtimeSessionProps) {
 
+  const { showError } = useErrorHandler();
   const [session, setSession] = useState<T | null>(null);
   const [events, setEvents] = useState<SessionEvent[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
@@ -68,7 +70,11 @@ export function useSimpleRealtimeSession<T extends GameSessionWithRounds | GameS
     maxConsecutiveFailures: 5,
     onError: (error) => {
       onError?.(error);
-      console.error('Connection error:', error);
+      showError('Problème de connexion détecté', 'realtime', {
+        sessionId,
+        gameSlug,
+        errorMessage: error.message
+      });
     },
     onConnectionChange: (connected) => {
       onConnectionChange?.(connected);

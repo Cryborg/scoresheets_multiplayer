@@ -1,4 +1,5 @@
 import { db } from './database';
+import { errorLogger } from './errorLogger';
 
 export async function trackGameActivity(userId: number, gameSlug: string): Promise<void> {
   try {
@@ -17,7 +18,11 @@ export async function trackGameActivity(userId: number, gameSlug: string): Promi
     
     console.log(`✅ Tracked game activity for user ${userId}, game ${gameSlug}`);
   } catch (error) {
-    console.error('Error tracking game activity:', error);
+    errorLogger.silent('Erreur lors du tracking d\'activité', 'gameActivity', {
+      userId,
+      gameSlug,
+      error: error instanceof Error ? error.message : String(error)
+    });
     // Ne pas faire échouer l'application si le tracking échoue
   }
 }
@@ -44,7 +49,10 @@ export async function getUserGameActivities(userId: number): Promise<Array<{
       times_opened: row.times_opened as number
     }));
   } catch (error) {
-    console.error('Error fetching user game activities:', error);
+    errorLogger.silent('Erreur lors de la récupération des activités', 'gameActivity', {
+      userId,
+      error: error instanceof Error ? error.message : String(error)
+    });
     return [];
   }
 }

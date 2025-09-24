@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import { useApiCall } from '@/hooks/useApiCall';
 
 interface User {
   id: number;
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { get } = useApiCall();
 
   useEffect(() => {
     checkAuthStatus();
@@ -28,13 +30,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await fetch('/api/auth/me');
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData.user);
-      }
+      const response = await get<{user: User}>('/api/auth/me', {
+        context: 'auth',
+        suppressToast: true // Ne pas afficher de toast pour la vérification auth
+      });
+      setUser(response.data.user);
     } catch (error) {
-      console.error('Auth check error:', error);
+      // Silent fail pour l'auth check - l'utilisateur n'est juste pas connecté
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
