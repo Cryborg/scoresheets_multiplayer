@@ -1,7 +1,13 @@
 /**
- * Environment variables validation
+ * Environment variables validation - SERVER-SIDE ONLY
+ * ⚠️ WARNING: This file should NEVER be imported in client-side code!
  * Ensures all required secrets are present and valid
  */
+
+// Fail fast if running in browser environment
+if (typeof window !== 'undefined') {
+  throw new Error('env-validation.ts should never be imported on client-side! Use server-only environment variables.');
+}
 
 interface EnvConfig {
   JWT_SECRET: string;

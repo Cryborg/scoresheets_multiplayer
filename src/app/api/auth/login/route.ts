@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateUser } from '@/lib/auth-db';
 import { db } from '@/lib/database';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '@/lib/constants';
+// JWT_SECRET accessed directly from env for security
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,9 +35,14 @@ export async function POST(request: NextRequest) {
       console.log('Note: Could not update last_seen (column may not exist yet)');
     }
 
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      return NextResponse.json({ error: 'Erreur de configuration serveur' }, { status: 500 });
+    }
+
     const token = jwt.sign(
       { userId: user.id, email: user.email, isAdmin: user.is_admin },
-      JWT_SECRET,
+      jwtSecret,
       { expiresIn: '7d' }
     );
 

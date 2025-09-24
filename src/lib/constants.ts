@@ -26,20 +26,6 @@ export const HTTP_STATUS = {
   INTERNAL_SERVER_ERROR: 500
 } as const;
 
-// Configuration JWT - Validated and secure
-import { getEnvConfig } from './env-validation';
-
-// Get JWT secret with proper validation
-export const JWT_SECRET = (() => {
-  try {
-    return getEnvConfig().JWT_SECRET;
-  } catch (error) {
-    // Only in test environment, allow a test secret
-    if (process.env.NODE_ENV === 'test') {
-      return 'test-jwt-secret-minimum-32-chars-long';
-    }
-    
-    console.error('JWT_SECRET validation failed:', error);
-    throw new Error('JWT_SECRET must be set and meet security requirements');
-  }
-})();
+// JWT_SECRET should NEVER be exported to client-side code
+// Use it directly in server-side API routes only via process.env.JWT_SECRET
+// or import it in server-only files

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '@/lib/constants';
+// JWT_SECRET accessed directly from env for security
 import { getUserByEmail } from '@/lib/auth-db';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { email: string; id: number; iat: number; exp: number };
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      return NextResponse.json({ error: 'Erreur de configuration serveur' }, { status: 500 });
+    }
+
+    const decoded = jwt.verify(token, jwtSecret) as { email: string; id: number; iat: number; exp: number };
     const user = await getUserByEmail(decoded.email);
 
     if (!user) {
