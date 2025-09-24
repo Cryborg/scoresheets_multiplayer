@@ -24,6 +24,22 @@ const metadataLoaders: Record<string, () => Promise<{ default?: GameMetadata } |
   'mille-bornes-equipes': () => import('@/games/mille-bornes-equipes/metadata').then(m => ({ default: m.milleBornesEquipesMetadata })),
   'rami': () => import('@/games/rami/metadata').then(m => ({ default: m.ramiMetadata })),
   'jeu-libre': () => import('@/games/jeu-libre/metadata').then(m => ({ default: m.jeuLibreMetadata })),
+
+  // Custom games with non-standard slugs - fallback to custom metadata
+  'uno': async () => ({
+    default: {
+      icon: '🎯',
+      duration: '15-30 min',
+      shortDescription: 'Jeu de cartes personnalisé avec scores',
+      color: {
+        primary: 'red',
+        accent: 'yellow'
+      },
+      difficulty: 'facile' as const,
+      keywords: ['cartes', 'personnalisé', 'uno'],
+      multiplayer: true
+    }
+  }),
 };
 
 // Cache des métadonnées chargées
@@ -78,8 +94,8 @@ export async function loadGameMetadata(slug: string): Promise<GameMetadata | nul
   // Charger depuis le fichier du jeu
   const loader = metadataLoaders[slug];
   if (!loader) {
-    console.warn(`Pas de métadonnées trouvées pour le jeu: ${slug}`);
-    return null;
+    // Return default metadata for unknown games instead of warning
+    return defaultGameMetadata;
   }
 
   try {
