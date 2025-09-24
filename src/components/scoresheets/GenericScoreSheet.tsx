@@ -17,8 +17,13 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
   const { showError } = useErrorHandler();
   const [roundScores, setRoundScores] = useState<Record<number, number>>({});
 
-  // Debug logging for custom games
+  // Debug logging for custom games - mobile visible
   console.log('GenericScoreSheet mounted:', { sessionId, gameSlug });
+
+  // Mobile debug - show alert on mount
+  if (gameSlug.includes('wazabi')) {
+    alert(`✅ GenericScoreSheet chargé: ${sessionId.substring(0, 4)}...`);
+  }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
@@ -309,6 +314,12 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
   );
   } catch (error) {
     console.error('GenericScoreSheet error:', error);
+
+    // Mobile debug - show error in alert
+    if (gameSlug.includes('wazabi')) {
+      alert(`❌ ERREUR GenericScoreSheet: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
     showError('Erreur lors du chargement du jeu', 'GenericScoreSheet', {
       sessionId,
       gameSlug,
