@@ -155,15 +155,23 @@ export function useSimpleRealtimeSession<T extends GameSessionWithRounds | GameS
   }, [pollInterval, visibility]);
 
   // Service de polling avec gestion des erreurs
+  const pollingEnabled = enabled &&
+                         !visibility.state.shouldPause &&
+                         connection.shouldRetry();
+
   const polling = usePollingService({
     interval: getAdaptiveInterval(),
     onUpdate: fetchSessionData,
-    enabled: enabled &&
-             !visibility.state.shouldPause &&
-             connection.shouldRetry() &&
-             !isLocalSession, // Pas de polling pour les sessions locales
+    enabled: pollingEnabled,
     onError: connection.handleError
   });
+
+  // Effet pour forcer le premier fetch même si polling désactivé
+  useEffect(() => {
+    if (sessionId && sessionId !== 'new' && !session) {
+      fetchSessionData();
+    }
+  }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Force refresh fonction
   const forceRefresh = useCallback(async () => {

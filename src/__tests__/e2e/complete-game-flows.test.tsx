@@ -28,13 +28,13 @@ describe('Flux de jeux complets - Tests E2E basiques', () => {
   describe('2. Vérification des hooks de jeu', () => {
     it('devrait pouvoir importer tous les hooks multiplayer', async () => {
       const { useMultiplayerGame } = await import('../../hooks/useMultiplayerGame');
-      const { useRealtimeSession } = await import('../../hooks/useRealtimeSession');
+      const { useSimpleRealtimeSession } = await import('../../hooks/useSimpleRealtimeSession');
       const { useOptimisticScores } = await import('../../hooks/useOptimisticScores');
       const { useScoreActions } = await import('../../hooks/useScoreActions');
       const { useGamePermissions } = await import('../../hooks/useGamePermissions');
-      
+
       expect(useMultiplayerGame).toBeDefined();
-      expect(useRealtimeSession).toBeDefined();
+      expect(useSimpleRealtimeSession).toBeDefined();
       expect(useOptimisticScores).toBeDefined();
       expect(useScoreActions).toBeDefined();
       expect(useGamePermissions).toBeDefined();

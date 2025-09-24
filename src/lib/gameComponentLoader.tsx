@@ -3,6 +3,7 @@ import { ComponentType } from 'react';
 
 export interface ScoreSheetProps {
   sessionId: string;
+  gameSlug?: string;
 }
 
 interface GameInfo {
