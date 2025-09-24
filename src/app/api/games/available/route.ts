@@ -9,6 +9,11 @@ export async function GET(request: Request) {
     // Get current user ID to filter custom games
     const userId = await getUserId(request as any);
 
+    // Debug logging to understand PC vs Mobile auth differences
+    console.log('🔍 [API] /games/available - userId:', userId);
+    console.log('🔍 [API] User-Agent:', request.headers.get('User-Agent')?.substring(0, 50));
+    console.log('🔍 [API] Has auth-token cookie:', !!request.cookies.get('auth-token'));
+
     const result = await db.execute(`
       SELECT
         g.id,
