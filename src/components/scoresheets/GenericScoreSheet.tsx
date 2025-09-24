@@ -16,6 +16,9 @@ interface GenericScoreSheetProps {
 export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreSheetProps) {
   const { showError } = useErrorHandler();
   const [roundScores, setRoundScores] = useState<Record<number, number>>({});
+
+  // Debug logging for custom games
+  console.log('GenericScoreSheet mounted:', { sessionId, gameSlug });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
@@ -90,11 +93,12 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
     setRoundToDelete(null);
   };
 
-  return (
-    <BaseScoreSheetMultiplayer<GameSessionWithRounds> 
-      sessionId={sessionId} 
-      gameSlug={gameSlug}
-    >
+  try {
+    return (
+      <BaseScoreSheetMultiplayer<GameSessionWithRounds>
+        sessionId={sessionId}
+        gameSlug={gameSlug}
+      >
       {({ session, gameState }) => {
         const scoreDirection = session?.game?.score_direction || 'higher';
         const gameTitle = session?.game?.name || "Jeu de points";
@@ -303,4 +307,26 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
       }}
     </BaseScoreSheetMultiplayer>
   );
+  } catch (error) {
+    console.error('GenericScoreSheet error:', error);
+    showError('Erreur lors du chargement du jeu', 'GenericScoreSheet', {
+      sessionId,
+      gameSlug,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Erreur de chargement</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">Le jeu n&apos;a pas pu être chargé.</p>
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retour
+          </button>
+        </div>
+      </div>
+    );
+  }
 }
