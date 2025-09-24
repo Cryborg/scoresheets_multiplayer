@@ -24,6 +24,7 @@ import {
 import { useMilleBornesScore } from '@/hooks/useMilleBornesScore';
 import GameCard from '@/components/layout/GameCard';
 import { Trophy, Users, Target } from 'lucide-react';
+import { useErrorHandler } from '@/contexts/ErrorContext';
 
 interface Props {
   sessionId: string;
@@ -49,6 +50,7 @@ interface GameInterfaceProps {
 
 function MilleBornesGameInterface({ session, gameState }: GameInterfaceProps) {
   const { addRound, isHost, currentUserId } = gameState;
+  const { showError } = useErrorHandler();
   
   // State
   const [gameVariant, setGameVariant] = useState<GameVariant>('classic');
@@ -128,7 +130,10 @@ function MilleBornesGameInterface({ session, gameState }: GameInterfaceProps) {
       // Reset for next round
       setRoundData(createEmptyRoundData(session.players.map(p => p.id)));
     } catch (error) {
-      console.error('Error submitting round:', error);
+      showError('Erreur lors de l\'ajout de la manche', 'scoreSheet', {
+        game: 'mille-bornes-equipes',
+        error: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setIsSubmitting(false);
     }

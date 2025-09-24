@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import CategoryEditModal from '@/components/admin/CategoryEditModal';
+import { errorLogger } from '@/lib/errorLogger';
 
 interface Category {
   id: number;
@@ -32,7 +33,14 @@ export default function CategoriesPage() {
         setCategories(data.categories);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      errorLogger.logError({
+        message: 'Erreur lors de la récupération des catégories',
+        context: 'admin',
+        details: {
+          error: error instanceof Error ? error.message : String(error),
+          action: 'fetchCategories'
+        }
+      });
     } finally {
       setLoading(false);
     }
@@ -57,7 +65,15 @@ export default function CategoriesPage() {
 
       await fetchCategories();
     } catch (error) {
-      console.error('Error saving category:', error);
+      errorLogger.logError({
+        message: 'Erreur lors de la sauvegarde de la catégorie',
+        context: 'admin',
+        details: {
+          error: error instanceof Error ? error.message : String(error),
+          action: 'saveCategory',
+          isEditing: !!editingCategory
+        }
+      });
       throw error;
     }
   };
@@ -84,7 +100,15 @@ export default function CategoriesPage() {
         await fetchCategories();
       }
     } catch (error) {
-      console.error('Error deleting category:', error);
+      errorLogger.logError({
+        message: 'Erreur lors de la suppression de la catégorie',
+        context: 'admin',
+        details: {
+          error: error instanceof Error ? error.message : String(error),
+          action: 'deleteCategory',
+          categoryId: id
+        }
+      });
     }
   };
 

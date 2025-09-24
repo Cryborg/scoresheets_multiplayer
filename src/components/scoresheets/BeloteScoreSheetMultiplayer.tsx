@@ -5,6 +5,7 @@ import { Crown, Target, Users } from 'lucide-react';
 import ScoreInput from '@/components/ui/ScoreInput';
 import GameCard from '@/components/layout/GameCard';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
+import { useErrorHandler } from '@/contexts/ErrorContext';
 import { GameSessionWithRounds } from '@/types/multiplayer';
 
 interface BeloteGameSession extends GameSessionWithRounds {
@@ -44,10 +45,10 @@ export default function BeloteScoreSheetMultiplayer({ sessionId }: { sessionId: 
   );
 }
 
-function BeloteGameInterface({ 
-  session, 
-  gameState 
-}: { 
+function BeloteGameInterface({
+  session,
+  gameState
+}: {
   session: BeloteGameSession;
   gameState: {
     addRound: (data: unknown) => Promise<void>;
@@ -55,6 +56,7 @@ function BeloteGameInterface({
   };
 }) {
   const { addRound, isHost } = gameState;
+  const { showError } = useErrorHandler();
 
   const [newRound, setNewRound] = useState<BeloteRoundData>({
     team1Points: 0,
@@ -167,8 +169,10 @@ function BeloteGameInterface({
         takingTeam: 1
       });
     } catch (error) {
-      console.error('Error submitting round:', error);
-      alert('Erreur lors de l\'ajout de la manche');
+      showError('Erreur lors de l\'ajout de la manche', 'scoreSheet', {
+        game: 'belote',
+        error: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setIsSubmitting(false);
     }

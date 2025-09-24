@@ -9,6 +9,7 @@ import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { GameSessionWithRounds } from '@/types/multiplayer';
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
 import { TeamRecord } from '@/types/realtime';
+import { useErrorHandler } from '@/contexts/ErrorContext';
 
 interface MilleBornesGameSession extends GameSessionWithRounds {
   teams?: TeamRecord[];
@@ -66,14 +67,15 @@ export default function MilleBornesScoreSheetMultiplayer({ sessionId }: { sessio
   );
 }
 
-function MilleBornesGameInterface({ 
-  session, 
-  gameState 
-}: { 
+function MilleBornesGameInterface({
+  session,
+  gameState
+}: {
   session: MilleBornesGameSession;
   gameState: ReturnType<typeof useMultiplayerGame>;
 }) {
   const { addRound, isHost } = gameState;
+  const { showError } = useErrorHandler();
 
   const [newRound, setNewRound] = useState<MilleBornesRoundData>({
     distances: {},
@@ -199,8 +201,10 @@ function MilleBornesGameInterface({
         primes: resetPrimes
       });
     } catch (error) {
-      console.error('Error submitting round:', error);
-      alert('Erreur lors de l\'ajout de la manche');
+      showError('Erreur lors de l\'ajout de la manche', 'scoreSheet', {
+        game: 'mille-bornes',
+        error: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setIsSubmitting(false);
     }

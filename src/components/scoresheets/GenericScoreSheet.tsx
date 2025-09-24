@@ -5,6 +5,7 @@ import { GameSessionWithRounds } from '@/types/multiplayer';
 import { useState } from 'react';
 import GameCard from '@/components/layout/GameCard';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import { useErrorHandler } from '@/contexts/ErrorContext';
 import { Trophy, TrendingDown, Edit3, Dice6, Trash2 } from 'lucide-react';
 
 interface GenericScoreSheetProps {
@@ -13,6 +14,7 @@ interface GenericScoreSheetProps {
 }
 
 export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreSheetProps) {
+  const { showError } = useErrorHandler();
   const [roundScores, setRoundScores] = useState<Record<number, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -72,8 +74,12 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
       setShowDeleteModal(false);
       setRoundToDelete(null);
     } catch (error) {
-      console.error('Error deleting round:', error);
-      // L'erreur sera gérée par le hook lui-même
+      showError('Erreur lors de la suppression de la manche', 'scoreSheet', {
+        sessionId,
+        gameSlug,
+        roundNumber: roundToDelete,
+        error: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setIsDeleting(false);
     }

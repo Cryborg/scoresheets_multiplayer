@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { isAuthenticated } from '@/lib/authClient';
+import { useApiCall } from '@/hooks/useApiCall';
 
 interface AdminGuardProps {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
   const [isChecking, setIsChecking] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
+  const { get } = useApiCall();
 
   useEffect(() => {
     const checkAdminAccess = async () => {
@@ -22,17 +24,12 @@ export default function AdminGuard({ children }: AdminGuardProps) {
         }
 
         // Use fast admin check API (no database initialization)
-        const response = await fetch('/api/admin/check', {
-          credentials: 'include'
+        const response = await get<{isAuthenticated: boolean, isAdmin: boolean}>('/api/admin/check', {
+          context: 'admin',
+          suppressToast: true // Silent admin check
         });
-        
-        if (!response.ok) {
-          router.push('/dashboard');
-          return;
-        }
 
-        const data = await response.json();
-        if (!data.isAuthenticated || !data.isAdmin) {
+        if (!response.data.isAuthenticated || !response.data.isAdmin) {
           router.push('/dashboard');
           return;
         }
@@ -40,7 +37,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
         setIsAdmin(true);
         setIsChecking(false);
       } catch (error) {
-        console.error('Admin check failed:', error);
+        // Error already logged by useApiCall, just redirect
         router.push('/dashboard');
       }
     };

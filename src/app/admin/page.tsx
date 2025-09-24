@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Users, Gamepad2, Trophy, Activity, TrendingUp, Calendar } from 'lucide-react';
+import { errorLogger } from '@/lib/errorLogger';
 
 interface DashboardStats {
   totalUsers: number;
@@ -34,7 +35,14 @@ export default function AdminDashboard() {
         setStats(data);
       }
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      errorLogger.logError({
+        message: 'Erreur lors de la récupération des statistiques du dashboard',
+        context: 'admin',
+        details: {
+          error: error instanceof Error ? error.message : String(error),
+          action: 'fetchDashboardStats'
+        }
+      });
     } finally {
       setLoading(false);
     }

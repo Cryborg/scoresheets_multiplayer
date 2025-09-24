@@ -7,6 +7,7 @@ import GameCard from '@/components/layout/GameCard';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { GameSessionWithRounds } from '@/types/multiplayer';
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
+import { useErrorHandler } from '@/contexts/ErrorContext';
 
 // Extension spécifique pour Tarot avec details typés
 interface TarotGameSession extends GameSessionWithRounds {
@@ -58,14 +59,15 @@ export default function TarotScoreSheetMultiplayer({ sessionId }: { sessionId: s
   );
 }
 
-function TarotGameInterface({ 
-  session, 
-  gameState 
-}: { 
+function TarotGameInterface({
+  session,
+  gameState
+}: {
   session: TarotGameSession;
   gameState: ReturnType<typeof useMultiplayerGame>;
 }) {
   const { addRound, isHost } = gameState;
+  const { showError } = useErrorHandler();
   
   const [newRound, setNewRound] = useState<TarotRoundData>({
     takerId: 0,
@@ -135,8 +137,10 @@ function TarotGameInterface({
         chelem: false
       });
     } catch (error) {
-      console.error('Error submitting round:', error);
-      alert('Erreur lors de l\'ajout de la manche');
+      showError('Erreur lors de l\'ajout de la manche', 'scoreSheet', {
+        game: 'tarot',
+        error: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setIsSubmitting(false);
     }

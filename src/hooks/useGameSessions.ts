@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { authenticatedFetch, isAuthenticated } from '@/lib/authClient';
+import { errorLogger } from '@/lib/errorLogger';
 
 interface GameSession {
   id: number;
@@ -47,7 +48,10 @@ export function useGameSessions(gameSlug: string) {
         setSessions(gameSessions);
       }
     } catch (error) {
-      console.error('Error fetching sessions for game:', error);
+      errorLogger.silent('Erreur lors de la récupération des sessions de jeu', 'gameSessions', {
+        gameSlug,
+        error: error instanceof Error ? error.message : String(error)
+      });
       setSessions([]);
     } finally {
       setLoading(false);

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import GameEditModal from '@/components/admin/GameEditModal';
+import { errorLogger } from '@/lib/errorLogger';
 
 interface Game {
   id: number;
@@ -48,7 +49,14 @@ export default function GamesPage() {
         setGames(data.games);
       }
     } catch (error) {
-      console.error('Error fetching games:', error);
+      errorLogger.logError({
+        message: 'Erreur lors de la récupération des jeux',
+        context: 'admin',
+        details: {
+          error: error instanceof Error ? error.message : String(error),
+          action: 'fetchGames'
+        }
+      });
     } finally {
       setLoading(false);
     }
@@ -62,7 +70,14 @@ export default function GamesPage() {
         setCategories(data.categories);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      errorLogger.logError({
+        message: 'Erreur lors de la récupération des catégories',
+        context: 'admin',
+        details: {
+          error: error instanceof Error ? error.message : String(error),
+          action: 'fetchCategories'
+        }
+      });
     }
   };
 
@@ -85,7 +100,15 @@ export default function GamesPage() {
 
       await fetchGames();
     } catch (error) {
-      console.error('Error saving game:', error);
+      errorLogger.logError({
+        message: 'Erreur lors de la sauvegarde du jeu',
+        context: 'admin',
+        details: {
+          error: error instanceof Error ? error.message : String(error),
+          action: 'saveGame',
+          isEditing: !!editingGame
+        }
+      });
       throw error;
     }
   };
@@ -112,7 +135,15 @@ export default function GamesPage() {
         await fetchGames();
       }
     } catch (error) {
-      console.error('Error deleting game:', error);
+      errorLogger.logError({
+        message: 'Erreur lors de la suppression du jeu',
+        context: 'admin',
+        details: {
+          error: error instanceof Error ? error.message : String(error),
+          action: 'deleteGame',
+          gameId: id
+        }
+      });
     }
   };
 
@@ -132,7 +163,15 @@ export default function GamesPage() {
         await fetchGames();
       }
     } catch (error) {
-      console.error('Error toggling implementation:', error);
+      errorLogger.logError({
+        message: 'Erreur lors du changement de statut d\'implémentation',
+        context: 'admin',
+        details: {
+          error: error instanceof Error ? error.message : String(error),
+          action: 'toggleImplementation',
+          gameId: game.id
+        }
+      });
     }
   };
 

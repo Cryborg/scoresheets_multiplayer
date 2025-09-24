@@ -7,6 +7,7 @@ import GameCard from '@/components/layout/GameCard';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { GameSessionWithRounds } from '@/types/multiplayer';
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
+import { useErrorHandler } from '@/contexts/ErrorContext';
 
 interface BridgeGameSession extends GameSessionWithRounds {
   rounds: Array<{
@@ -60,14 +61,15 @@ export default function BridgeScoreSheetMultiplayer({ sessionId }: { sessionId: 
   );
 }
 
-function BridgeGameInterface({ 
-  session, 
-  gameState 
-}: { 
+function BridgeGameInterface({
+  session,
+  gameState
+}: {
   session: BridgeGameSession;
   gameState: ReturnType<typeof useMultiplayerGame>;
 }) {
   const { addRound, isHost } = gameState;
+  const { showError } = useErrorHandler();
 
   const [newRound, setNewRound] = useState<BridgeRoundData>({
     declarerPosition: 'Nord',
@@ -190,8 +192,10 @@ function BridgeGameInterface({
         vulnerableEW: false
       });
     } catch (error) {
-      console.error('Error submitting round:', error);
-      alert('Erreur lors de l\'ajout de la manche');
+      showError('Erreur lors de l\'ajout de la manche', 'scoreSheet', {
+        game: 'bridge',
+        error: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setIsSubmitting(false);
     }

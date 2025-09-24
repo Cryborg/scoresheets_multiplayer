@@ -1,5 +1,44 @@
 import { Player } from '@/types/multiplayer';
 
+/**
+ * Vérifie si on peut rejoindre un jeu d'équipe spécifique
+ * Logique extraite pour réduire la complexité du hook principal
+ */
+function canJoinTeamGame(session: any): boolean {
+  if (!session?.team_based) return true; // Not a team game
+
+  switch (session.game_slug) {
+    case 'mille-bornes-equipes': {
+      // For Mille Bornes Équipes: can join if there's no second team yet
+      const occupiedTeams = new Set<number>();
+
+      session.players?.forEach((player: Player) => {
+        if (player.team_id) {
+          occupiedTeams.add(player.team_id);
+        } else {
+          // Fallback: assume position-based teams (1-2 = team 1, 3-4 = team 2)
+          const teamId = player.position <= 2 ? 1 : 2;
+          occupiedTeams.add(teamId);
+        }
+      });
+
+      // Can join if there's only one team so far
+      return occupiedTeams.size < 2;
+    }
+
+    case 'belote': {
+      // Belote logic: 4 players exactly, 2 teams
+      return (session.players?.length || 0) < 4;
+    }
+
+    default: {
+      // Default team game logic: assume standard team capacity
+      const currentPlayerCount = session.players?.length || 0;
+      return currentPlayerCount < (session.max_players || 4);
+    }
+  }
+}
+
 export function useGamePermissions(currentUserId: number | null) {
   // Check if current user can edit scores for a specific player
   const canEditPlayerScores = (player: Player, session?: any): boolean => {
@@ -39,25 +78,10 @@ export function useGamePermissions(currentUserId: number | null) {
     // Can join if:
     // 1. Session is waiting
     // 2. User is not already in the session
-    // 3. There are available spots (for team games, check if there's room for another team)
-    
-    if (session.team_based && session.game_slug === 'mille-bornes-equipes') {
-      // For Mille Bornes Équipes: can join if there's no second team yet
-      const teams = session.teams || [];
-      const occupiedTeams = new Set();
-      
-      session.players?.forEach((player: Player) => {
-        if (player.team_id) {
-          occupiedTeams.add(player.team_id);
-        } else {
-          // Fallback: assume position-based teams (1-2 = team 1, 3-4 = team 2)
-          const teamId = player.position <= 2 ? 1 : 2;
-          occupiedTeams.add(teamId);
-        }
-      });
-      
-      // Can join if there's only one team so far
-      return occupiedTeams.size < 2;
+    // 3. There are available spots (delegated to team game logic for complexity)
+
+    if (session.team_based) {
+      return canJoinTeamGame(session);
     }
     
     // For other games: can join if there are available spots

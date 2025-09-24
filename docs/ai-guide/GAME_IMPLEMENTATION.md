@@ -36,6 +36,7 @@ if (existingGame.rows.length === 0) {
 
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { GameSessionWithRounds } from '@/types/multiplayer'; // or WithCategories
+import { useErrorHandler } from '@/contexts/ErrorContext'; // ✅ MANDATORY for error handling
 
 export default function GameNameScoreSheet({ sessionId }: { sessionId: string }) {
   return (
@@ -55,14 +56,22 @@ function GameInterface({ session, gameState }: {
   gameState: any;
 }) {
   const { addRound, isHost } = gameState;
+  const { showError } = useErrorHandler(); // ✅ MANDATORY for error handling
 
   // Game-specific logic here
   const handleAddRound = async () => {
-    const scores = [
-      { playerId: session.players[0].id, score: 100 },
-      { playerId: session.players[1].id, score: 80 }
-    ];
-    await addRound(scores);
+    try {
+      const scores = [
+        { playerId: session.players[0].id, score: 100 },
+        { playerId: session.players[1].id, score: 80 }
+      ];
+      await addRound(scores);
+    } catch (error) {
+      showError('Erreur lors de l\'ajout de la manche', 'scoreSheet', {
+        game: 'game-slug',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   };
 
   return (
@@ -282,3 +291,117 @@ curl -X POST http://localhost:3000/api/games/game-slug/sessions \
 - Check `gameMetadata.ts` has your game entry
 - Verify metadata file exists at correct path
 - Check export name matches import
+
+## 🚨 CENTRALIZED ERROR HANDLING (MANDATORY)
+
+### ⚠️ NEVER use console.error or alert() directly!
+
+**All new games MUST use the centralized error handling system.**
+
+### For React Components (Game Scoresheets)
+
+```typescript
+import { useErrorHandler } from '@/contexts/ErrorContext';
+
+function GameInterface() {
+  const { showError } = useErrorHandler();
+
+  const handleGameAction = async () => {
+    try {
+      // Your game logic here
+      await someApiCall();
+    } catch (error) {
+      showError('Erreur lors de l\'action de jeu', 'scoreSheet', {
+        game: 'your-game-slug',
+        error: error instanceof Error ? error.message : String(error),
+        additionalContext: 'any relevant data'
+      });
+    }
+  };
+}
+```
+
+### For Non-React Contexts (Utilities, API Routes)
+
+```typescript
+import { errorLogger } from '@/lib/errorLogger';
+
+// In utility functions or API routes
+try {
+  // Your code here
+} catch (error) {
+  errorLogger.logError({
+    message: 'Description de l\'erreur en français',
+    context: 'scoreSheet', // or 'admin', 'auth', 'realtime', etc.
+    details: {
+      error: error instanceof Error ? error.message : String(error),
+      gameSlug: 'your-game-slug',
+      userId: currentUserId,
+      additionalData: relevantData
+    },
+    level: 'error', // 'error', 'warning', 'info'
+    showToast: true // Show user-friendly message
+  });
+}
+```
+
+### Error Context Categories
+
+Use these standard contexts for consistency:
+
+- **`scoreSheet`** - Game scoresheet components errors
+- **`admin`** - Admin panel operations
+- **`auth`** - Authentication flows
+- **`realtime`** - Real-time session management
+- **`api`** - API route errors
+- **`app`** - General application errors
+
+### ❌ FORBIDDEN Patterns
+
+```typescript
+// ❌ NEVER DO THIS
+catch (error) {
+  console.error('Error:', error);
+  alert('Something went wrong!');
+}
+
+// ❌ NEVER DO THIS
+catch (error) {
+  console.log('Failed to save:', error);
+}
+
+// ❌ NEVER DO THIS
+if (error) {
+  console.error(error);
+}
+```
+
+### ✅ CORRECT Patterns
+
+```typescript
+// ✅ FOR REACT COMPONENTS
+catch (error) {
+  showError('Message en français pour l\'utilisateur', 'scoreSheet', {
+    game: gameSlug,
+    error: error instanceof Error ? error.message : String(error)
+  });
+}
+
+// ✅ FOR API ROUTES
+catch (error) {
+  errorLogger.logError({
+    message: 'Échec de l\'opération',
+    context: 'api',
+    details: { error: error.message, endpoint: '/api/games/...' }
+  });
+  return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+}
+```
+
+### Benefits of Centralized Error Handling
+
+1. **User Experience**: Consistent, French error messages in beautiful toast notifications
+2. **Developer Experience**: Centralized logging with context and details
+3. **Debugging**: All errors logged with structured data for easy filtering
+4. **Maintainability**: Single place to update error handling behavior
+5. **Production**: Automatic error collection and monitoring

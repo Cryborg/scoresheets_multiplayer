@@ -240,7 +240,12 @@ export function useSimpleRealtimeSession<T extends GameSessionWithRounds | GameS
 
       return await response.json();
     } catch (error) {
-      console.error('Error deleting round:', error);
+      showError('Erreur lors de la suppression de la manche', 'realtime', {
+        sessionId,
+        gameSlug,
+        roundNumber,
+        error: error instanceof Error ? error.message : String(error)
+      });
       throw error;
     }
   }, [gameSlug, sessionId, forceRefresh]);
