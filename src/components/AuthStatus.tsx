@@ -13,20 +13,21 @@ interface AuthStatusProps {
  * what content to show (e.g. "Save your games" vs "Your account")
  */
 export default function AuthStatus({ children }: AuthStatusProps) {
-  const [isChecking, setIsChecking] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
       const authenticated = isAuthenticated();
       setIsAuth(authenticated);
-      setIsChecking(false);
+      setMounted(true);
     };
 
     checkAuth();
   }, []);
 
-  if (isChecking) {
+  // Avoid hydration mismatch by showing loading state until mounted
+  if (!mounted) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-gray-500 dark:text-gray-400">Chargement...</div>
