@@ -1,112 +1,166 @@
-import { useState, useCallback, useRef } from 'react';
+'use client';
 
-interface ConnectionState {
-  status: 'connected' | 'disconnected' | 'error' | 'reconnecting';
-  consecutiveErrors: number;
-  lastError: Error | null;
-}
+import { useState, useRef, useCallback, useEffect } from 'react';
 
-interface ConnectionOptions {
+export interface ConnectionConfig {
   maxRetries?: number;
   baseDelay?: number;
-  maxDelay?: number;
-  onError?: (error: Error, retryCount: number) => void;
-  onReconnect?: () => void;
+  maxConsecutiveFailures?: number;
+  onConnectionChange?: (connected: boolean) => void;
+  onError?: (error: Error) => void;
 }
 
-export function useConnectionManager({
-  maxRetries = 5,
-  baseDelay = 1000,
-  maxDelay = 30000,
-  onError,
-  onReconnect
-}: ConnectionOptions = {}) {
-  
-  const [state, setState] = useState<ConnectionState>({
-    status: 'connected',
-    consecutiveErrors: 0,
-    lastError: null
-  });
+export interface ConnectionState {
+  isConnected: boolean;
+  connectionStatus: 'connected' | 'connecting' | 'disconnected' | 'error';
+  error: string | null;
+  retryCount: number;
+  consecutiveFailures: number;
+  isCircuitOpen: boolean;
+}
 
-  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+export interface ConnectionManager {
+  state: ConnectionState;
+  handleSuccess: () => void;
+  handleError: (error: Error) => void;
+  reset: () => void;
+  shouldRetry: () => boolean;
+  getRetryDelay: () => number;
+}
 
-  const calculateDelay = useCallback((attempt: number) => {
-    // Exponential backoff with jitter
-    const exponential = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
-    const jitter = Math.random() * 0.1 * exponential;
-    return exponential + jitter;
-  }, [baseDelay, maxDelay]);
+const DEFAULT_CONFIG = {
+  maxRetries: 3,
+  baseDelay: 1000,
+  maxConsecutiveFailures: 5,
+};
 
-  const handleError = useCallback((error: Error) => {
-    setState(prev => {
-      const newCount = prev.consecutiveErrors + 1;
-      
-      if (newCount >= maxRetries) {
-        return {
-          status: 'error',
-          consecutiveErrors: newCount,
-          lastError: error
-        };
-      }
+/**
+ * Hook spécialisé pour la gestion des connexions et reconnexions
+ * Implémente un circuit breaker et un backoff exponentiel
+ */
+export function useConnectionManager(config: ConnectionConfig = {}): ConnectionManager {
+  const {
+    maxRetries = DEFAULT_CONFIG.maxRetries,
+    baseDelay = DEFAULT_CONFIG.baseDelay,
+    maxConsecutiveFailures = DEFAULT_CONFIG.maxConsecutiveFailures,
+    onConnectionChange,
+    onError,
+  } = config;
 
-      return {
-        status: 'reconnecting',
-        consecutiveErrors: newCount,
-        lastError: error
-      };
-    });
+  // État de la connexion
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected' | 'error'>('connecting');
+  const [error, setError] = useState<string | null>(null);
 
-    onError?.(error, state.consecutiveErrors + 1);
-  }, [maxRetries, onError, state.consecutiveErrors]);
+  // Compteurs de retry et circuit breaker (état pour re-render)
+  const [retryCount, setRetryCount] = useState(0);
+  const [consecutiveFailures, setConsecutiveFailures] = useState(0);
 
+  // Debounce pour éviter les changements trop fréquents de status
+  const connectionDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fonction de mise à jour du status avec debounce
+  const setConnectionStatusDebounced = useCallback((status: typeof connectionStatus) => {
+    if (connectionDebounceRef.current) {
+      clearTimeout(connectionDebounceRef.current);
+    }
+
+    connectionDebounceRef.current = setTimeout(() => {
+      setConnectionStatus(status);
+    }, 300); // 300ms delay to stabilize
+  }, []);
+
+  // Circuit breaker: est-il ouvert ?
+  const isCircuitOpen = consecutiveFailures >= maxConsecutiveFailures;
+
+  // Gestion du succès d'une connexion
   const handleSuccess = useCallback(() => {
-    if (state.consecutiveErrors > 0) {
-      onReconnect?.();
+    setIsConnected(true);
+    setConnectionStatusDebounced('connected');
+    setError(null);
+
+    // Reset tous les compteurs d'erreur
+    setRetryCount(0);
+    setConsecutiveFailures(0);
+
+    onConnectionChange?.(true);
+  }, [setConnectionStatusDebounced, onConnectionChange]);
+
+  // Gestion des erreurs de connexion
+  const handleError = useCallback((err: Error) => {
+    const newRetryCount = retryCount + 1;
+    const newConsecutiveFailures = consecutiveFailures + 1;
+
+    setRetryCount(newRetryCount);
+    setConsecutiveFailures(newConsecutiveFailures);
+
+    const errorMessage = err.message || 'Erreur de connexion';
+    setError(errorMessage);
+    setIsConnected(false);
+
+    // Déterminer le status selon le nombre d'échecs
+    if (newConsecutiveFailures >= maxConsecutiveFailures) {
+      setConnectionStatusDebounced('error'); // Circuit breaker ouvert
+    } else if (newRetryCount >= maxRetries) {
+      setConnectionStatusDebounced('error');
+    } else {
+      setConnectionStatusDebounced('disconnected');
     }
 
-    setState({
-      status: 'connected',
-      consecutiveErrors: 0,
-      lastError: null
-    });
+    onConnectionChange?.(false);
+    onError?.(err);
+  }, [retryCount, consecutiveFailures, maxRetries, maxConsecutiveFailures, setConnectionStatusDebounced, onConnectionChange, onError]);
 
-    // Clear any pending retry
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current);
-      retryTimeoutRef.current = null;
-    }
-  }, [state.consecutiveErrors, onReconnect]);
-
-  const scheduleRetry = useCallback((retryFn: () => void) => {
-    if (state.status === 'error' || state.consecutiveErrors >= maxRetries) {
-      return;
-    }
-
-    const delay = calculateDelay(state.consecutiveErrors);
-    retryTimeoutRef.current = setTimeout(retryFn, delay);
-  }, [state.status, state.consecutiveErrors, maxRetries, calculateDelay]);
-
+  // Reset complet de l'état de connexion
   const reset = useCallback(() => {
-    setState({
-      status: 'connected',
-      consecutiveErrors: 0,
-      lastError: null
-    });
-    
-    if (retryTimeoutRef.current) {
-      clearTimeout(retryTimeoutRef.current);
-      retryTimeoutRef.current = null;
+    setIsConnected(false);
+    setConnectionStatus('connecting');
+    setError(null);
+    setRetryCount(0);
+    setConsecutiveFailures(0);
+
+    if (connectionDebounceRef.current) {
+      clearTimeout(connectionDebounceRef.current);
+      connectionDebounceRef.current = null;
     }
   }, []);
 
+  // Détermine si on doit retry
+  const shouldRetry = useCallback(() => {
+    return (
+      retryCount < maxRetries &&
+      !isCircuitOpen &&
+      (connectionStatus === 'error' || connectionStatus === 'disconnected')
+    );
+  }, [retryCount, maxRetries, isCircuitOpen, connectionStatus]);
+
+  // Calcule le délai de retry avec backoff exponentiel
+  const getRetryDelay = useCallback(() => {
+    return baseDelay * Math.pow(2, retryCount);
+  }, [baseDelay, retryCount]);
+
+  // Cleanup au démontage
+  useEffect(() => {
+    return () => {
+      if (connectionDebounceRef.current) {
+        clearTimeout(connectionDebounceRef.current);
+      }
+    };
+  }, []);
+
   return {
-    ...state,
-    isConnected: state.status === 'connected',
-    isRetrying: state.status === 'reconnecting',
-    shouldRetry: state.consecutiveErrors < maxRetries,
-    handleError,
+    state: {
+      isConnected,
+      connectionStatus,
+      error,
+      retryCount,
+      consecutiveFailures,
+      isCircuitOpen,
+    },
     handleSuccess,
-    scheduleRetry,
-    reset
+    handleError,
+    reset,
+    shouldRetry,
+    getRetryDelay,
   };
 }

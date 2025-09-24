@@ -83,16 +83,20 @@ export function useGamePermissions(currentUserId: number | null) {
   // Check if current user can view/participate in this session
   const canViewSession = (session: any): boolean => {
     if (!session) return false;
-    
+
     // Host can always view their sessions
     if (currentUserId && isHost(session.host_user_id, currentUserId)) return true;
-    
+
     // Players can view sessions they're in
     if (currentUserId && isUserInSession(session.players || [], currentUserId)) return true;
-    
+
     // Anyone can view waiting sessions (to potentially join)
     if (session.status === 'waiting') return true;
-    
+
+    // Allow read-only access to active sessions (spectator mode)
+    // This allows users to see ongoing games without being able to participate
+    if (session.status === 'active') return true;
+
     return false;
   };
 

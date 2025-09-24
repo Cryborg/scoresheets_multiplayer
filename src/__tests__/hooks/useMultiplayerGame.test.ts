@@ -1,9 +1,9 @@
 import { renderHook, act } from '@testing-library/react';
 import { useMultiplayerGame } from '../../hooks/useMultiplayerGame';
 
-// Mock useRealtimeSession
-jest.mock('../../hooks/useRealtimeSession', () => ({
-  useRealtimeSession: jest.fn()
+// Mock useSimpleRealtimeSession
+jest.mock('../../hooks/useSimpleRealtimeSession', () => ({
+  useSimpleRealtimeSession: jest.fn()
 }));
 
 // Mock useGamePermissions
@@ -32,11 +32,11 @@ jest.mock('../../lib/authHelper', () => ({
   getUserId: jest.fn()
 }));
 
-import { useRealtimeSession } from '../../hooks/useRealtimeSession';
+import { useSimpleRealtimeSession } from '../../hooks/useSimpleRealtimeSession';
 import { useGamePermissions } from '../../hooks/useGamePermissions';
 import { getUserId } from '../../lib/authHelper';
 
-const mockUseRealtimeSession = useRealtimeSession as jest.MockedFunction<typeof useRealtimeSession>;
+const mockUseSimpleRealtimeSession = useSimpleRealtimeSession as jest.MockedFunction<typeof useSimpleRealtimeSession>;
 const mockUseGamePermissions = useGamePermissions as jest.MockedFunction<typeof useGamePermissions>;
 const mockGetUserId = getUserId as jest.MockedFunction<typeof getUserId>;
 
@@ -47,10 +47,10 @@ describe('useMultiplayerGame', () => {
     // Default mocks
     mockUseGamePermissions.mockReturnValue({
       canJoinSession: jest.fn(),
-      canEditPlayerScores: jest.fn(),
-      isHost: jest.fn(),
       canViewSession: jest.fn(),
       canStartGame: jest.fn(),
+      canEditPlayerScores: jest.fn(),
+      isHost: jest.fn(),
       isUserInSession: jest.fn()
     });
 
@@ -67,7 +67,7 @@ describe('useMultiplayerGame', () => {
   });
 
   it('should initialize with loading state', () => {
-    mockUseRealtimeSession.mockReturnValue({
+    mockUseSimpleRealtimeSession.mockReturnValue({
       session: null,
       events: [],
       isConnected: false,
@@ -95,7 +95,7 @@ describe('useMultiplayerGame', () => {
       ]
     };
 
-    mockUseRealtimeSession.mockReturnValue({
+    mockUseSimpleRealtimeSession.mockReturnValue({
       session: mockSession,
       events: [],
       isConnected: true,
@@ -120,7 +120,7 @@ describe('useMultiplayerGame', () => {
       players: []
     };
 
-    mockUseRealtimeSession.mockReturnValue({
+    mockUseSimpleRealtimeSession.mockReturnValue({
       session: mockSession,
       events: [],
       isConnected: true,
@@ -154,7 +154,7 @@ describe('useMultiplayerGame', () => {
       players: [{ id: 1, player_name: 'Alice', position: 0 }]
     };
 
-    mockUseRealtimeSession.mockReturnValue({
+    mockUseSimpleRealtimeSession.mockReturnValue({
       session: mockSession,
       events: [],
       isConnected: true,
@@ -180,7 +180,7 @@ describe('useMultiplayerGame', () => {
   });
 
   it('should handle player name state', () => {
-    mockUseRealtimeSession.mockReturnValue({
+    mockUseSimpleRealtimeSession.mockReturnValue({
       session: null,
       events: [],
       isConnected: false,
@@ -216,7 +216,7 @@ describe('useMultiplayerGame', () => {
       isHost: jest.fn()
     };
 
-    mockUseRealtimeSession.mockReturnValue({
+    mockUseSimpleRealtimeSession.mockReturnValue({
       session: mockSession,
       events: [],
       isConnected: true,
@@ -236,7 +236,7 @@ describe('useMultiplayerGame', () => {
   });
 
   it('should handle error states', () => {
-    mockUseRealtimeSession.mockReturnValue({
+    mockUseSimpleRealtimeSession.mockReturnValue({
       session: null,
       events: [],
       isConnected: false,
@@ -262,7 +262,7 @@ describe('useMultiplayerGame', () => {
       team_based: true
     };
 
-    mockUseRealtimeSession.mockReturnValue({
+    mockUseSimpleRealtimeSession.mockReturnValue({
       session: mockSession,
       events: [],
       isConnected: true,

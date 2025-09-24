@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useRealtimeSession } from './useRealtimeSession';
+import { useSimpleRealtimeSession } from './useSimpleRealtimeSession';
 import { useGamePermissions } from './useGamePermissions';
 import { GameSession, Player } from '@/types/multiplayer';
 import { notify } from '@/lib/toast';
@@ -63,7 +63,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     deleteRound,
     forceRefresh,
     isLocalSession: isLocalFromServer
-  } = useRealtimeSession<T>({
+  } = useSimpleRealtimeSession<T>({
     sessionId,
     gameSlug,
     pollInterval: optimizedPollInterval,
