@@ -24,8 +24,11 @@
 - ✅ useApiCall hook avec gestion d'erreurs automatique
 - ✅ errorLogger pour hooks non-React
 - ✅ ErrorProvider intégré au layout
-- 🟡 Migration progressive des console.error commencée (gameActivity, AuthContext, useSimpleRealtimeSession)
-- ⏳ 247 console.error restants à migrer
+- 🟡 Migration progressive des console.error en cours (45% terminé)
+  - ✅ gameActivity, AuthContext, useSimpleRealtimeSession
+  - ✅ Pages auth (login, register) avec useApiCall
+  - ✅ useGameSessionCreator (hook critique création sessions)
+- ⏳ 138 console.error restants (réduction de 251 → 138 = -45%)
 
 **Impact**: Élevé - EN COURS DE RÉSOLUTION 🚧
 
@@ -36,6 +39,20 @@
 - Difficile à étendre pour nouveaux jeux
 
 **Impact**: Moyen - Rend l'ajout de nouveaux jeux plus complexe
+
+#### 4. 🆕 UX Input Scores - Boutons +/- (NOUVEAU)
+**Besoin identifié**:
+- Input numériques difficiles à utiliser sur mobile/tablette
+- Pas de boutons +/- pour ajuster rapidement les scores
+- Interface pas optimisée pour le responsive/tactile
+
+**Amélioration proposée**:
+- Ajouter boutons - et + de chaque côté des inputs de score
+- Taille adaptée pour le tactile (min 44px)
+- Design cohérent avec l'UI existante
+- Support clavier + tactile
+
+**Impact**: Moyen - Améliore significativement l'UX mobile 📱
 
 ---
 
@@ -137,7 +154,32 @@ const useApiCall = () => {
 **Durée**: 3-4 jours
 **Impact**: Moyen - Facilite ajout de nouveaux jeux
 
+### **Phase 4: UX Input Scores** (PRIORITÉ 4)
+**Objectif**: Améliorer l'UX des inputs de score pour mobile/tactile
+**Durée**: 2-3 jours
+**Impact**: Moyen - Améliore UX mobile significativement
+
 #### Étapes:
+1. **Créer ScoreInputWithButtons** - Composant réutilisable avec boutons +/-
+2. **Remplacer inputs existants** - Migration progressive des scoresheets
+3. **Tests responsive** - Validation mobile/tablette
+4. **Accessibilité** - Support clavier et lecteurs d'écran
+
+#### Architecture Cible:
+```typescript
+<ScoreInputWithButtons
+  value={score}
+  onChange={setScore}
+  min={0}
+  max={999}
+  step={1}
+  disabled={!canEdit}
+  size="lg" // Pour mobile
+  className="touch-friendly"
+/>
+```
+
+#### Étapes Phase 3:
 1. **Extraire useTeamGameLogic** - Logique spécifique aux équipes
 2. **Simplifier useGamePermissions** - Permissions de base uniquement
 3. **Créer hooks composés** - Combinaison propre des permissions
@@ -183,8 +225,8 @@ Semaine 4: Phase 3 (Permissions)
 - [x] useApiCall hook avec gestion automatique des erreurs API
 - [x] errorLogger pour hooks non-React et logging silencieux
 - [x] ErrorProvider ajouté au layout principal
-- [x] Migration commencée (AuthContext, gameActivity, useSimpleRealtimeSession)
-- [ ] Migration des 247 console.error restants (en cours)
+- [x] Migration avancée (45% terminé: auth, gameActivity, hooks critiques)
+- [ ] Migration des 138 console.error restants (113 migrés)
 - [ ] Tests du système d'erreurs
 - [x] Logging centralisé fonctionnel
 

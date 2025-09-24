@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { UserPlus, Mail, Lock, User, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { migrateGuestSessions, hasGuestSessionsToMigrate } from '@/lib/guestMigration';
+import { useApiCall } from '@/hooks/useApiCall';
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
@@ -20,6 +21,7 @@ export default function RegisterPage() {
   const [honeypot, setHoneypot] = useState('');
   const [csrfToken, setCsrfToken] = useState('');
   const router = useRouter();
+  const { get, post } = useApiCall();
 
   useEffect(() => {
     setMounted(true);
@@ -27,10 +29,18 @@ export default function RegisterPage() {
     setHasGuestSessions(hasGuestSessionsToMigrate());
     
     // Get CSRF token
-    fetch('/api/auth/csrf-token')
-      .then(res => res.json())
-      .then(data => setCsrfToken(data.token))
-      .catch(err => console.error('Failed to fetch CSRF token:', err));
+    const fetchCsrfToken = async () => {
+      try {
+        const response = await get<{token: string}>('/api/auth/csrf-token', {
+          context: 'auth',
+          suppressToast: true
+        });
+        setCsrfToken(response.data.token);
+      } catch (err) {
+        // Silent fail for CSRF token - not critical for user experience
+      }
+    };
+    fetchCsrfToken();
   }, []);
 
   if (!mounted) {
@@ -55,41 +65,32 @@ export default function RegisterPage() {
     }
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, email, password, honeypot, csrfToken }),
+      await post<{success: boolean}>('/api/auth/register',
+        { username, email, password, honeypot, csrfToken }, {
+        context: 'auth',
+        suppressToast: true // On gère les messages localement
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // If user has guest sessions, migrate them
-        if (hasGuestSessions) {
-          // Get auth token from the registration response
-          const loginResponse = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
+      // If user has guest sessions, migrate them
+      if (hasGuestSessions) {
+        try {
+          const loginResponse = await post<{token?: string}>('/api/auth/login',
+            { email, password }, {
+            context: 'auth',
+            suppressToast: true
           });
 
-          if (loginResponse.ok) {
-            const loginData = await loginResponse.json();
-            // Migration will happen automatically via the auth token
-            await migrateGuestSessions(loginData.token || '');
-          }
+          // Migration will happen automatically via the auth token
+          await migrateGuestSessions(loginResponse.data.token || '');
+        } catch (migrationError) {
+          // Migration failed but account was created - continue
         }
-
-        router.push('/dashboard?message=Compte créé avec succès');
-      } else {
-        setError(data.error || 'Une erreur est survenue');
       }
-    } catch {
-      setError('Erreur de connexion');
+
+      router.push('/dashboard?message=Compte créé avec succès');
+    } catch (error) {
+      // L'erreur est loggée automatiquement, on affiche un message générique
+      setError('Erreur lors de la création du compte');
     } finally {
       setLoading(false);
     }

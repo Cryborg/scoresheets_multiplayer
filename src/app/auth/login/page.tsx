@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useApiCall } from '@/hooks/useApiCall';
 import { LogIn, Mail, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
+  const { post } = useApiCall();
 
   useEffect(() => {
     setMounted(true);
@@ -39,25 +41,16 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      const response = await post<{user: any}>('/api/auth/login', { email, password }, {
+        context: 'auth',
+        suppressToast: true // On gère l'erreur localement avec setError
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        login(data.user);
-        router.push('/dashboard');
-      } else {
-        setError(data.error || 'Une erreur est survenue');
-      }
+      login(response.data.user);
+      router.push('/dashboard');
     } catch (error) {
-      console.error('Login error:', error);
-      setError('Erreur de connexion');
+      // L'erreur est déjà loggée par useApiCall, on affiche juste le message local
+      setError('Email ou mot de passe incorrect');
     } finally {
       setLoading(false);
     }

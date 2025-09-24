@@ -5,6 +5,7 @@ import { notify } from '@/lib/toast';
 import { getGuestId, trackGuestSession, isGuest } from '@/lib/guestAuth';
 import { authenticatedFetch, isAuthenticated } from '@/lib/authClient';
 import { initializeGameSession, validateGameSession, type Game as GameTeamLogicGame } from '@/lib/gameTeamLogic';
+import { errorLogger } from '@/lib/errorLogger';
 
 export interface Player {
   name: string;
@@ -71,7 +72,9 @@ export function useGameSessionCreator(game?: Game | null) {
         setState(prev => ({ ...prev, suggestedPlayers: playerNames }));
       }
     } catch (err) {
-      console.error('Error fetching players:', err);
+      errorLogger.silent('Erreur lors de la récupération des joueurs suggérés', 'gameSessionCreator', {
+        error: err instanceof Error ? err.message : String(err)
+      });
     }
   };
 
@@ -217,7 +220,11 @@ export function useGameSessionCreator(game?: Game | null) {
         return null;
       }
     } catch (error) {
-      console.error('Session creation error:', error);
+      errorLogger.error('Erreur lors de la création de session', 'gameSessionCreator', {
+        game: game.name,
+        playerCount: state.players.length,
+        error: error instanceof Error ? error.message : String(error)
+      });
       notify.error('Erreur de connexion');
       return null;
     } finally {
