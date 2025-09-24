@@ -17,10 +17,13 @@ export async function POST(
     // Everyone gets an ID (authenticated or guest) - simplified with new architecture
     const userId = await getUserId(request, guestId);
 
-    // Get game info
+    // Get game info - only allow user's own custom games or public games
     const gameResult = await db.execute({
-      sql: 'SELECT * FROM games WHERE slug = ?',
-      args: [slug]
+      sql: `SELECT * FROM games WHERE slug = ? AND (
+        created_by_user_id IS NULL OR    -- Built-in games
+        created_by_user_id = ?           -- User's custom games only
+      )`,
+      args: [slug, userId]
     });
     const game = gameResult.rows[0] as {
       id: number;

@@ -3,7 +3,7 @@
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { GameSessionWithRounds } from '@/types/multiplayer';
 import { useState } from 'react';
-import GameCard from '@/components/layout/GameCard';
+import ScoreInput from '@/components/ui/ScoreInput';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { useErrorHandler } from '@/contexts/ErrorContext';
 import { Trophy, TrendingDown, Edit3, Dice6, Trash2 } from 'lucide-react';
@@ -138,20 +138,17 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
                             </h3>
                           </div>
                           
-                          {/* Input score */}
+                          {/* Input score avec boutons +/- */}
                           <div className="flex-shrink-0">
-                            <div className="relative">
-                              <input
-                                type="number"
-                                placeholder="0"
-                                value={roundScores[player.id] || ''}
-                                onChange={(e) => handleScoreChange(player.id, parseInt(e.target.value) || 0)}
-                                className="w-16 sm:w-20 h-12 text-center text-lg font-semibold border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-colors bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                              />
-                              <div className="absolute -bottom-1 -right-1 text-xs text-gray-400 dark:text-gray-500">
-                                pts
-                              </div>
-                            </div>
+                            <ScoreInput
+                              value={roundScores[player.id] || 0}
+                              onChange={(value) => handleScoreChange(player.id, parseInt(value) || 0)}
+                              placeholder="0"
+                              min={-999}
+                              max={9999}
+                              size="md"
+                              showButtons={true}
+                            />
                           </div>
                         </div>
                       </div>
