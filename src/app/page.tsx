@@ -9,13 +9,10 @@ import Button from '@/components/ui/Button';
 
 export default function HomePage() {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); // null = loading
   const [checkingMaintenance, setCheckingMaintenance] = useState(true);
 
   useEffect(() => {
-    setMounted(true);
-    
     // Check maintenance mode first
     async function checkMaintenance() {
       try {
@@ -33,16 +30,13 @@ export default function HomePage() {
         setCheckingMaintenance(false);
       }
     }
-    
+
     // Check if user is already authenticated
     const token = document.cookie
       .split('; ')
       .find(row => row.startsWith('auth-token='));
-    
-    if (token) {
-      setIsAuthenticated(true);
-    }
 
+    setIsAuthenticated(!!token);
     checkMaintenance();
   }, [router]);
 
@@ -50,9 +44,10 @@ export default function HomePage() {
     router.push('/dashboard');
   };
 
-  if (!mounted || checkingMaintenance) {
+  // Show loading state while checking auth and maintenance
+  if (isAuthenticated === null || checkingMaintenance) {
     return (
-      <div suppressHydrationWarning className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             {BRANDING.name}

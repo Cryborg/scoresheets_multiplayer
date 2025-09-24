@@ -25,6 +25,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: BRANDING.fullTitle,
   description: BRANDING.description.full,
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.svg', type: 'image/x-icon' }
+    ],
+  },
 };
 
 export const viewport = {
