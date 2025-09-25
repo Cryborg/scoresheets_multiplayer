@@ -40,6 +40,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Erreur de configuration serveur' }, { status: 500 });
     }
 
+    console.log('🔍 [Login] Creating JWT for user:', { userId: user.id, email: user.email });
+
     const token = jwt.sign(
       { userId: user.id, email: user.email, isAdmin: user.is_admin },
       jwtSecret,
