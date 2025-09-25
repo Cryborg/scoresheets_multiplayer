@@ -16,6 +16,7 @@ export async function POST(
 
     // Everyone gets an ID (authenticated or guest) - simplified with new architecture
     const userId = await getUserId(request, guestId);
+    console.log('🔍 [Create Session] getUserId returned:', userId);
 
     // Get game info - only allow user's own custom games or public games
     const gameResult = await db.execute({

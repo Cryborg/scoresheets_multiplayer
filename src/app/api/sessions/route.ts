@@ -8,11 +8,12 @@ export async function GET(request: NextRequest) {
   try {
     // Everyone gets an ID (authenticated or guest)
     userId = await getUserId(request);
+    console.log('🔍 [Sessions API] getUserId returned:', userId);
 
-    // Récupérer d'abord les sessions où l'utilisateur est hôte
-    const hostSessions = await db.execute({
+    // Récupérer TOUTES les sessions où l'utilisateur participe (hôte ou joueur)
+    const allSessions = await db.execute({
       sql: `
-        SELECT
+        SELECT DISTINCT
           s.id,
           s.name as session_name,
           s.status,
@@ -23,18 +24,19 @@ export async function GET(request: NextRequest) {
           g.name as game_name,
           g.slug as game_slug,
           g.max_players,
-          1 as is_host
+          CASE WHEN s.host_user_id = ? THEN 1 ELSE 0 END as is_host
         FROM sessions s
         JOIN games g ON s.game_id = g.id
+        LEFT JOIN session_player sp ON s.id = sp.session_id
+        LEFT JOIN players p ON sp.player_id = p.id
         WHERE s.host_user_id = ?
+           OR (p.created_by_user_id = ? AND p.created_by_user_id IS NOT NULL)
         ORDER BY s.updated_at DESC, s.created_at DESC
       `,
-      args: [userId]
+      args: [userId, userId, userId]
     });
 
-    // Pour l'instant, on ne récupère que les sessions où l'utilisateur est hôte
-    // On pourra ajouter les sessions participant plus tard
-    const sessions = { rows: hostSessions.rows };
+    const sessions = { rows: allSessions.rows };
 
     // Récupérer les joueurs pour chaque session
     const sessionIds = sessions.rows.map(row => row.id);
