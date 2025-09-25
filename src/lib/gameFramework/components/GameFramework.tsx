@@ -15,7 +15,6 @@ import { GameSessionWithRounds, GameSessionWithCategories } from '@/types/multip
  * Génère automatiquement une interface de jeu complète à partir d'une GameDefinition
  */
 export default function GameFramework({ sessionId, definition }: GameFrameworkProps) {
-  console.log('[GameFramework] Initializing with:', { sessionId, slug: definition.slug, scoreType: definition.scoreType });
   
   if (definition.scoreType === 'categories') {
     return (
@@ -52,16 +51,6 @@ interface GameInterfaceProps {
 
 function GameInterface({ session, gameState, definition }: GameInterfaceProps) {
   const { isHost } = gameState;
-  
-  // Debug logging
-  console.log('[GameFramework] Debug:', { 
-    hasSession: !!session, 
-    hasPlayers: !!session?.players, 
-    playersLength: session?.players?.length,
-    sessionStatus: session?.status,
-    gameState: Object.keys(gameState || {}),
-    definition: definition.slug 
-  });
   
   // Attendre que la session soit complètement chargée
   if (!session) {

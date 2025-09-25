@@ -43,8 +43,6 @@ export async function authenticateUser({ email, password }: AuthCredentials): Pr
       return null;
     }
 
-    console.log('🔍 [AuthDB] User authenticated:', { id: user.id, email: user.email, username: user.username });
-
     return {
       id: user.id,
       username: user.username,
