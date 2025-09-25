@@ -9,7 +9,8 @@ import jwt from 'jsonwebtoken';
 export function getAuthenticatedUserId(request: NextRequest): number | null {
   try {
     const token = request.cookies.get('auth-token')?.value;
-    
+    console.log('🔍 [Auth] Token present:', !!token);
+
     if (!token) {
       return null;
     }
@@ -22,11 +23,14 @@ export function getAuthenticatedUserId(request: NextRequest): number | null {
 
     // Verify JWT signature and decode payload
     const payload = jwt.verify(token, jwtSecret) as { userId?: number; exp?: number };
-    
+    console.log('🔍 [Auth] JWT payload:', { userId: payload.userId, hasUserId: !!payload.userId });
+
     if (!payload.userId || typeof payload.userId !== 'number') {
+      console.log('🔍 [Auth] Invalid userId in payload');
       return null;
     }
 
+    console.log('🔍 [Auth] Returning authenticated userId:', payload.userId);
     return payload.userId;
   } catch (error) {
     // jwt.verify throws errors for invalid signatures, expired tokens, etc.
