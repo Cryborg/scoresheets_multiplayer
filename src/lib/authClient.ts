@@ -34,14 +34,26 @@ export function redirectToLogin(): void {
  * Global fetch wrapper that handles authentication errors
  */
 export async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  // Add guest ID header for consistency with session creation
+  const headers: Record<string, string> = {
+    'Cache-Control': 'no-cache',
+    ...options.headers as Record<string, string>
+  };
+
+  // Add guest ID header if user is not authenticated
+  if (typeof window !== 'undefined' && !isAuthenticated()) {
+    // Import guest auth utilities
+    const { isGuest, getGuestId } = await import('./guestAuth');
+    if (isGuest()) {
+      headers['X-Guest-Id'] = getGuestId().toString();
+    }
+  }
+
   const response = await fetch(url, {
     ...options,
     credentials: 'include',
     cache: 'no-store',
-    headers: {
-      'Cache-Control': 'no-cache',
-      ...options.headers
-    }
+    headers
   });
   
   if (response.status === 401) {
