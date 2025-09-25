@@ -8,7 +8,6 @@ export async function GET(request: NextRequest) {
   try {
     // Everyone gets an ID (authenticated or guest)
     userId = await getUserId(request);
-    console.log('🔍 [Sessions API] getUserId returned:', userId);
 
     // Récupérer les sessions où l'utilisateur est hôte
     const hostSessions = await db.execute({
