@@ -155,7 +155,9 @@ export function useSimpleRealtimeSession<T extends GameSessionWithRounds | GameS
 
     // Add jitter to prevent thundering herd (5-15% random variation)
     const jitterRange = baseInterval * 0.1;
-    const jitter = (Math.random() - 0.5) * jitterRange;
+    const jitter = typeof window !== 'undefined'
+      ? (Math.random() - 0.5) * jitterRange
+      : 0;
 
     return Math.max(1000, Math.floor((baseInterval * multiplier) + jitter));
   }, [pollInterval, visibility]);

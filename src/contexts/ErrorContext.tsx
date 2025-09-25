@@ -36,7 +36,7 @@ export function ErrorProvider({ children }: { children: React.ReactNode }) {
     details?: Record<string, unknown>
   ) => {
     const error: AppError = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `error-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       message,
       type,
       timestamp: new Date(),
