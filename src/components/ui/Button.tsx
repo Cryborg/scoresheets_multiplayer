@@ -69,15 +69,7 @@ export default function Button({
 
   // Sinon, utiliser button
   // Filter out custom props that shouldn't be passed to the HTML button element
-  const { 
-    variant: _variant, 
-    size: _size, 
-    leftIcon: _leftIcon, 
-    rightIcon: _rightIcon, 
-    fullWidth: _fullWidth, 
-    loading: _loading,
-    ...buttonProps 
-  } = props;
+  const { variant, size, leftIcon, rightIcon, fullWidth, loading, ...buttonProps } = props;
 
   return (
     <button className={baseClasses} disabled={disabled} {...buttonProps}>

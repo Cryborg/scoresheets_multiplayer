@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Database, Play, CheckCircle, XCircle, AlertTriangle, 
+import {
+  Database, Play, CheckCircle, XCircle, AlertTriangle,
   RefreshCw, ArrowLeft, Info
 } from 'lucide-react';
+import { THEME } from '@/lib/theme';
 
 interface MigrationStatus {
   databaseExists: boolean;

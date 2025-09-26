@@ -5,6 +5,9 @@
 
 import { renderHook, act } from '@testing-library/react';
 import { useSimpleRealtimeSession } from '@/hooks/useSimpleRealtimeSession';
+import { usePollingService } from '@/hooks/usePollingService';
+import { useVisibilityOptimization } from '@/hooks/useVisibilityOptimization';
+import { useConnectionManager } from '@/hooks/useConnectionManager';
 
 // Mock des hooks spécialisés
 jest.mock('@/hooks/usePollingService', () => ({
@@ -80,9 +83,6 @@ describe('useSimpleRealtimeSession', () => {
   });
 
   it('should use specialized hooks with correct configurations', () => {
-    const { usePollingService } = require('@/hooks/usePollingService');
-    const { useVisibilityOptimization } = require('@/hooks/useVisibilityOptimization');
-    const { useConnectionManager } = require('@/hooks/useConnectionManager');
 
     renderHook(() =>
       useSimpleRealtimeSession({
@@ -153,7 +153,6 @@ describe('useSimpleRealtimeSession', () => {
     );
 
     // Les callbacks sont passés correctement aux hooks spécialisés
-    const { useConnectionManager } = require('@/hooks/useConnectionManager');
     const connectionManagerCall = useConnectionManager.mock.calls[0][0];
 
     expect(typeof connectionManagerCall.onError).toBe('function');
@@ -174,14 +173,13 @@ describe('useSimpleRealtimeSession', () => {
   });
 
   it('should calculate adaptive polling interval', () => {
-    const { result } = renderHook(() =>
+    renderHook(() =>
       useSimpleRealtimeSession({
         sessionId: 'test-session',
         pollInterval: 2000
       })
     );
 
-    const { usePollingService } = require('@/hooks/usePollingService');
     const pollingCall = usePollingService.mock.calls[0][0];
 
     // L'intervalle devrait être calculé de façon adaptative

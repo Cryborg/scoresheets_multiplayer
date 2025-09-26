@@ -51,7 +51,7 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
 
       await addRound(scores);
       setRoundScores({});
-    } catch (error) {
+    } catch {
       setErrorMessage("Impossible d'ajouter la manche");
     } finally {
       setIsSubmitting(false);

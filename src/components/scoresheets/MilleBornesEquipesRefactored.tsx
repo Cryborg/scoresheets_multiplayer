@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import PlayerScoreCard from './millebornes/PlayerScoreCard';
 import { GameSessionWithRounds } from '@/types/multiplayer';

@@ -7,15 +7,16 @@ Créez des parties, invitez vos amis avec un code de session, et jouez ensemble 
 ![Next.js](https://img.shields.io/badge/Next.js-15.0-black?logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
 ![Turso](https://img.shields.io/badge/Turso-SQLite-green?logo=sqlite)
-![Tests](https://img.shields.io/badge/Tests-101%20passed-green)
+![Tests](https://img.shields.io/badge/Tests-225%20passed-green)
 ![Realtime](https://img.shields.io/badge/Realtime-Polling-blue)
 
-## 🎮 Jeux supportés (6 jeux, 7 variantes)
+## 🎮 Jeux supportés (8 jeux, 9 variantes)
 
 ### Jeux de cartes
 - **🃏 Tarot** - Contrats, bouts, primes et calculs de points complexes
-- **♠️ Bridge** - Positions Nord/Sud/Est/Ouest, contrats et vulnérabilité  
+- **♠️ Bridge** - Positions Nord/Sud/Est/Ouest, contrats et vulnérabilité
 - **🃏 Belote** - Annonces, plis et scoring d'équipes
+- **🃏 Rami** - Combinaisons et melding de cartes
 
 ### Jeux de dés
 - **🎲 Yams** - Scoring par catégories avec bonus section supérieure
@@ -23,6 +24,10 @@ Créez des parties, invitez vos amis avec un code de session, et jouez ensemble 
 ### Jeux de société
 - **🏎️ Mille Bornes (individuel)** - Course automobile, bottes et coups fourrés (5000 points)
 - **🏎️ Mille Bornes (équipes)** - Version officielle 2v2 avec scores d'équipe
+- **✂️ Pierre-Papier-Ciseaux** - Le classique pour 2 joueurs
+
+### Système de jeux personnalisés
+- **🎯 Jeu libre** - Créez vos propres jeux avec scoring personnalisé
 
 > 💡 **Note importante** : Le Mille Bornes n'est PAS un jeu de course à 1000 km, mais un **jeu de points** où le premier à 5000 points gagne !
 
@@ -98,10 +103,13 @@ npm start
 ## 📖 Documentation technique
 
 - **[CLAUDE.md](./CLAUDE.md)** - Guide de développement et commandes essentielles
-- **[MULTIPLAYER_BLUEPRINT.md](./docs/MULTIPLAYER_BLUEPRINT.md)** - Bible technique complète 
-- **Tests** - 101 tests unitaires + intégration (96% success rate)
+- **[Guides AI](./docs/ai-guide/)** - Documentation technique complète pour l'IA
+  - [DATABASE.md](./docs/ai-guide/DATABASE.md) - Structure base de données
+  - [API.md](./docs/ai-guide/API.md) - Endpoints et formats de requête
+  - [GAME_IMPLEMENTATION.md](./docs/ai-guide/GAME_IMPLEMENTATION.md) - Guide d'ajout de jeux
+- **Tests** - 282 tests (225 passés, 37 échecs à corriger)
 
-## 🧪 Tests (101 tests, 96% success rate)
+## 🧪 Tests détaillés
 
 ```bash
 # Tests complets avec validation

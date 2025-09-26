@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, RotateCcw, Trophy, Users } from 'lucide-react';
+import { Plus, RotateCcw, Users } from 'lucide-react';
 import GameCard from '@/components/layout/GameCard';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { GameSessionWithRounds } from '@/types/multiplayer';

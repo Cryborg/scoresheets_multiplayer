@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
-import { authenticatedFetch, isAuthenticated } from '@/lib/authClient';
+import { authenticatedFetch } from '@/lib/authClient';
 import { getGuestId } from '@/lib/guestAuth';
 
 interface LastPlayedGameTrackerProps {

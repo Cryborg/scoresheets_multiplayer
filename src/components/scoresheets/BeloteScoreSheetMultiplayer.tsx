@@ -176,7 +176,7 @@ function BeloteGameInterface({
     } finally {
       setIsSubmitting(false);
     }
-  }, [session, newRound, isSubmitting, calculateBeloteScore, addRound]);
+  }, [session, newRound, isSubmitting, calculateBeloteScore, addRound, showError]);
 
   const getTotalScore = useCallback((playerId: number) => {
     if (!session?.rounds) return 0;

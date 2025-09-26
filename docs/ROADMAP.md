@@ -3,7 +3,7 @@
 ## ✅ Fonctionnalités Implémentées
 
 ### 🎮 Système de Jeu Complet
-- **5 jeux fonctionnels** : Yams, Mille Bornes (individuel/équipes), Tarot, Belote, Rami
+- **8 jeux fonctionnels** : Yams, Mille Bornes (individuel/équipes), Tarot, Belote, Bridge, Rami, Pierre-Papier-Ciseaux + Jeu libre (système de jeux personnalisés)
 - **Architecture générique** : `BaseScoreSheetMultiplayer` + composants spécialisés
 - **Système multijoueur temps réel** : polling HTTP avec intervalles adaptatifs
 - **Sessions persistantes** : codes de partage, rejoindre/quitter, transfert d'hôte

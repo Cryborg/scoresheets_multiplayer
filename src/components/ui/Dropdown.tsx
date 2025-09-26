@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 interface DropdownProps {
@@ -11,7 +11,6 @@ interface DropdownProps {
 }
 
 export default function Dropdown({ isOpen, anchorEl, children, className = '' }: DropdownProps) {
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
   const lastRectRef = useRef<DOMRect | null>(null);
 

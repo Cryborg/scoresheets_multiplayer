@@ -659,10 +659,7 @@ function MilleBornesEquipesGameInterface({
     } finally {
       setIsSubmitting(false);
     }
-  }, [session, isSubmitting, myTeamPlayers, calculatePlayerScore, gameState]);
-
-  const currentRound = (session?.rounds?.length || 0) + 1;
-
+  }, [session, isSubmitting, myTeamPlayers, calculatePlayerScore, gameState, broadcastRoundData]);
 
   // Check session events for variant selection
   useEffect(() => {
@@ -679,7 +676,7 @@ function MilleBornesEquipesGameInterface({
             setGameVariant(data.variant as GameVariant);
             setVariantSelected(true);
           }
-        } catch (e) {
+        } catch {
           // Ignore parse errors
         }
       }
@@ -701,8 +698,6 @@ function MilleBornesEquipesGameInterface({
         // Process only the FIRST event (most recent) that contains data for each player
         const processedDistances = new Set<number>();
         const processedPrimes = new Set<number>();
-        let eventsProcessed = 0;
-        let eventsSkipped = 0;
         
         roundDataEvents.forEach(event => {
           if (event.event_data) {
@@ -718,9 +713,6 @@ function MilleBornesEquipesGameInterface({
                   if (!isMyPlayer && !processedDistances.has(playerId)) {
                     updatedData.distances[playerId] = distance as number;
                     processedDistances.add(playerId);
-                    eventsProcessed++;
-                  } else if (!isMyPlayer) {
-                    eventsSkipped++;
                   }
                 });
                 
@@ -732,13 +724,10 @@ function MilleBornesEquipesGameInterface({
                   if (!isMyPlayer && !processedPrimes.has(playerId)) {
                     updatedData.primes[playerId] = primes as MilleBornesPrimes;
                     processedPrimes.add(playerId);
-                    eventsProcessed++;
-                  } else if (!isMyPlayer) {
-                    eventsSkipped++;
                   }
                 });
               }
-            } catch (e) {
+            } catch {
               // Ignore parse errors
             }
           }

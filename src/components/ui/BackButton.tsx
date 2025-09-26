@@ -1,7 +1,6 @@
 'use client';
 
 import { ArrowLeft } from 'lucide-react';
-import { useClientRouter } from '@/hooks/useClientRouter';
 
 interface BackButtonProps {
   href?: string;
@@ -9,12 +8,11 @@ interface BackButtonProps {
   className?: string;
 }
 
-export default function BackButton({ 
-  href = '/dashboard', 
+export default function BackButton({
+  href = '/dashboard',
   label,
   className = ''
 }: BackButtonProps) {
-  const router = useClientRouter();
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();

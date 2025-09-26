@@ -34,7 +34,7 @@ export default function MilleBornesRulesHelper({ variant = 'moderne' }: MilleBor
                     Mille Bornes - Les VRAIES règles !
                   </h2>
                   <p className="text-gray-600 dark:text-gray-300 mt-1">
-                    Découvrez pourquoi c'est un jeu de <strong>5000 points</strong>, pas de 1000 bornes !
+                    Découvrez pourquoi c&apos;est un jeu de <strong>5000 points</strong>, pas de 1000 bornes !
                   </p>
                 </div>
                 <button
@@ -54,8 +54,8 @@ export default function MilleBornesRulesHelper({ variant = 'moderne' }: MilleBor
                   </h3>
                 </div>
                 <p className="text-yellow-700 dark:text-yellow-300 text-sm">
-                  <strong>Idée reçue :</strong> "Premier à 1000 bornes gagne" ❌<br />
-                  <strong>Vraie règle :</strong> "Premier à 5000 points gagne" ✅
+                  <strong>Idée reçue :</strong> &quot;Premier à 1000 bornes gagne&quot; ❌<br />
+                  <strong>Vraie règle :</strong> &quot;Premier à 5000 points gagne&quot; ✅
                 </p>
               </div>
 
@@ -107,8 +107,8 @@ export default function MilleBornesRulesHelper({ variant = 'moderne' }: MilleBor
                     <ul className="text-sm space-y-1 text-blue-700 dark:text-blue-300">
                       <li>• <strong>Botte exposée</strong> = 100 pts</li>
                       <li>• <strong>Botte en coup fourré</strong> = 100 + 300 = 400 pts</li>
-                      <li>• Coup fourré = jouer la botte immédiatement quand l'adversaire attaque</li>
-                      <li className="text-xs italic">Exemple : adversaire joue "Accident", vous jouez "As du Volant" = coup fourré !</li>
+                      <li>• Coup fourré = jouer la botte immédiatement quand l&apos;adversaire attaque</li>
+                      <li className="text-xs italic">Exemple : adversaire joue &quot;Accident&quot;, vous jouez &quot;As du Volant&quot; = coup fourré !</li>
                     </ul>
                   </div>
 

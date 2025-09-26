@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { isAuthenticated } from '@/lib/authClient';
+import { THEME } from '@/lib/theme';
 
 export default function DebugAuthPage() {
   const [authState, setAuthState] = useState({

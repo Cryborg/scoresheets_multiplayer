@@ -199,7 +199,7 @@ function BridgeGameInterface({
     } finally {
       setIsSubmitting(false);
     }
-  }, [session, newRound, isSubmitting, calculateBridgeScore, addRound]);
+  }, [session, newRound, isSubmitting, calculateBridgeScore, addRound, showError]);
 
   const getTotalScore = useCallback((playerId: number) => {
     if (!session?.rounds) return 0;

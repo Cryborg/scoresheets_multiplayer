@@ -37,14 +37,14 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
         setIsAdmin(true);
         setIsChecking(false);
-      } catch (error) {
+      } catch {
         // Error already logged by useApiCall, just redirect
         router.push('/dashboard');
       }
     };
 
     checkAdminAccess();
-  }, [router]);
+  }, [router, get]);
 
   if (isChecking || !isAdmin) {
     return (

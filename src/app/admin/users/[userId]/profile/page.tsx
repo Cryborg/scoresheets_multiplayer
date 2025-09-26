@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import {
-  User, Calendar, Clock, Activity, LogIn,
+  User, Clock, Activity, LogIn,
   Gamepad2, Trophy, ArrowLeft, RefreshCw, Shield
 } from 'lucide-react';
 import GameCard from '@/components/layout/GameCard';

@@ -3,7 +3,6 @@
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { GameSessionWithRounds } from '@/types/multiplayer';
 import { useState } from 'react';
-import GameCard from '@/components/layout/GameCard';
 import { Trophy, TrendingDown, Edit3 } from 'lucide-react';
 
 interface RoundBasedScoreSheetProps {
@@ -52,7 +51,7 @@ export default function RoundBasedScoreSheet({
 
       await addRound(scores);
       setRoundScores({});
-    } catch (error) {
+    } catch {
       setErrorMessage("Impossible d'ajouter la manche");
     } finally {
       setIsSubmitting(false);

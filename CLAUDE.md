@@ -17,7 +17,7 @@
 **PROJECT**: Oh Sheet! - Real-time multiplayer game scoring web app ("Score like a pro")
 **CODEBASE SIZE**: ~50 files, 15k+ lines TypeScript/React
 **ARCHITECTURE QUALITY**: B+ (Production-ready, some tech debt)
-**CURRENT STATE**: 5 games implemented, multiplayer system working, active development
+**CURRENT STATE**: 8 games implemented (+ custom games), multiplayer system working, active development
 
 ### 🔴 CRITICAL ROUTING BUG TO AVOID
 **NEVER create static game folders in `/app/games/`!**

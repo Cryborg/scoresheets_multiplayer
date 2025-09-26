@@ -48,22 +48,6 @@ export default function ScoreInput({
     setInternalValue(value.toString());
   }, [value]);
 
-  // Handle delayed blur after button interactions (legacy - kept for text inputs)
-  const scheduleBlur = () => {
-    // Clear any existing timeout
-    if (blurTimeoutRef.current) {
-      clearTimeout(blurTimeoutRef.current);
-    }
-    
-    // Schedule blur after 2 seconds of inactivity
-    blurTimeoutRef.current = setTimeout(() => {
-      // Save first, then blur (same as handleBlur)
-      if (onSave && internalValue && internalValue.trim() !== '') {
-        onSave(internalValue);
-      }
-      onBlur?.();
-    }, 2000);
-  };
 
   // Handle delayed blur after button interactions (without auto-save)
   const scheduleBlurWithoutSave = () => {

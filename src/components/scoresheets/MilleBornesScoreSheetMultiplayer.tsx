@@ -208,7 +208,7 @@ function MilleBornesGameInterface({
     } finally {
       setIsSubmitting(false);
     }
-  }, [session, newRound, isSubmitting, calculateMilleBornesScore, addRound]);
+  }, [session, newRound, isSubmitting, calculateMilleBornesScore, addRound, showError]);
 
   const getTotalScore = useCallback((playerId: number) => {
     if (!session?.rounds) return 0;

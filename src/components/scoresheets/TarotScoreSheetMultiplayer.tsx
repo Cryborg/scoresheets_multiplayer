@@ -144,7 +144,7 @@ function TarotGameInterface({
     } finally {
       setIsSubmitting(false);
     }
-  }, [session, newRound, isSubmitting, calculateTarotScore, addRound]);
+  }, [session, newRound, isSubmitting, calculateTarotScore, addRound, showError]);
 
   const getTotalScore = useCallback((playerId: number) => {
     if (!session?.rounds) return 0;

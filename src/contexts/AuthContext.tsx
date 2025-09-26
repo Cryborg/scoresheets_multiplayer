@@ -24,10 +24,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const { get } = useApiCall();
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
   const checkAuthStatus = async () => {
     try {
       const response = await get<{user: User}>('/api/auth/me', {
@@ -35,13 +31,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         suppressToast: true // Ne pas afficher de toast pour la vérification auth
       });
       setUser(response.data.user);
-    } catch (error) {
+    } catch {
       // Silent fail pour l'auth check - l'utilisateur n'est juste pas connecté
       setUser(null);
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   const login = (userData: User) => {
     setUser(userData);
