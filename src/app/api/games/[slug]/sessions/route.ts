@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, ensureDatabaseExists, generateUniqueSessionCode } from '@/lib/database';
 import { getUserId } from '@/lib/authHelper';
 import { trackUserActivity } from '@/lib/user-tracking';
+import { trackUserPlayer } from '@/lib/userPlayerTracking';
 
 export async function POST(
   request: NextRequest,
@@ -188,19 +189,22 @@ export async function POST(
             if (typeof playerId === 'bigint') {
               playerId = Number(playerId);
             }
-            
+
+            // Track player for autocomplete
+            await trackUserPlayer(userId, playerName.trim());
+
             // Link player to session
             await db.execute({
               sql: `INSERT INTO session_player (session_id, player_id, position) VALUES (?, ?, ?)`,
               args: [sessionId, playerId, position]
             });
-            
+
             // Link player to team in this session
             await db.execute({
               sql: `INSERT INTO team_player (team_id, player_id, session_id) VALUES (?, ?, ?)`,
               args: [teamId, playerId, sessionId]
             });
-            
+
             position++;
           }
         }
@@ -217,13 +221,16 @@ export async function POST(
           if (typeof playerId === 'bigint') {
             playerId = Number(playerId);
           }
-          
+
+          // Track player for autocomplete
+          await trackUserPlayer(userId, playerName.trim());
+
           // Link player to session
           await db.execute({
             sql: `INSERT INTO session_player (session_id, player_id, position) VALUES (?, ?, ?)`,
             args: [sessionId, playerId, position]
           });
-          
+
           position++;
         }
       }

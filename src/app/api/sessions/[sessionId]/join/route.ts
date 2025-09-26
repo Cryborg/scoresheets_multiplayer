@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserId } from '@/lib/authHelper';
 import { db } from '@/lib/database';
 import { trackUserActivity } from '@/lib/user-tracking';
+import { trackUserPlayer } from '@/lib/userPlayerTracking';
 
 interface JoinSessionParams {
   params: Promise<{ sessionId: string }>;
@@ -133,17 +134,20 @@ export async function POST(request: NextRequest, context: JoinSessionParams) {
         sql: `INSERT INTO players (name, user_id) VALUES (?, ?)`,
         args: [player.name, player.userId]
       });
-      
-      const playerId = typeof playerResult.lastInsertRowid === 'bigint' 
-        ? Number(playerResult.lastInsertRowid) 
+
+      const playerId = typeof playerResult.lastInsertRowid === 'bigint'
+        ? Number(playerResult.lastInsertRowid)
         : playerResult.lastInsertRowid;
+
+      // Track player for autocomplete
+      await trackUserPlayer(player.userId, player.name);
 
       // 2. Associate player with session via session_player pivot
       await db.execute({
         sql: `INSERT INTO session_player (session_id, player_id, position) VALUES (?, ?, ?)`,
         args: [sessionId, playerId, player.position]
       });
-        
+
       insertedPlayers.push({
         id: playerId,
         name: player.name,

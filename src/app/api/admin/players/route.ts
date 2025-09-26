@@ -69,9 +69,9 @@ export async function GET(request: NextRequest) {
             LIMIT 1
           ) as favorite_game,
           -- Estimation simple du taux de victoire (à améliorer avec une vraie logique de victoire)
-          CASE 
+          CASE
             WHEN COUNT(DISTINCT gs.id) = 0 THEN 0
-            ELSE ROUND(RANDOM() * 100) -- Placeholder - à remplacer par une vraie logique
+            ELSE (p.id * 17 + 23) % 100 -- Placeholder pseudo-aléatoire stable basé sur l'ID
           END as win_rate,
           SUM(COALESCE(s.score, 0)) as total_score
         FROM players p

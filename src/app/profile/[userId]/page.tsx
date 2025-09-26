@@ -4,10 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams, useSearchParams } from 'next/navigation';
 import {
-  User, Calendar, Clock, Activity, LogIn,
-  Gamepad2, Trophy, ArrowLeft, RefreshCw, Shield
+  User, Clock, Activity, LogIn,
+  Gamepad2, Trophy, ArrowLeft, RefreshCw, Shield,
+  Plus, Edit2, Trash2, UserCheck
 } from 'lucide-react';
 import GameCard from '@/components/layout/GameCard';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 
 interface UserProfile {
   id: number;
@@ -44,20 +46,33 @@ interface ActivityHistory {
   related_data?: string;
 }
 
+interface ManagedPlayer {
+  id: number;
+  player_name: string;
+  games_played: number;
+  last_played: string;
+  created_at: string;
+}
+
 export default function UserProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [loginHistory, setLoginHistory] = useState<LoginHistory[]>([]);
   const [activityHistory, setActivityHistory] = useState<ActivityHistory[]>([]);
+  const [managedPlayers, setManagedPlayers] = useState<ManagedPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [isAdminView, setIsAdminView] = useState(false);
+  const [newPlayerName, setNewPlayerName] = useState('');
+  const [editingPlayer, setEditingPlayer] = useState<{ id: number; name: string } | null>(null);
+  const [addingPlayer, setAddingPlayer] = useState(false);
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
   const userId = params?.userId as string;
   const fromAdmin = searchParams?.get('from') === 'admin';
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const fetchProfile = useCallback(async () => {
     if (!userId) return;
@@ -90,6 +105,19 @@ export default function UserProfilePage() {
       setActivityHistory(data.activityHistory);
       setIsOwnProfile(data.isOwnProfile);
       setIsAdminView(data.isAdminView);
+
+      // Load managed players for own profile
+      if (data.isOwnProfile) {
+        try {
+          const playersResponse = await fetch('/api/user/players');
+          if (playersResponse.ok) {
+            const playersData = await playersResponse.json();
+            setManagedPlayers(playersData.players || []);
+          }
+        } catch (err) {
+          console.error('Error loading managed players:', err);
+        }
+      }
     } catch (err) {
       console.error('Erreur lors du chargement du profil:', err);
       setError('Erreur lors du chargement du profil');
@@ -151,6 +179,100 @@ export default function UserProfilePage() {
   const getBackLabel = () => {
     if (fromAdmin || isAdminView) return 'Retour à la liste des utilisateurs';
     return 'Retour au dashboard';
+  };
+
+  const handleAddPlayer = async () => {
+    if (!newPlayerName.trim()) return;
+
+    try {
+      const response = await fetch('/api/user/players', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerName: newPlayerName.trim() })
+      });
+
+      if (response.ok) {
+        setNewPlayerName('');
+        setAddingPlayer(false);
+        // Refresh players list
+        const playersResponse = await fetch('/api/user/players');
+        if (playersResponse.ok) {
+          const playersData = await playersResponse.json();
+          setManagedPlayers(playersData.players || []);
+        }
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Erreur lors de l&apos;ajout');
+      }
+    } catch (error) {
+      console.error('Error adding player:', error);
+      alert('Erreur lors de l&apos;ajout');
+    }
+  };
+
+  const handleEditPlayer = async (playerId: number) => {
+    if (!editingPlayer?.name.trim()) return;
+
+    try {
+      const response = await fetch('/api/user/players', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerId,
+          playerName: editingPlayer.name.trim()
+        })
+      });
+
+      if (response.ok) {
+        setEditingPlayer(null);
+        // Refresh players list
+        const playersResponse = await fetch('/api/user/players');
+        if (playersResponse.ok) {
+          const playersData = await playersResponse.json();
+          setManagedPlayers(playersData.players || []);
+        }
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Erreur lors de la modification');
+      }
+    } catch (error) {
+      console.error('Error editing player:', error);
+      alert('Erreur lors de la modification');
+    }
+  };
+
+  const handleDeletePlayer = async (playerId: number, playerName: string) => {
+    const confirmed = await confirm({
+      title: 'Supprimer le joueur',
+      message: `Êtes-vous sûr de vouloir supprimer "${playerName}" de votre liste ?`,
+      confirmLabel: 'Supprimer',
+      isDangerous: true
+    });
+
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch('/api/user/players', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId })
+      });
+
+      if (response.ok) {
+        // Refresh players list
+        const playersResponse = await fetch('/api/user/players');
+        if (playersResponse.ok) {
+          const playersData = await playersResponse.json();
+          setManagedPlayers(playersData.players || []);
+        }
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Erreur lors de la suppression');
+      }
+    } catch (error) {
+      console.error('Error deleting player:', error);
+      alert('Erreur lors de la suppression');
+    }
   };
 
   if (loading) {
@@ -373,6 +495,144 @@ export default function UserProfilePage() {
         </div>
       </GameCard>
 
+      {/* Player Management - Own Profile Only */}
+      {isOwnProfile && (
+        <GameCard>
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Mes joueurs
+              </h2>
+              {!addingPlayer && (
+                <button
+                  onClick={() => setAddingPlayer(true)}
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Ajouter
+                </button>
+              )}
+            </div>
+
+            <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
+              Gérez vos joueurs récurrents pour les retrouver facilement lors de la création de parties.
+            </p>
+
+            {addingPlayer && (
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={newPlayerName}
+                    onChange={(e) => setNewPlayerName(e.target.value)}
+                    placeholder="Nom du joueur..."
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddPlayer()}
+                  />
+                  <button
+                    onClick={handleAddPlayer}
+                    disabled={!newPlayerName.trim()}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Ajouter
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAddingPlayer(false);
+                      setNewPlayerName('');
+                    }}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {managedPlayers.length > 0 ? (
+              <div className="space-y-3">
+                {managedPlayers.map((player) => (
+                  <div
+                    key={player.id}
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                  >
+                    <UserCheck className="h-4 w-4 text-blue-500" />
+                    <div className="flex-1">
+                      {editingPlayer?.id === player.id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editingPlayer.name}
+                            onChange={(e) => setEditingPlayer({ ...editingPlayer, name: e.target.value })}
+                            className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                            onKeyPress={(e) => e.key === 'Enter' && handleEditPlayer(player.id)}
+                          />
+                          <button
+                            onClick={() => handleEditPlayer(player.id)}
+                            disabled={!editingPlayer.name.trim()}
+                            className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors disabled:opacity-50"
+                          >
+                            Sauver
+                          </button>
+                          <button
+                            onClick={() => setEditingPlayer(null)}
+                            className="px-2 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 transition-colors"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {player.player_name}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            {player.games_played > 0 ? (
+                              `${player.games_played} partie${player.games_played > 1 ? 's' : ''}`
+                            ) : (
+                              'Jamais utilisé'
+                            )}
+                            {player.games_played > 0 && (
+                              <> • Dernière: {formatDateTime(player.last_played)}</>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {editingPlayer?.id !== player.id && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setEditingPlayer({ id: player.id, name: player.player_name })}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                          title="Modifier"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeletePlayer(player.id, player.player_name)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <UserCheck className="mx-auto h-8 w-8 text-gray-400" />
+                <p className="mt-2 text-sm text-gray-500">Aucun joueur enregistré</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Les joueurs que vous créez en partie seront automatiquement ajoutés ici
+                </p>
+              </div>
+            )}
+          </div>
+        </GameCard>
+      )}
+
       {/* Login History - Admin View Only */}
       {isAdminView && (
         <GameCard>
@@ -434,6 +694,8 @@ export default function UserProfilePage() {
           </div>
         </GameCard>
       )}
+
+      <ConfirmDialog />
     </div>
   );
 }
