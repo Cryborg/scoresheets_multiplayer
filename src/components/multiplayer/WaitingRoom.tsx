@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Users, Play, Copy, Check, UserPlus, Crown, ArrowLeft } from 'lucide-react';
 import { Player } from '@/types/multiplayer';
+import { THEME } from '@/lib/theme';
 
 interface GameSession {
   id: number;
@@ -54,7 +55,7 @@ export default function WaitingRoom({ session, currentUserId, onStartGame, onBac
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className={`min-h-screen ${THEME.classes.pageBackground}`}>
       {/* Navigation Bar */}
       {onBack && (
         <nav className="bg-white dark:bg-gray-800 shadow">

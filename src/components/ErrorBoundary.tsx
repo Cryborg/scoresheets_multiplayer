@@ -2,6 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { THEME } from '@/lib/theme';
 
 interface Props {
   children: ReactNode;
@@ -66,7 +67,7 @@ class ErrorBoundary extends Component<Props, State> {
 
       // Default error UI
       return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className={`min-h-screen ${THEME.classes.pageBackground} flex items-center justify-center p-4`}>
           <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
             <div className="mb-4">
               <AlertTriangle className="h-12 w-12 text-red-500 mx-auto" />

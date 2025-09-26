@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { isAuthenticated } from '@/lib/authClient';
+import { THEME } from '@/lib/theme';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -29,7 +30,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   if (isChecking || !isAuth) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className={`min-h-screen ${THEME.classes.pageBackground} flex items-center justify-center`}>
         <div className="text-gray-500 dark:text-gray-400">Vérification...</div>
       </div>
     );

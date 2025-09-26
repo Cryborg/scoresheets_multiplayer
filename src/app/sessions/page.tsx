@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Users, Clock, Play, Trash2, Square, Calendar, RotateCcw, Loader2 } from 'lucide-react';
 import { authenticatedFetch, isAuthenticated } from '@/lib/authClient';
 import Button from '@/components/ui/Button';
+import { THEME } from '@/lib/theme';
 
 interface Session {
   id: number;
@@ -150,7 +151,7 @@ export default function SessionsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className={`min-h-screen ${THEME.classes.pageBackground} flex items-center justify-center`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p className="text-gray-600 dark:text-gray-400 mt-4">Chargement des parties...</p>
@@ -160,7 +161,7 @@ export default function SessionsPage() {
   }
 
   return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className={`min-h-screen ${THEME.classes.pageBackground}`}>
         {/* Header */}
         <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
           <div className="max-w-6xl mx-auto px-6 py-4">

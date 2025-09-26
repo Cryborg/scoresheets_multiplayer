@@ -1,6 +1,7 @@
 import { getGameComponent } from '@/lib/gameComponentLoader';
 import BackButton from '@/components/ui/BackButton';
 import LastPlayedGameTracker from '@/components/LastPlayedGameTracker';
+import { THEME } from '@/lib/theme';
 
 interface GameSessionPageProps {
   params: Promise<{ 
@@ -17,7 +18,7 @@ export default async function GameSessionPage({ params }: GameSessionPageProps) 
   
   if (!ScoreSheetComponent) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className={`min-h-screen ${THEME.classes.pageBackground}`}>
           {/* Navigation Bar */}
           <nav className="bg-white dark:bg-gray-800 shadow">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

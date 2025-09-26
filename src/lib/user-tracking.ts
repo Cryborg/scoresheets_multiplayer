@@ -66,7 +66,7 @@ export async function getUserActivityHistory(userId: number, limit = 50): Promis
     const result = await db.execute({
       sql: `SELECT
               uah.*,
-              s.session_name,
+              s.name as session_name,
               g.name as game_name
             FROM user_activity_history uah
             LEFT JOIN sessions s ON uah.related_id = s.id AND uah.activity_type IN ('game_created', 'game_joined', 'game_completed')

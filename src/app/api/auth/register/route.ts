@@ -3,10 +3,21 @@ import { createUser, getUserByEmail } from '@/lib/auth-db';
 import { checkRegistrationRateLimit, checkSuspiciousPatterns } from '@/lib/rateLimiting';
 import { validateCSRFToken } from '@/lib/csrf';
 import { sendWelcomeEmail } from '@/lib/email';
+import { getSetting } from '@/lib/settings';
 
 export async function POST(request: NextRequest) {
   try {
-    const { username, email, password, honeypot, csrfToken } = await request.json();
+    const body = await request.json();
+    const { username, email, password, honeypot, csrfToken } = body;
+
+    // Check if registration is allowed BEFORE other validations
+    const registrationAllowed = await getSetting('allowRegistration', true);
+    if (!registrationAllowed) {
+      return NextResponse.json(
+        { error: 'Les inscriptions sont actuellement désactivées' },
+        { status: 403 }
+      );
+    }
 
     // CSRF protection
     if (!validateCSRFToken(request, csrfToken)) {

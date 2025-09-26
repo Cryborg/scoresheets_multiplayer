@@ -167,7 +167,7 @@ describe.skip('/api/admin/dashboard', () => {
     const expectedQuery = `
       SELECT 
         gs.id,
-        gs.session_name,
+        gs.name as session_name,
         gs.status,
         gs.created_at,
         g.name as game_name,
@@ -175,7 +175,7 @@ describe.skip('/api/admin/dashboard', () => {
       FROM sessions gs
       JOIN games g ON gs.game_id = g.id
       LEFT JOIN players p ON gs.id = p.session_id
-      GROUP BY gs.id, gs.session_name, gs.status, gs.created_at, g.name
+      GROUP BY gs.id, gs.name, gs.status, gs.created_at, g.name
       ORDER BY gs.created_at DESC
       LIMIT 10
     `;

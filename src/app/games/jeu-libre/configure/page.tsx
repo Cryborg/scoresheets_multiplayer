@@ -7,6 +7,7 @@ import { ArrowLeft, Gamepad2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { authenticatedFetch } from '@/lib/authClient';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
+import { GamePageLayout } from '@/components/layout/PageLayout';
 
 export default function JeuLibreConfigurePage() {
   const router = useRouter();
@@ -81,9 +82,9 @@ export default function JeuLibreConfigurePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <GamePageLayout>
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 -mx-4 -mt-8 mb-8">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -405,6 +406,6 @@ export default function JeuLibreConfigurePage() {
           </p>
         </div>
       </div>
-    </div>
+    </GamePageLayout>
   );
 }

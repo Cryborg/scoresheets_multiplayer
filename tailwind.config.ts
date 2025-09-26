@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import { THEME } from "./src/lib/theme";
 
 export default {
   content: [
@@ -10,6 +11,16 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Override gray-900 to use our custom dark background
+        gray: {
+          900: THEME.colors.dark.background,
+        },
+        // Custom theme colors
+        'background-dark': THEME.colors.dark.background,
+        'background-card-dark': THEME.colors.dark.backgroundCard,
+        'background-sidebar-dark': THEME.colors.dark.backgroundSidebar,
+
+        // Keep existing shadcn colors
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

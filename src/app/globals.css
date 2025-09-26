@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #1f2937;
+  --background: 0 0% 100%;
+  --foreground: 210 17% 20%;
   --card: #ffffff;
   --card-foreground: #1f2937;
   --border: #e5e7eb;
@@ -21,9 +21,9 @@
 }
 
 .dark {
-  --background: #0f0f0f;
-  --foreground: #f8fafc;
-  --card: #1a1a1a;
+  --background: 0 0% 12%;
+  --foreground: 216 11% 97%;
+  --card: #3a3a3e;
   --card-foreground: #f1f5f9;
   --border: #2d2d2d;
   --input: #2d2d2d;
@@ -49,8 +49,8 @@
   
   /* Force dark mode styles */
   .dark body {
-    background: #0f0f0f;
-    color: #f8fafc;
+    background: var(--background);
+    color: var(--foreground);
   }
 }
 
@@ -69,6 +69,21 @@
 
 .rotate-y-180 {
   transform: rotateY(180deg);
+}
+
+/* Custom background colors - use CSS variables */
+@layer utilities {
+  .bg-background-dark {
+    background-color: var(--background);
+  }
+}
+
+/* Force dark theme background - use CSS variables */
+body.dark,
+.dark body,
+.dark .min-h-screen,
+.dark div[class*="min-h-screen"] {
+  background-color: var(--background) !important; /* Uses CSS variable from THEME */
 }
 
 /* Mobile UX Optimizations */

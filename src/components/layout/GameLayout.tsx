@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import BackButton from '@/components/ui/BackButton';
 import { ArrowLeft } from 'lucide-react';
+import { THEME } from '@/lib/theme';
 
 // Interface pour le mode classique
 interface ClassicLayoutProps {
@@ -48,7 +49,7 @@ export default function GameLayout(props: GameLayoutProps) {
     const { session, onLeaveSession, showRanking, rankingComponent, children } = props;
     
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className={`min-h-screen ${THEME.classes.pageBackground}`}>
         <nav className="bg-white dark:bg-gray-800 shadow">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
@@ -92,7 +93,7 @@ export default function GameLayout(props: GameLayoutProps) {
     const { title, subtitle, onBack, rightContent, children } = props;
     
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className={`min-h-screen ${THEME.classes.pageBackground}`}>
         <nav className="bg-white dark:bg-gray-800 shadow">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">

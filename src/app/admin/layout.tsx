@@ -4,17 +4,18 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import AdminGuard from '@/components/AdminGuard';
-import { 
-  Users, 
-  Settings, 
-  BarChart3, 
-  Gamepad2, 
-  Tags, 
+import {
+  Users,
+  Settings,
+  BarChart3,
+  Gamepad2,
+  Tags,
   Shield,
   Menu,
   X,
   Database
 } from 'lucide-react';
+import { THEME } from '@/lib/theme';
 
 const adminSections = [
   {
@@ -71,7 +72,7 @@ export default function AdminLayout({
 
   return (
       <AdminGuard>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 lg:flex">
+        <div className={`min-h-screen ${THEME.classes.pageBackground} lg:flex`}>
           {/* Mobile sidebar overlay */}
           {sidebarOpen && (
             <div 

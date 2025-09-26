@@ -7,6 +7,7 @@ import ScoreInput from '@/components/ui/ScoreInput';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { useErrorHandler } from '@/contexts/ErrorContext';
 import { Trophy, TrendingDown, Edit3, Dice6, Trash2 } from 'lucide-react';
+import { THEME } from '@/lib/theme';
 
 interface GenericScoreSheetProps {
   sessionId: string;
@@ -312,7 +313,7 @@ export default function GenericScoreSheet({ sessionId, gameSlug }: GenericScoreS
       error: error instanceof Error ? error.message : String(error)
     });
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className={`min-h-screen ${THEME.classes.pageBackground} flex items-center justify-center`}>
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Erreur de chargement</h1>
           <p className="text-gray-600 dark:text-gray-400 mb-4">Le jeu n&apos;a pas pu être chargé.</p>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { THEME } from '@/lib/theme';
 
 interface MaintenanceStatus {
   maintenanceMode: boolean;
@@ -54,7 +55,7 @@ export default function MaintenanceCheck({ children }: { children: React.ReactNo
   // Show loading or maintenance page while checking
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className={`min-h-screen ${THEME.classes.pageBackground} flex items-center justify-center`}>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
     );

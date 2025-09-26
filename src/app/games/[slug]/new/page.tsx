@@ -9,6 +9,7 @@ import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
 import GameSessionForm from '@/components/GameSessionForm';
 import { authenticatedFetch } from '@/lib/authClient';
 import { getGuestId } from '@/lib/guestAuth';
+import { GamePageLayout } from '@/components/layout/PageLayout';
 
 export default function NewGamePage() {
   const params = useParams();
@@ -92,12 +93,14 @@ export default function NewGamePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600 dark:text-gray-400 mt-4">Chargement du jeu...</p>
+      <GamePageLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="text-gray-600 dark:text-gray-400 mt-4">Chargement du jeu...</p>
+          </div>
         </div>
-      </div>
+      </GamePageLayout>
     );
   }
 
@@ -107,9 +110,9 @@ export default function NewGamePage() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <GamePageLayout>
         {/* Header */}
-        <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
+        <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 -mx-4 -mt-8 mb-8">
           <div className="max-w-7xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
@@ -147,6 +150,6 @@ export default function NewGamePage() {
             submitButtonText={`Commencer la partie de ${game.name}`}
           />
         </div>
-      </div>
+    </GamePageLayout>
   );
 }

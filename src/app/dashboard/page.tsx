@@ -15,6 +15,7 @@ import GameListView from '@/components/dashboard/GameListView';
 import { BRANDING } from '@/lib/branding';
 import { authenticatedFetch } from '@/lib/authClient';
 import { shouldShowGuestBanner, dismissGuestBanner } from '@/lib/guestBannerDismiss';
+import { THEME } from '@/lib/theme';
 
 export default function DashboardPage() {
   return (
@@ -210,7 +211,7 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
 
   return (
     <div>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className={`min-h-screen ${THEME.classes.pageBackground}`}>
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">

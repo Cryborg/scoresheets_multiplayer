@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { isAuthenticated } from '@/lib/authClient';
 import { useApiCall } from '@/hooks/useApiCall';
+import { THEME } from '@/lib/theme';
 
 interface AdminGuardProps {
   children: React.ReactNode;
@@ -47,7 +48,7 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
   if (isChecking || !isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className={`min-h-screen ${THEME.classes.pageBackground} flex items-center justify-center`}>
         <div className="text-gray-500 dark:text-gray-400">Vérification des droits administrateur...</div>
       </div>
     );

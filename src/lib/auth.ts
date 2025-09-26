@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { db } from '@/lib/database';
+import { getSetting } from '@/lib/settings';
 
 /**
  * Removes guest users that haven't been seen for more than 24 hours
  * Only runs once per day based on app_settings tracking
+ * Respects the autoCleanupOldSessions setting
  */
 export async function pruneInactiveGuestUsers(): Promise<void> {
   try {
+    // Check if automatic cleanup is enabled
+    const autoCleanupEnabled = await getSetting('autoCleanupOldSessions', true);
+    if (!autoCleanupEnabled) {
+      return; // Skip pruning if disabled
+    }
     // Check when last pruning occurred
     const lastPruneResult = await db.execute({
       sql: 'SELECT value FROM app_settings WHERE key = ?',

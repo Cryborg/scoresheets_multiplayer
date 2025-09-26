@@ -41,14 +41,14 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await post<{user: any}>('/api/auth/login', { email, password }, {
+      const response = await post<{user: unknown}>('/api/auth/login', { email, password }, {
         context: 'auth',
         suppressToast: true // On gère l'erreur localement avec setError
       });
 
       login(response.data.user);
       router.push('/dashboard');
-    } catch (error) {
+    } catch {
       // L'erreur est déjà loggée par useApiCall, on affiche juste le message local
       setError('Email ou mot de passe incorrect');
     } finally {

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { THEME } from '@/lib/theme';
 
 function FindSession() {
   const router = useRouter();
@@ -41,14 +42,14 @@ function FindSession() {
   if (isSearching) {
     const message = code ? `Recherche de la partie ${code}...` : 'Recherche de la partie...';
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className={`min-h-screen ${THEME.classes.pageBackground} flex items-center justify-center`}>
         <LoadingSpinner message={message} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+    <div className={`min-h-screen ${THEME.classes.pageBackground} flex items-center justify-center`}>
       <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">

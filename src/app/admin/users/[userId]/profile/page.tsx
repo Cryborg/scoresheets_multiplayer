@@ -231,7 +231,7 @@ export default function AdminUserProfilePage() {
               <div className="font-medium text-gray-900 dark:text-white">{user.id}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Nom d'utilisateur</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Nom d&apos;utilisateur</div>
               <div className="font-medium text-gray-900 dark:text-white">{user.username}</div>
             </div>
             <div>
@@ -240,7 +240,7 @@ export default function AdminUserProfilePage() {
             </div>
             {user.display_name && (
               <div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Nom d'affichage</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Nom d&apos;affichage</div>
                 <div className="font-medium text-gray-900 dark:text-white">{user.display_name}</div>
               </div>
             )}
@@ -265,7 +265,7 @@ export default function AdminUserProfilePage() {
         <GameCard>
           <div className="p-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Statistiques d'utilisation
+              Statistiques d&apos;utilisation
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="text-center">

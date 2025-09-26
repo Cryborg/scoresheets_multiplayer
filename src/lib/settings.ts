@@ -6,7 +6,7 @@ let cacheTimestamp = 0;
 const CACHE_DURATION = 60000; // 1 minute
 
 // Helper function to convert database value to proper type
-function convertValue(value: string, type: string): unknown {
+function convertValue(value: string, type: string | null): unknown {
   switch (type) {
     case 'boolean':
       return value === 'true';
@@ -14,6 +14,16 @@ function convertValue(value: string, type: string): unknown {
       return parseInt(value, 10);
     case 'json':
       return JSON.parse(value);
+    case null:
+    case undefined:
+      // If no type is specified, try to infer from value
+      if (value === 'true' || value === 'false') {
+        return value === 'true';
+      }
+      if (!isNaN(Number(value))) {
+        return parseInt(value, 10);
+      }
+      return value;
     default:
       return value;
   }

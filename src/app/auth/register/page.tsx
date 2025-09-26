@@ -27,21 +27,23 @@ export default function RegisterPage() {
     setMounted(true);
     // Check if user has guest sessions to migrate
     setHasGuestSessions(hasGuestSessionsToMigrate());
-    
-    // Get CSRF token
-    const fetchCsrfToken = async () => {
+
+    // Check if registration is allowed and get CSRF token
+    const fetchSettings = async () => {
       try {
+        // Check registration status by trying to get CSRF token
         const response = await get<{token: string}>('/api/auth/csrf-token', {
           context: 'auth',
           suppressToast: true
         });
         setCsrfToken(response.data.token);
-      } catch (err) {
-        // Silent fail for CSRF token - not critical for user experience
+      } catch {
+        // If we can't get CSRF token, registration might be disabled
+        // We'll check this in the actual registration attempt
       }
     };
-    fetchCsrfToken();
-  }, []);
+    fetchSettings();
+  }, [get]);
 
   if (!mounted) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -82,15 +84,20 @@ export default function RegisterPage() {
 
           // Migration will happen automatically via the auth token
           await migrateGuestSessions(loginResponse.data.token || '');
-        } catch (migrationError) {
+        } catch {
           // Migration failed but account was created - continue
         }
       }
 
       router.push('/dashboard?message=Compte créé avec succès');
-    } catch (error) {
-      // L'erreur est loggée automatiquement, on affiche un message générique
-      setError('Erreur lors de la création du compte');
+    } catch (error: unknown) {
+      // Gestion spécifique de l'erreur d'inscription désactivée
+      const err = error as { status?: number; data?: { error?: string } };
+      if (err?.status === 403 && err?.data?.error?.includes('désactivées')) {
+        setError('Les inscriptions sont temporairement désactivées. Contactez un administrateur.');
+      } else {
+        setError('Erreur lors de la création du compte');
+      }
     } finally {
       setLoading(false);
     }

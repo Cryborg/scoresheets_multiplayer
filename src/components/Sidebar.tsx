@@ -81,17 +81,6 @@ export default function Sidebar({ isOpen, onClose, games, onLogout, isAuthentica
               </Link>
             )}
 
-            {/* Mon Profil - seulement pour les utilisateurs connectés */}
-            {isAuthenticated && (
-              <Link
-                href="/profile"
-                onClick={onClose}
-                className="flex items-center px-4 py-2 mb-2 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
-              >
-                <User className="h-5 w-5 mr-3" />
-                Mon Profil
-              </Link>
-            )}
 
             {/* Jeu libre - seulement pour les utilisateurs connectés */}
             {isAuthenticated && jeuLibre && (
@@ -125,7 +114,19 @@ export default function Sidebar({ isOpen, onClose, games, onLogout, isAuthentica
                 Administration
               </Link>
             )}
-            
+
+            {/* Mon Profil - seulement pour les utilisateurs connectés */}
+            {isAuthenticated && (
+              <Link
+                href="/profile"
+                onClick={onClose}
+                className="flex items-center w-full px-4 py-2 text-gray-900 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg"
+              >
+                <User className="h-5 w-5 mr-3" />
+                Mon Profil
+              </Link>
+            )}
+
             <button
               onClick={() => {
                 onLogout();

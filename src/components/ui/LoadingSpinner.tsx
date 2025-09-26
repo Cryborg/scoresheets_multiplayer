@@ -1,6 +1,7 @@
 'use client';
 
 import { LOADING_MESSAGES } from '@/lib/constants';
+import { THEME } from '@/lib/theme';
 
 interface LoadingSpinnerProps {
   message?: string;
@@ -9,7 +10,7 @@ interface LoadingSpinnerProps {
 
 export default function LoadingSpinner({ 
   message = LOADING_MESSAGES.DEFAULT, 
-  className = "min-h-screen bg-gray-50 dark:bg-gray-900" 
+  className = `min-h-screen ${THEME.classes.pageBackground}` 
 }: LoadingSpinnerProps) {
   return (
     <div className={`${className} flex items-center justify-center`}>

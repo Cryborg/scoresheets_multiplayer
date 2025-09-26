@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { isAuthenticated } from '@/lib/authClient';
+import { THEME } from '@/lib/theme';
 
 interface AuthStatusProps {
   children: (isAuthenticated: boolean) => React.ReactNode;
@@ -29,7 +30,7 @@ export default function AuthStatus({ children }: AuthStatusProps) {
   // Avoid hydration mismatch by showing loading state until mounted
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className={`min-h-screen ${THEME.classes.pageBackground} flex items-center justify-center`}>
         <div className="text-gray-500 dark:text-gray-400">Chargement...</div>
       </div>
     );

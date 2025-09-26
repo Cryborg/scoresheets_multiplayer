@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import GameCard from '@/components/layout/GameCard';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
+import { GamePageLayout } from '@/components/layout/PageLayout';
 
 interface UserProfile {
   id: number;
@@ -316,7 +317,8 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <GamePageLayout>
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -373,7 +375,7 @@ export default function UserProfilePage() {
               </div>
             )}
             <div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Nom d'utilisateur</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Nom d&apos;utilisateur</div>
               <div className="font-medium text-gray-900 dark:text-white">{user.username}</div>
             </div>
             <div>
@@ -382,7 +384,7 @@ export default function UserProfilePage() {
             </div>
             {user.display_name && (
               <div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Nom d'affichage</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Nom d&apos;affichage</div>
                 <div className="font-medium text-gray-900 dark:text-white">{user.display_name}</div>
               </div>
             )}
@@ -696,6 +698,7 @@ export default function UserProfilePage() {
       )}
 
       <ConfirmDialog />
-    </div>
+      </div>
+    </GamePageLayout>
   );
 }
