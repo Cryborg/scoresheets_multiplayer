@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserId } from '@/lib/authHelper';
 import { db } from '@/lib/database';
+import { trackUserActivity } from '@/lib/user-tracking';
 
 interface JoinSessionParams {
   params: Promise<{ sessionId: string }>;
@@ -178,6 +179,13 @@ export async function POST(request: NextRequest, context: JoinSessionParams) {
         )
       ]
     });
+
+    // Track game join activity (non-blocking)
+    trackUserActivity(userId, 'game_joined', Number(sessionId), {
+      game_name: session.game_name,
+      session_name: session.session_name,
+      player_names: insertedPlayers.map(p => p.name)
+    }).catch(console.error);
 
     return NextResponse.json({
       success: true,

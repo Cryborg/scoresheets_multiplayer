@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, ensureDatabaseExists, generateUniqueSessionCode } from '@/lib/database';
 import { getUserId } from '@/lib/authHelper';
+import { trackUserActivity } from '@/lib/user-tracking';
 
 export async function POST(
   request: NextRequest,
@@ -249,6 +250,13 @@ export async function POST(
         args: [position, sessionId]
       });
     }
+
+    // Track game creation activity (non-blocking)
+    trackUserActivity(userId, 'game_created', sessionId, {
+      game_name: game.name,
+      session_name: sessionName,
+      player_count: position
+    }).catch(console.error);
 
     return NextResponse.json({
       message: 'Partie créée avec succès',

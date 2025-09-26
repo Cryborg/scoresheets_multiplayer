@@ -362,6 +362,32 @@ async function createTables(): Promise<void> {
     )
   `);
 
+  // User activity history - login tracking
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS user_login_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      ip_address TEXT,
+      user_agent TEXT,
+      login_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      logout_at DATETIME,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  `);
+
+  // User activity history - games created
+  await tursoClient.execute(`
+    CREATE TABLE IF NOT EXISTS user_activity_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      activity_type TEXT NOT NULL, -- 'game_created', 'game_joined', 'game_completed'
+      related_id INTEGER, -- session_id for game activities
+      related_data TEXT, -- JSON with additional data
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    )
+  `);
+
   // Create indexes for performance optimization
   console.log('Creating database indexes for optimal performance...');
   
@@ -399,6 +425,13 @@ async function createTables(): Promise<void> {
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_game_activity_user ON user_game_activity (user_id)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_game_activity_last_opened ON user_game_activity (user_id, last_opened_at DESC)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_game_activity_game ON user_game_activity (game_slug)`); // NEW: For popular games
+
+  // User history indexes
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_login_history_user ON user_login_history (user_id)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_login_history_date ON user_login_history (login_at DESC)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_activity_history_user ON user_activity_history (user_id)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_activity_history_type ON user_activity_history (activity_type)`);
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_activity_history_date ON user_activity_history (created_at DESC)`)
   
   // Games catalog indexes
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_games_slug ON games (slug)`); // NEW: Critical for game lookup

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateUser } from '@/lib/auth-db';
 import { db } from '@/lib/database';
+import { trackUserLogin } from '@/lib/user-tracking';
 import jwt from 'jsonwebtoken';
 // JWT_SECRET accessed directly from env for security
 
@@ -34,6 +35,11 @@ export async function POST(request: NextRequest) {
       // Ignore error if last_seen column doesn't exist yet (migration pending)
       console.log('Note: Could not update last_seen (column may not exist yet)');
     }
+
+    // Track login (non-blocking)
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined;
+    const userAgent = request.headers.get('user-agent') || undefined;
+    trackUserLogin(user.id, ipAddress || undefined, userAgent || undefined).catch(console.error);
 
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
