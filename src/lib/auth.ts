@@ -1,5 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import { db } from '@/lib/database';
+
+/**
+ * Removes guest users that haven't been seen for more than 24 hours
+ * Only runs once per day based on app_settings tracking
+ */
+export async function pruneInactiveGuestUsers(): Promise<void> {
+  try {
+    // Check when last pruning occurred
+    const lastPruneResult = await db.execute({
+      sql: 'SELECT value FROM app_settings WHERE key = ?',
+      args: ['last_guest_prune']
+    });
+
+    const now = new Date();
+    const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    if (lastPruneResult.rows.length > 0) {
+      const lastPruneDate = lastPruneResult.rows[0].value as string;
+      // Already pruned today, skip
+      if (lastPruneDate === today) {
+        return;
+      }
+    }
+
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    // Delete guest users not seen in 24 hours
+    const result = await db.execute({
+      sql: `DELETE FROM users
+            WHERE is_guest = 1
+            AND (last_seen IS NULL OR last_seen < ?)`,
+      args: [twentyFourHoursAgo]
+    });
+
+    // Update last prune date
+    if (lastPruneResult.rows.length > 0) {
+      await db.execute({
+        sql: 'UPDATE app_settings SET value = ?, updated_at = ? WHERE key = ?',
+        args: [today, now.toISOString(), 'last_guest_prune']
+      });
+    } else {
+      await db.execute({
+        sql: 'INSERT INTO app_settings (key, value, updated_at) VALUES (?, ?, ?)',
+        args: ['last_guest_prune', today, now.toISOString()]
+      });
+    }
+
+    if (result.rowsAffected && result.rowsAffected > 0) {
+      console.log(`✅ Pruned ${result.rowsAffected} inactive guest users`);
+    }
+  } catch (error) {
+    console.error('Error pruning inactive guest users:', error);
+  }
+}
 
 /**
  * Extracts and validates the user ID from the JWT token in the request cookies

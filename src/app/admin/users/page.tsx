@@ -92,20 +92,22 @@ export default function UsersPage() {
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatDate = (dateString: string | null) => {
+  const formatDateTime = (dateString: string | null) => {
     if (!dateString) {
       return 'Jamais';
     }
-    
+
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
       return 'Jamais';
     }
-    
+
     return date.toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -207,13 +209,13 @@ export default function UsersPage() {
                     <td className="p-4">
                       <div className="flex items-center gap-1 text-gray-900 dark:text-white">
                         <Calendar className="h-4 w-4 text-gray-400" />
-                        {formatDate(user.created_at)}
+                        {formatDateTime(user.created_at)}
                       </div>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-1 text-gray-900 dark:text-white">
                         <Clock className="h-4 w-4 text-gray-400" />
-                        {formatDate(user.last_seen || null)}
+                        {formatDateTime(user.last_seen || null)}
                       </div>
                     </td>
                     <td className="p-4">

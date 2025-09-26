@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUserId } from '@/lib/auth';
+import { getAuthenticatedUserId, pruneInactiveGuestUsers } from '@/lib/auth';
 import { db } from '@/lib/database';
 import bcrypt from 'bcryptjs';
 
@@ -19,13 +19,17 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
-    
+
     if (!(await isUserAdmin(userId))) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
+    // Run pruning of inactive guest users (once per day, non-blocking)
+    pruneInactiveGuestUsers().catch(console.error);
+
+    // Filter out guest users from admin list
     const result = await db.execute({
-      sql: 'SELECT id, username, email, is_admin, is_blocked, created_at, last_seen, display_name FROM users ORDER BY created_at DESC',
+      sql: 'SELECT id, username, email, is_admin, is_blocked, created_at, last_seen, display_name, is_guest FROM users WHERE is_guest = 0 OR is_guest IS NULL ORDER BY created_at DESC',
       args: []
     });
 
