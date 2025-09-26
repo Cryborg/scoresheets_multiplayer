@@ -38,6 +38,12 @@ export default function HomePage() {
 
     setIsAuthenticated(!!token);
     checkMaintenance();
+
+    // Redirect to dashboard if already authenticated
+    if (token) {
+      router.push('/dashboard');
+      return;
+    }
   }, [router]);
 
   const handlePlayAsGuest = () => {

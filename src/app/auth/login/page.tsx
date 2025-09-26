@@ -61,7 +61,7 @@ export default function LoginPage() {
       {/* Back Button */}
       <div className="absolute top-6 left-6 z-10">
         <Link
-          href="/"
+          href="/dashboard"
           className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl border border-gray-200/50 dark:border-gray-700/50 hover:shadow-lg transition-all duration-200 text-gray-700 dark:text-gray-300"
         >
           <ArrowLeft className="h-4 w-4" />

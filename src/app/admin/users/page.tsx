@@ -42,7 +42,7 @@ export default function UsersPage() {
       }
       
       if (response.status === 403) {
-        router.push('/');
+        router.push('/dashboard');
         return;
       }
 
@@ -50,7 +50,7 @@ export default function UsersPage() {
       setUsers(data.users || []);
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
-      router.push('/');
+      router.push('/dashboard');
     } finally {
       setLoading(false);
     }
