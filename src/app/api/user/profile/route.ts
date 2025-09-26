@@ -10,9 +10,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    // Get user info
+    // Get user info and check if it's a guest
     const userResult = await db.execute({
-      sql: 'SELECT id, username, email, display_name, created_at, last_seen, is_admin FROM users WHERE id = ?',
+      sql: 'SELECT id, username, email, display_name, created_at, last_seen, is_admin, is_guest FROM users WHERE id = ?',
       args: [userId]
     });
 
@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
     }
 
     const user = userResult.rows[0];
+
+    // Block guest users from accessing profile
+    if (user.is_guest === 1) {
+      return NextResponse.json({ error: 'Les profils ne sont pas disponibles pour les invités' }, { status: 403 });
+    }
 
     // Get statistics
     const statistics = await getUserStatistics(userId);

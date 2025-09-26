@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Lock, Unlock, Trash2, KeyRound, Search, 
-  User, Calendar, Clock, ArrowLeft
+import Link from 'next/link';
+import {
+  Lock, Unlock, Trash2, KeyRound, Search,
+  User, Calendar, Clock, ArrowLeft, ExternalLink
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import UserActionModal from '@/components/admin/UserActionModal';
@@ -180,7 +181,14 @@ export default function UsersPage() {
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-gray-400" />
                         <div>
-                          <div className="font-medium text-gray-900 dark:text-white">{user.username}</div>
+                          <Link
+                            href={`/profile/${user.id}`}
+                            className="font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline flex items-center gap-1"
+                            title={`Voir le profil de ${user.username}`}
+                          >
+                            {user.username}
+                            <ExternalLink className="h-3 w-3" />
+                          </Link>
                           {user.display_name && (
                             <div className="text-sm text-gray-600 dark:text-gray-400">{user.display_name}</div>
                           )}
