@@ -287,7 +287,7 @@ export default function UserProfilePage() {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
               Statistiques
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {statistics.totalGamesCreated}
@@ -306,18 +306,22 @@ export default function UserProfilePage() {
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Parties terminées</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                  {statistics.totalLogins}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Connexions</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-medium text-gray-900 dark:text-white">
-                  {formatDateTime(statistics.lastLogin)}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Dernière connexion</div>
-              </div>
+              {isAdminView && (
+                <>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                      {statistics.totalLogins}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Connexions</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {formatDateTime(statistics.lastLogin)}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Dernière connexion</div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </GameCard>
@@ -369,73 +373,67 @@ export default function UserProfilePage() {
         </div>
       </GameCard>
 
-      {/* Login History */}
-      <GameCard>
-        <div className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Historique des connexions {isAdminView && '(20 dernières)'}
-          </h2>
-          {loginHistory.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-600">
-                    <th className="text-left p-2 text-gray-700 dark:text-gray-300 font-medium">
-                      Date de connexion
-                    </th>
-                    {isAdminView && (
-                      <>
-                        <th className="text-left p-2 text-gray-700 dark:text-gray-300 font-medium">
-                          Adresse IP
-                        </th>
-                        <th className="text-left p-2 text-gray-700 dark:text-gray-300 font-medium">
-                          Navigateur
-                        </th>
-                      </>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {loginHistory.map((login) => (
-                    <tr
-                      key={login.id}
-                      className="border-b border-gray-200 dark:border-gray-600"
-                    >
-                      <td className="p-2 text-gray-900 dark:text-white">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-gray-400" />
-                          {formatDateTime(login.login_at)}
-                        </div>
-                      </td>
-                      {isAdminView && (
-                        <>
-                          <td className="p-2 text-gray-600 dark:text-gray-400">
-                            {login.ip_address || 'Non disponible'}
-                          </td>
-                          <td className="p-2 text-gray-600 dark:text-gray-400 text-xs">
-                            {login.user_agent ? (
-                              <div className="max-w-xs truncate" title={login.user_agent}>
-                                {login.user_agent}
-                              </div>
-                            ) : (
-                              'Non disponible'
-                            )}
-                          </td>
-                        </>
-                      )}
+      {/* Login History - Admin View Only */}
+      {isAdminView && (
+        <GameCard>
+          <div className="p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Historique des connexions (20 dernières)
+            </h2>
+            {loginHistory.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-600">
+                      <th className="text-left p-2 text-gray-700 dark:text-gray-300 font-medium">
+                        Date de connexion
+                      </th>
+                      <th className="text-left p-2 text-gray-700 dark:text-gray-300 font-medium">
+                        Adresse IP
+                      </th>
+                      <th className="text-left p-2 text-gray-700 dark:text-gray-300 font-medium">
+                        Navigateur
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <LogIn className="mx-auto h-8 w-8 text-gray-400" />
-              <p className="mt-2 text-sm text-gray-500">Aucune connexion enregistrée</p>
-            </div>
-          )}
-        </div>
-      </GameCard>
+                  </thead>
+                  <tbody>
+                    {loginHistory.map((login) => (
+                      <tr
+                        key={login.id}
+                        className="border-b border-gray-200 dark:border-gray-600"
+                      >
+                        <td className="p-2 text-gray-900 dark:text-white">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-gray-400" />
+                            {formatDateTime(login.login_at)}
+                          </div>
+                        </td>
+                        <td className="p-2 text-gray-600 dark:text-gray-400">
+                          {login.ip_address || 'Non disponible'}
+                        </td>
+                        <td className="p-2 text-gray-600 dark:text-gray-400 text-xs">
+                          {login.user_agent ? (
+                            <div className="max-w-xs truncate" title={login.user_agent}>
+                              {login.user_agent}
+                            </div>
+                          ) : (
+                            'Non disponible'
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <LogIn className="mx-auto h-8 w-8 text-gray-400" />
+                <p className="mt-2 text-sm text-gray-500">Aucune connexion enregistrée</p>
+              </div>
+            )}
+          </div>
+        </GameCard>
+      )}
     </div>
   );
 }
