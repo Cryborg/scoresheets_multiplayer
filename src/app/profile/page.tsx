@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   User, Calendar, Clock, Activity, LogIn,
-  GameController2, Trophy, ArrowLeft, RefreshCw
+  Gamepad2, Trophy, ArrowLeft, RefreshCw
 } from 'lucide-react';
 import GameCard from '@/components/layout/GameCard';
 
@@ -107,7 +107,7 @@ export default function ProfilePage() {
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'game_created':
-        return <GameController2 className="h-4 w-4 text-blue-500" />;
+        return <Gamepad2 className="h-4 w-4 text-blue-500" />;
       case 'game_joined':
         return <LogIn className="h-4 w-4 text-green-500" />;
       case 'game_completed':
