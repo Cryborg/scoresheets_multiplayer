@@ -12,7 +12,6 @@ interface PlayerStats {
   games_played: number;
   last_played: string;
   favorite_game: string | null;
-  win_rate: number;
   total_score: number;
 }
 
@@ -20,7 +19,7 @@ export default function PlayersPage() {
   const [players, setPlayers] = useState<PlayerStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'games_played' | 'last_played' | 'win_rate'>('games_played');
+  const [sortBy, setSortBy] = useState<'games_played' | 'last_played' | 'total_score'>('games_played');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const fetchPlayers = useCallback(async () => {
@@ -175,8 +174,8 @@ export default function PlayersPage() {
               <option value="games_played_asc">Parties jouées (↑)</option>
               <option value="last_played_desc">Dernière partie (↓)</option>
               <option value="last_played_asc">Dernière partie (↑)</option>
-              <option value="win_rate_desc">Taux de victoire (↓)</option>
-              <option value="win_rate_asc">Taux de victoire (↑)</option>
+              <option value="total_score_desc">Score total (↓)</option>
+              <option value="total_score_asc">Score total (↑)</option>
             </select>
           </div>
         </div>
@@ -204,12 +203,6 @@ export default function PlayersPage() {
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Jeu préféré
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-300"
-                      onClick={() => handleSort('win_rate')}
-                    >
-                      Taux de victoire {sortBy === 'win_rate' && (sortOrder === 'desc' ? '↓' : '↑')}
                     </th>
                     <th 
                       className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:text-gray-700 dark:hover:text-gray-300"
@@ -253,19 +246,6 @@ export default function PlayersPage() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                         {player.favorite_game || '-'}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center">
-                          <div className="text-sm text-gray-900 dark:text-white">
-                            {Math.round(player.win_rate)}%
-                          </div>
-                          <div className="ml-2 w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div 
-                              className="bg-green-500 h-2 rounded-full" 
-                              style={{ width: `${Math.min(player.win_rate, 100)}%` }}
-                            />
-                          </div>
-                        </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                         {new Date(player.last_played).toLocaleDateString('fr-FR')}

@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     // Validation des paramètres de tri
-    const validSortFields = ['games_played', 'last_played', 'win_rate'];
+    const validSortFields = ['games_played', 'last_played', 'total_score'];
     const validSortOrders = ['asc', 'desc'];
     
     if (!validSortFields.includes(sortBy) || !validSortOrders.includes(sortOrder)) {
@@ -68,11 +68,6 @@ export async function GET(request: NextRequest) {
             ORDER BY COUNT(*) DESC 
             LIMIT 1
           ) as favorite_game,
-          -- Estimation simple du taux de victoire (à améliorer avec une vraie logique de victoire)
-          CASE
-            WHEN COUNT(DISTINCT gs.id) = 0 THEN 0
-            ELSE (p.id * 17 + 23) % 100 -- Placeholder pseudo-aléatoire stable basé sur l'ID
-          END as win_rate,
           SUM(COALESCE(s.score, 0)) as total_score
         FROM players p
         LEFT JOIN users u ON p.user_id = u.id
@@ -83,12 +78,12 @@ export async function GET(request: NextRequest) {
         HAVING games_played > 0
       )
       SELECT * FROM player_stats
-      ORDER BY 
-        CASE 
-          WHEN ? = 'games_played' AND ? = 'desc' THEN games_played 
+      ORDER BY
+        CASE
+          WHEN ? = 'games_played' AND ? = 'desc' THEN games_played
           WHEN ? = 'games_played' AND ? = 'asc' THEN -games_played
-          WHEN ? = 'win_rate' AND ? = 'desc' THEN win_rate
-          WHEN ? = 'win_rate' AND ? = 'asc' THEN -win_rate
+          WHEN ? = 'total_score' AND ? = 'desc' THEN total_score
+          WHEN ? = 'total_score' AND ? = 'asc' THEN -total_score
           WHEN ? = 'last_played' AND ? = 'desc' THEN last_played
           WHEN ? = 'last_played' AND ? = 'asc' THEN -last_played
           ELSE games_played
@@ -99,9 +94,9 @@ export async function GET(request: NextRequest) {
       sql: playersQuery,
       args: [
         sortBy, sortOrder, // pour games_played desc
-        sortBy, sortOrder, // pour games_played asc  
-        sortBy, sortOrder, // pour win_rate desc
-        sortBy, sortOrder, // pour win_rate asc
+        sortBy, sortOrder, // pour games_played asc
+        sortBy, sortOrder, // pour total_score desc
+        sortBy, sortOrder, // pour total_score asc
         sortBy, sortOrder, // pour last_played desc
         sortBy, sortOrder  // pour last_played asc
       ]
@@ -117,7 +112,6 @@ export async function GET(request: NextRequest) {
         games_played: row.games_played,
         last_played: row.last_played,
         favorite_game: row.favorite_game,
-        win_rate: row.win_rate || 0,
         total_score: row.total_score || 0
       }))
     });
