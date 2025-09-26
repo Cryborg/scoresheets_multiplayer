@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import {
   User, Calendar, Clock, Activity, LogIn,
   Gamepad2, Trophy, ArrowLeft, RefreshCw, Shield
@@ -55,7 +55,9 @@ export default function UserProfilePage() {
   const [isAdminView, setIsAdminView] = useState(false);
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const userId = params?.userId as string;
+  const fromAdmin = searchParams?.get('from') === 'admin';
 
   const fetchProfile = useCallback(async () => {
     if (!userId) return;
@@ -142,12 +144,12 @@ export default function UserProfilePage() {
   };
 
   const getBackUrl = () => {
-    if (isAdminView) return '/admin/users';
-    return '/';
+    if (fromAdmin || isAdminView) return '/admin/users';
+    return '/dashboard';
   };
 
   const getBackLabel = () => {
-    if (isAdminView) return 'Retour à la liste des utilisateurs';
+    if (fromAdmin || isAdminView) return 'Retour à la liste des utilisateurs';
     return 'Retour au dashboard';
   };
 

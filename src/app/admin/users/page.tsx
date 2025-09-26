@@ -182,7 +182,7 @@ export default function UsersPage() {
                         <User className="h-4 w-4 text-gray-400" />
                         <div>
                           <Link
-                            href={`/profile/${user.id}`}
+                            href={`/profile/${user.id}?from=admin`}
                             className="font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline flex items-center gap-1"
                             title={`Voir le profil de ${user.username}`}
                           >
