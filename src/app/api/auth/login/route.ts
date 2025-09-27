@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 // JWT_SECRET accessed directly from env for security
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now(); // Performance timing
   try {
     const { email, password } = await request.json();
 
@@ -16,13 +17,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const authStartTime = Date.now();
     const user = await authenticateUser({ email, password });
-    
+    const authDuration = Date.now() - authStartTime;
+
     if (!user) {
       return NextResponse.json(
         { error: 'Email ou mot de passe incorrect' },
         { status: 401 }
       );
+    }
+
+    // Performance logging
+    if (process.env.NODE_ENV === 'production') {
+      console.log(`🔐 Login performance: auth=${authDuration}ms`);
     }
 
     // Update last_seen timestamp (handle gracefully if column doesn't exist yet)
@@ -36,10 +44,14 @@ export async function POST(request: NextRequest) {
       console.log('Note: Could not update last_seen (column may not exist yet)');
     }
 
-    // Track login (non-blocking)
+    // Track login (truly non-blocking with setImmediate)
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined;
     const userAgent = request.headers.get('user-agent') || undefined;
-    trackUserLogin(user.id, ipAddress || undefined, userAgent || undefined).catch(console.error);
+
+    // Execute in next tick to ensure it doesn't block response
+    setImmediate(() => {
+      trackUserLogin(user.id, ipAddress || undefined, userAgent || undefined).catch(console.error);
+    });
 
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
@@ -78,6 +90,12 @@ export async function POST(request: NextRequest) {
       maxAge: 7 * 24 * 60 * 60,
       path: '/'
     });
+
+    // Final performance log
+    const totalDuration = Date.now() - startTime;
+    if (process.env.NODE_ENV === 'production') {
+      console.log(`🔐 Login completed in ${totalDuration}ms (auth: ${authDuration}ms)`);
+    }
 
     return response;
   } catch (error) {

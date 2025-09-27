@@ -15,8 +15,9 @@ interface User {
 
 export async function authenticateUser({ email, password }: AuthCredentials): Promise<User | null> {
   try {
-    // Initialize database if needed
-    await initializeDatabase();
+    // PERFORMANCE: Database should already be initialized at app start
+    // Don't reinitialize on every login call
+    // await initializeDatabase();
     
     const result = await db.execute({
       sql: 'SELECT * FROM users WHERE email = ?',
@@ -57,7 +58,8 @@ export async function authenticateUser({ email, password }: AuthCredentials): Pr
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   try {
-    await initializeDatabase();
+    // PERFORMANCE: Database should already be initialized
+    // await initializeDatabase();
     
     const result = await db.execute({
       sql: 'SELECT * FROM users WHERE email = ?',
@@ -92,7 +94,8 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 export async function createUser({ username, email, password }: { username: string; email: string; password: string }): Promise<User> {
   try {
-    await initializeDatabase();
+    // PERFORMANCE: Database should already be initialized
+    // await initializeDatabase();
     
     const passwordHash = await bcrypt.hash(password, 10);
     
