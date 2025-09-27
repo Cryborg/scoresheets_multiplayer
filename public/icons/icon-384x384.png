@@ -1,0 +1,24 @@
+<svg width="384" height="384" viewBox="0 0 384 384" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="384" height="384" rx="76.80000000000001" fill="url(#bg)"/>
+
+  <!-- Sheet icon -->
+  <rect x="76.80000000000001" y="57.599999999999994" width="230.39999999999998" height="268.79999999999995" rx="19.200000000000003" fill="white" opacity="0.9"/>
+
+  <!-- Lines on sheet -->
+  <line x1="115.19999999999999" y1="134.39999999999998" x2="268.79999999999995" y2="134.39999999999998" stroke="#3b82f6" stroke-width="7.68"/>
+  <line x1="115.19999999999999" y1="192" x2="268.79999999999995" y2="192" stroke="#3b82f6" stroke-width="7.68"/>
+  <line x1="115.19999999999999" y1="249.60000000000002" x2="268.79999999999995" y2="249.60000000000002" stroke="#3b82f6" stroke-width="7.68"/>
+
+  <!-- Exclamation mark (Oh!) -->
+  <circle cx="326.4" cy="96" r="38.400000000000006" fill="#fbbf24"/>
+  <rect x="314.88" y="57.599999999999994" width="23.04" height="46.08" rx="11.52" fill="white"/>
+  <circle cx="326.4" cy="122.88" r="7.68" fill="white"/>
+</svg>
