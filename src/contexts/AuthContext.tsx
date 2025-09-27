@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useApiCall } from '@/hooks/useApiCall';
+import { syncService } from '@/lib/sync-service';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 interface User {
   id: number;
@@ -23,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { get } = useApiCall();
+  const { isOnline } = useNetworkStatus();
 
   const checkAuthStatus = useCallback(async () => {
     try {
@@ -42,6 +45,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     checkAuthStatus();
   }, [checkAuthStatus]);
+
+  // Gestion du service de synchronisation
+  useEffect(() => {
+    if (isOnline && user) {
+      // Démarre la sync seulement si l'utilisateur est connecté et en ligne
+      syncService.start();
+    } else {
+      // Arrête la sync si hors ligne ou non connecté
+      syncService.stop();
+    }
+
+    // Cleanup à la destruction du contexte
+    return () => {
+      syncService.stop();
+    };
+  }, [isOnline, user]);
 
   const login = (userData: User) => {
     setUser(userData);

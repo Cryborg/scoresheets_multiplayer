@@ -10,6 +10,8 @@ import { ErrorProvider } from "@/contexts/ErrorContext";
 import ToastProviderReactHot from "@/components/providers/ToastProvider";
 import MaintenanceCheck from "@/components/MaintenanceCheck";
 import CookieConsent from "@/components/CookieConsent";
+import PWAInit from "@/components/PWAInit";
+import OfflineIndicator from "@/components/offline/OfflineIndicator";
 import { BRANDING } from "@/lib/branding";
 
 const geistSans = Geist({
@@ -25,12 +27,35 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: BRANDING.fullTitle,
   description: BRANDING.description.full,
+  manifest: '/manifest.json',
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
       { url: '/favicon.svg', type: 'image/x-icon' }
     ],
+    apple: [
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' }
+    ]
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: BRANDING.name
+  },
+  formatDetection: {
+    telephone: false
+  },
+  openGraph: {
+    type: 'website',
+    siteName: BRANDING.name,
+    title: BRANDING.fullTitle,
+    description: BRANDING.description.full
+  },
+  twitter: {
+    card: 'summary',
+    title: BRANDING.fullTitle,
+    description: BRANDING.description.full
+  }
 };
 
 export const viewport = {
@@ -57,10 +82,12 @@ export default function RootLayout({
           <AuthProvider>
             <ToastProvider>
               <ConfirmationProvider>
+                <PWAInit />
                 <ToastProviderReactHot />
                 <MaintenanceCheck>
                   {children}
                 </MaintenanceCheck>
+                <OfflineIndicator />
                 <CookieConsent />
               </ConfirmationProvider>
             </ToastProvider>

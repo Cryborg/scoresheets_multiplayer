@@ -3,14 +3,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, Clock, Gamepad2, Share2, RotateCcw, Save, Plus, Grid, List, X } from 'lucide-react';
+import { Menu, Clock, Gamepad2, Share2, RotateCcw, Save, Plus, Grid, List, X, Wifi, WifiOff } from 'lucide-react';
 import AuthStatus from '@/components/AuthStatus';
 import Sidebar from '@/components/Sidebar';
 import { Game } from '@/types/dashboard';
 import { validateGamesResponse, processGamesWithMetadata } from '@/lib/gameDataHelpers';
 import { useDashboardFilters } from '@/hooks/useDashboardFilters';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
-import { useAllGameSessions } from '@/hooks/useAllGameSessions';
+import { useOfflineGameSessions } from '@/hooks/useOfflineGameSessions';
 import GameCard from '@/components/dashboard/GameCard';
 import GameListView from '@/components/dashboard/GameListView';
 import { BRANDING } from '@/lib/branding';
@@ -54,12 +54,15 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
   // Keep the hook for tracking in other parts of the app but don't use sort logic here
   useLastPlayedGame();
 
-  // Centralized sessions loading - single API call for all games
+  // Offline-first sessions loading - works online AND offline
   const {
     getActiveSessionsForGame,
     getCompletedSessionsForGame,
-    refetch: refetchSessions
-  } = useAllGameSessions();
+    refetch: refetchSessions,
+    isOfflineMode,
+    offlineSessions,
+    onlineSessions
+  } = useOfflineGameSessions();
 
   // Check if guest banner should be shown (only client-side to avoid hydration)
   useEffect(() => {
@@ -236,7 +239,22 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
               <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 mr-4">
                 <Menu className="h-6 w-6 text-gray-900 dark:text-gray-300" />
               </button>
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{BRANDING.ui.dashboard.title}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{BRANDING.ui.dashboard.title}</h1>
+                {/* Mode offline indicator */}
+                {isOfflineMode && (
+                  <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-full text-xs">
+                    <WifiOff className="h-3 w-3 text-orange-600" />
+                    <span className="text-orange-700 dark:text-orange-300 font-medium">Hors ligne</span>
+                  </div>
+                )}
+                {!isOfflineMode && offlineSessions > 0 && (
+                  <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-full text-xs">
+                    <Wifi className="h-3 w-3 text-blue-600" />
+                    <span className="text-blue-700 dark:text-blue-300 font-medium">{offlineSessions} à sync</span>
+                  </div>
+                )}
+              </div>
             </div>
             
             {/* Quick join form + Custom game button in header */}

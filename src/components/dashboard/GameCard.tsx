@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Users, Clock, Plus, Play, RotateCw, ArrowLeft, Trash2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useGlobalConfirm } from '@/contexts/ConfirmationContext';
+import OfflineGameCreator from '@/components/offline/OfflineGameCreator';
 import { Game } from '@/types/dashboard';
 
 interface GameSession {
@@ -38,6 +39,7 @@ export default function GameCard({
   onRefetchSessions
 }: GameCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [showGameCreator, setShowGameCreator] = useState(false);
   const { confirm } = useGlobalConfirm();
 
   const handleFlip = () => {
@@ -83,6 +85,12 @@ export default function GameCard({
         alert('Erreur lors de la suppression');
       }
     }
+  };
+
+  const handleGameCreatorClose = () => {
+    setShowGameCreator(false);
+    // Actualise les sessions après création d'une partie
+    onRefetchSessions();
   };
 
   return (
@@ -131,7 +139,7 @@ export default function GameCard({
               
               {/* Bouton Nouvelle partie */}
               <Button
-                href={`/games/${game.slug}/new`}
+                onClick={() => setShowGameCreator(true)}
                 variant="secondary"
                 size="sm"
                 leftIcon={<Plus className="h-4 w-4" />}
@@ -266,7 +274,14 @@ export default function GameCard({
           </div>
         </div>
       </div>
-      
+
+      {/* Modal de création de partie offline-first */}
+      {showGameCreator && (
+        <OfflineGameCreator
+          game={game}
+          onClose={handleGameCreatorClose}
+        />
+      )}
     </div>
   );
 }
