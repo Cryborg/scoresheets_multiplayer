@@ -113,7 +113,7 @@ export default function GameCard({ game, isLastPlayed }: GameCardProps) {
                 variant="secondary"
                 size="sm"
                 leftIcon={<Plus className="h-4 w-4" />}
-                className={activeSessions.length > 0 ? "flex-1" : "w-full"}
+                className={`${activeSessions.length > 0 ? "flex-1" : "w-full"} !bg-blue-700 hover:!bg-blue-800 !text-white`}
               >
                 Nouvelle partie
               </Button>

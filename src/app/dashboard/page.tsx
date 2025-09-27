@@ -209,6 +209,15 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
     setShowGuestBanner(false);
   };
 
+  // Helper function for join button styling
+  const getJoinButtonClasses = (baseClasses: string) => {
+    return `${baseClasses} text-sm rounded-lg font-medium transition-colors flex items-center gap-1 ${
+      sessionId.trim()
+        ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+        : 'bg-indigo-600/50 text-white/70 cursor-not-allowed'
+    }`;
+  };
+
   return (
     <div>
       <div className={`min-h-screen ${THEME.classes.pageBackground}`}>
@@ -235,20 +244,16 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
                 </Link>
               )}
               
-              <input 
-                type="text" 
-                placeholder="Code partie" 
-                value={sessionId} 
-                onChange={(e) => setSessionId(e.target.value.toUpperCase())} 
-                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 w-32" 
+              <input
+                type="text"
+                placeholder="Code"
+                value={sessionId}
+                onChange={(e) => setSessionId(e.target.value.toUpperCase())}
+                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 w-24 text-center font-mono"
               />
-              <Link 
-                href={sessionId.trim() ? `/sessions/find?code=${sessionId.trim()}` : '#'} 
-                className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors flex items-center gap-1 ${
-                  sessionId.trim() 
-                    ? 'bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white' 
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                }`}
+              <Link
+                href={sessionId.trim() ? `/sessions/find?code=${sessionId.trim()}` : '#'}
+                className={getJoinButtonClasses('px-4 py-2')}
               >
                 <Share2 className="h-4 w-4" />
                 Rejoindre
@@ -336,23 +341,19 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
             <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Rejoindre une partie</h3>
             <div className="flex items-center gap-2">
-              <input 
-                type="text" 
-                placeholder="Code de partie" 
-                value={sessionId} 
-                onChange={(e) => setSessionId(e.target.value.toUpperCase())} 
-                className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400" 
+              <input
+                type="text"
+                placeholder="Code"
+                value={sessionId}
+                onChange={(e) => setSessionId(e.target.value.toUpperCase())}
+                className="w-1/2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-center font-mono"
               />
-              <Link 
-                href={sessionId.trim() ? `/sessions/find?code=${sessionId.trim()}` : '#'} 
-                className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors flex items-center gap-1 ${
-                  sessionId.trim() 
-                    ? 'bg-blue-500 hover:bg-blue-600 text-white' 
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                }`}
+              <Link
+                href={sessionId.trim() ? `/sessions/find?code=${sessionId.trim()}` : '#'}
+                className={getJoinButtonClasses('w-1/2 px-3 py-2 justify-center')}
               >
                 <Share2 className="h-4 w-4" />
-                Rejoindre
+                <span>Rejoindre</span>
               </Link>
             </div>
           </div>
