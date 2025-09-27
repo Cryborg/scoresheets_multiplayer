@@ -10,6 +10,7 @@ import { Game } from '@/types/dashboard';
 import { validateGamesResponse, processGamesWithMetadata } from '@/lib/gameDataHelpers';
 import { useDashboardFilters } from '@/hooks/useDashboardFilters';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
+import { useAllGameSessions } from '@/hooks/useAllGameSessions';
 import GameCard from '@/components/dashboard/GameCard';
 import GameListView from '@/components/dashboard/GameListView';
 import { BRANDING } from '@/lib/branding';
@@ -52,6 +53,13 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
 
   // Keep the hook for tracking in other parts of the app but don't use sort logic here
   useLastPlayedGame();
+
+  // Centralized sessions loading - single API call for all games
+  const {
+    getActiveSessionsForGame,
+    getCompletedSessionsForGame,
+    refetch: refetchSessions
+  } = useAllGameSessions();
 
   // Check if guest banner should be shown (only client-side to avoid hydration)
   useEffect(() => {
@@ -513,6 +521,9 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
                             game={game}
                             isLastPlayed={index === 0}
                             index={index}
+                            activeSessions={getActiveSessionsForGame(game.slug)}
+                            completedSessions={getCompletedSessionsForGame(game.slug)}
+                            onRefetchSessions={refetchSessions}
                           />
                         ))}
                       </div>
@@ -538,6 +549,9 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
                             game={game}
                             isLastPlayed={false}
                             index={index + playedGames.length}
+                            activeSessions={getActiveSessionsForGame(game.slug)}
+                            completedSessions={getCompletedSessionsForGame(game.slug)}
+                            onRefetchSessions={refetchSessions}
                           />
                         ))}
                       </div>

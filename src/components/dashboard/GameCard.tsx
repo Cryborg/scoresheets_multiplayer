@@ -3,19 +3,41 @@
 import { useState } from 'react';
 import { Users, Clock, Plus, Play, RotateCw, ArrowLeft, Trash2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { useGameSessions } from '@/hooks/useGameSessions';
 import { useGlobalConfirm } from '@/contexts/ConfirmationContext';
 import { Game } from '@/types/dashboard';
+
+interface GameSession {
+  id: number;
+  session_name: string;
+  game_name: string;
+  game_slug: string;
+  status: 'waiting' | 'active' | 'paused' | 'completed' | 'cancelled';
+  current_players: number;
+  max_players: number;
+  created_at: string;
+  last_activity: string;
+  ended_at?: string;
+  is_host: boolean;
+  players: string[];
+}
 
 interface GameCardProps {
   game: Game;
   isLastPlayed: boolean;
   index: number;
+  activeSessions: GameSession[];
+  completedSessions: GameSession[];
+  onRefetchSessions: () => void;
 }
 
-export default function GameCard({ game, isLastPlayed }: GameCardProps) {
+export default function GameCard({
+  game,
+  isLastPlayed,
+  activeSessions,
+  completedSessions,
+  onRefetchSessions
+}: GameCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
-  const { sessions, activeSessions, completedSessions, refetch } = useGameSessions(game.slug);
   const { confirm } = useGlobalConfirm();
 
   const handleFlip = () => {
@@ -51,7 +73,7 @@ export default function GameCard({ game, isLastPlayed }: GameCardProps) {
 
         if (response.ok) {
           // Actualiser la liste des sessions
-          refetch();
+          onRefetchSessions();
         } else {
           const data = await response.json();
           alert(data.error || 'Erreur lors de la suppression');
@@ -234,7 +256,7 @@ export default function GameCard({ game, isLastPlayed }: GameCardProps) {
               </div>
             )}
 
-            {sessions.length === 0 && (
+            {activeSessions.length === 0 && completedSessions.length === 0 && (
               <div className="text-center py-8">
                 <p className="text-gray-500 dark:text-gray-400 text-sm">
                   Aucune partie pour ce jeu
