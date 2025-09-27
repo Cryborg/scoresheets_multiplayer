@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Wifi, WifiOff, Sync, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Wifi, WifiOff, RotateCw, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useSyncService } from '@/lib/sync-service';
 import { usePWA } from '@/lib/pwa';
@@ -23,7 +23,7 @@ export default function OfflineIndicator() {
 
   const getStatusIcon = () => {
     if (!isOnline) return <WifiOff className="h-4 w-4 text-orange-500" />;
-    if (pendingCount > 0) return <Sync className="h-4 w-4 text-blue-500 animate-spin" />;
+    if (pendingCount > 0) return <RotateCw className="h-4 w-4 text-blue-500 animate-spin" />;
     return <Wifi className="h-4 w-4 text-green-500" />;
   };
 

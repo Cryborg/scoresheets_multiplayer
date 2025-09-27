@@ -178,12 +178,14 @@ export class OfflineStorageService {
   }
 
   async getPendingActions(): Promise<OfflineAction[]> {
-    return await this.db.actions
+    const actions = await this.db.actions
       .where('sync_status')
       .anyOf(['pending', 'failed'])
       .and(action => action.retry_count < action.max_retries)
-      .orderBy('priority')
       .toArray();
+
+    // Trie par priorité après récupération
+    return actions.sort((a, b) => a.priority - b.priority);
   }
 
   async markActionAsSynced(actionId: string): Promise<void> {
