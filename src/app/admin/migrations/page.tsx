@@ -71,7 +71,7 @@ export default function MigrationsPage() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen ${THEME.classes.pageBackground} flex items-center justify-center">
+      <div className={`min-h-screen ${THEME.classes.pageBackground} flex items-center justify-center`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-500 dark:text-gray-400">Vérification de l&apos;état de la base de données...</p>
@@ -106,7 +106,7 @@ export default function MigrationsPage() {
           disabled={loading}
           className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors cursor-pointer"
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={loading ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
           Actualiser
         </button>
       </div>

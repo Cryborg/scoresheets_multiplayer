@@ -45,7 +45,7 @@ export default function DebugAuthPage() {
   }, [checkAuth]);
 
   return (
-    <div className={`min-h-screen ${THEME.classes.pageBackground} p-8">
+    <div className={`min-h-screen ${THEME.classes.pageBackground} p-8`}>
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
           Debug Authentification
