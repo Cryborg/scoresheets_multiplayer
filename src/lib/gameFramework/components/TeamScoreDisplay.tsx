@@ -6,7 +6,7 @@ import { TeamDefinition } from '../types';
 
 interface TeamScoreDisplayProps {
   teams: TeamDefinition[];
-  session: any;
+  session: { players?: Player[]; host_user_id?: number };
   getTotalScore: (playerId: number) => number;
   getTeamScore: (teamId: string) => number;
   targetScore?: number;

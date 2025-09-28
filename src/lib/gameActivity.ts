@@ -16,7 +16,6 @@ export async function trackGameActivity(userId: number, gameSlug: string): Promi
       args: [userId, gameSlug]
     });
     
-    console.log(`✅ Tracked game activity for user ${userId}, game ${gameSlug}`);
   } catch (error) {
     errorLogger.silent('Erreur lors du tracking d\'activité', 'gameActivity', {
       userId,

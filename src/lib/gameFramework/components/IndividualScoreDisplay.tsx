@@ -4,7 +4,7 @@ import GameCard from '@/components/layout/GameCard';
 import { Player } from '@/types/multiplayer';
 
 interface IndividualScoreDisplayProps {
-  session: any;
+  session: { players?: Player[]; host_user_id?: number };
   getTotalScore: (playerId: number) => number;
   targetScore?: number;
   showRankings?: boolean;
@@ -96,7 +96,7 @@ export default function IndividualScoreDisplay({
                 </div>
                 {targetScore && (
                   <div className="text-xs text-gray-500">
-                    {Math.round((player.totalScore / targetScore) * 100)}% de l'objectif
+                    {Math.round((player.totalScore / targetScore) * 100)}% de l&apos;objectif
                   </div>
                 )}
               </div>

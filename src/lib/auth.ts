@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { db } from '@/lib/database';
 import { getSetting } from '@/lib/settings';
+import { errorLogger } from '@/lib/errorLogger';
 
 /**
  * Removes guest users that haven't been seen for more than 24 hours
@@ -56,7 +57,7 @@ export async function pruneInactiveGuestUsers(): Promise<void> {
     }
 
     if (result.rowsAffected && result.rowsAffected > 0) {
-      console.log(`✅ Pruned ${result.rowsAffected} inactive guest users`);
+      errorLogger.info(`Pruned ${result.rowsAffected} inactive guest users`, 'auth');
     }
   } catch (error) {
     console.error('Error pruning inactive guest users:', error);

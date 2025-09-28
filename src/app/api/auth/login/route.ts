@@ -8,7 +8,7 @@ import jwt from 'jsonwebtoken';
 export async function POST(request: NextRequest) {
   const startTime = Date.now(); // Performance timing
   try {
-    const { email, password } = await request.json();
+    const { email, password, rememberMe } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -58,10 +58,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Erreur de configuration serveur' }, { status: 500 });
     }
 
+    // Token duration based on Remember me option: 30 days if checked, 7 days otherwise
+    const tokenDuration = rememberMe ? '30d' : '7d';
     const token = jwt.sign(
       { userId: user.id, email: user.email, isAdmin: user.is_admin },
       jwtSecret,
-      { expiresIn: '7d' }
+      { expiresIn: tokenDuration }
     );
 
     const response = NextResponse.json({
@@ -74,11 +76,14 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // Cookie duration matches token duration: 30 days if Remember me, 7 days otherwise
+    const cookieMaxAge = rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60;
+
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60,
+      maxAge: cookieMaxAge,
       path: '/'
     });
 
@@ -87,7 +92,7 @@ export async function POST(request: NextRequest) {
       httpOnly: false,
       secure: false, // Allow in dev
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60,
+      maxAge: cookieMaxAge,
       path: '/'
     });
 

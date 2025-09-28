@@ -1,5 +1,35 @@
 import { db } from '@/lib/database';
 
+// Types for database rows
+interface UserLoginHistory {
+  id: number;
+  user_id: number;
+  ip_address: string | null;
+  user_agent: string | null;
+  login_at: string;
+}
+
+interface UserActivityHistory {
+  id: number;
+  user_id: number;
+  activity_type: string;
+  related_id: number | null;
+  related_data: string | null;
+  created_at: string;
+  session_name?: string;
+  game_name?: string;
+}
+
+interface ActivityCount {
+  activity_type: string;
+  count: number;
+}
+
+interface LoginStats {
+  total_logins: number;
+  last_login: string | null;
+}
+
 /**
  * Track user login
  */
@@ -9,8 +39,8 @@ export async function trackUserLogin(userId: number, ipAddress?: string, userAge
       sql: 'INSERT INTO user_login_history (user_id, ip_address, user_agent, login_at) VALUES (?, ?, ?, ?)',
       args: [userId, ipAddress || null, userAgent || null, new Date().toISOString()]
     });
-  } catch (error) {
-    console.error('Error tracking user login:', error);
+  } catch (_error) {
+    console.error('Error tracking user login:', _error);
   }
 }
 
@@ -34,15 +64,15 @@ export async function trackUserActivity(
         new Date().toISOString()
       ]
     });
-  } catch (error) {
-    console.error('Error tracking user activity:', error);
+  } catch (_error) {
+    console.error('Error tracking user activity:', _error);
   }
 }
 
 /**
  * Get user login history
  */
-export async function getUserLoginHistory(userId: number, limit = 20): Promise<any[]> {
+export async function getUserLoginHistory(userId: number, limit = 20): Promise<UserLoginHistory[]> {
   try {
     const result = await db.execute({
       sql: `SELECT * FROM user_login_history
@@ -51,9 +81,9 @@ export async function getUserLoginHistory(userId: number, limit = 20): Promise<a
             LIMIT ?`,
       args: [userId, limit]
     });
-    return result.rows as any[];
-  } catch (error) {
-    console.error('Error fetching login history:', error);
+    return result.rows as UserLoginHistory[];
+  } catch (_error) {
+    console.error('Error fetching login history:', _error);
     return [];
   }
 }
@@ -61,7 +91,7 @@ export async function getUserLoginHistory(userId: number, limit = 20): Promise<a
 /**
  * Get user activity history
  */
-export async function getUserActivityHistory(userId: number, limit = 50): Promise<any[]> {
+export async function getUserActivityHistory(userId: number, limit = 50): Promise<UserActivityHistory[]> {
   try {
     const result = await db.execute({
       sql: `SELECT
@@ -76,9 +106,9 @@ export async function getUserActivityHistory(userId: number, limit = 50): Promis
             LIMIT ?`,
       args: [userId, limit]
     });
-    return result.rows as any[];
-  } catch (error) {
-    console.error('Error fetching activity history:', error);
+    return result.rows as UserActivityHistory[];
+  } catch (_error) {
+    console.error('Error fetching activity history:', _error);
     return [];
   }
 }
@@ -105,7 +135,7 @@ export async function getUserStatistics(userId: number): Promise<{
       args: [userId]
     });
 
-    const activities = activityResult.rows.reduce((acc: any, row: any) => {
+    const activities = activityResult.rows.reduce((acc: Record<string, number>, row: ActivityCount) => {
       acc[row.activity_type] = row.count;
       return acc;
     }, {});
@@ -120,7 +150,7 @@ export async function getUserStatistics(userId: number): Promise<{
       args: [userId]
     });
 
-    const loginStats = loginResult.rows[0] as any;
+    const loginStats = loginResult.rows[0] as LoginStats;
 
     return {
       totalGamesCreated: activities.game_created || 0,
@@ -129,8 +159,8 @@ export async function getUserStatistics(userId: number): Promise<{
       lastLogin: loginStats?.last_login,
       totalLogins: loginStats?.total_logins || 0
     };
-  } catch (error) {
-    console.error('Error fetching user statistics:', error);
+  } catch (_error) {
+    console.error('Error fetching user statistics:', _error);
     return {
       totalGamesCreated: 0,
       totalGamesJoined: 0,

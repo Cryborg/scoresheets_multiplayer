@@ -10,7 +10,7 @@ export function useIsAdmin() {
         const response = await fetch('/api/admin/check');
         const data = await response.json();
         setIsAdmin(data.isAdmin || false);
-      } catch (error) {
+      } catch (_error) {
         setIsAdmin(false);
       } finally {
         setLoading(false);

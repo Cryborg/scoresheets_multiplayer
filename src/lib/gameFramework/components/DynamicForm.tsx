@@ -3,7 +3,7 @@ import ScoreInput from '@/components/ui/ScoreInput';
 import GameCard from '@/components/layout/GameCard';
 import { FormField } from '../types';
 
-interface DynamicFormProps<TData = any> {
+interface DynamicFormProps<TData = Record<string, unknown>> {
   title: string;
   fields: FormField[];
   data: TData;
@@ -13,7 +13,7 @@ interface DynamicFormProps<TData = any> {
   submitLabel?: string;
 }
 
-export default function DynamicForm<TData = any>({
+export default function DynamicForm<TData = Record<string, unknown>>({
   title,
   fields,
   data,
@@ -23,7 +23,7 @@ export default function DynamicForm<TData = any>({
   submitLabel = "Valider"
 }: DynamicFormProps<TData>) {
   
-  const handleFieldChange = (fieldName: string, value: any) => {
+  const handleFieldChange = (fieldName: string, value: unknown) => {
     setData(prev => ({
       ...prev,
       [fieldName]: value
@@ -31,7 +31,7 @@ export default function DynamicForm<TData = any>({
   };
 
   const renderField = (field: FormField) => {
-    const value = (data as any)[field.name];
+    const value = (data as Record<string, unknown>)[field.name];
 
     switch (field.type) {
       case 'number':

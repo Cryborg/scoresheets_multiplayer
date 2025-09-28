@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     await ensureDatabaseExists();
 
     // Get current user ID to filter custom games
-    const userId = await getUserId(request as Request & { cookies?: any });
+    const userId = await getUserId(request as Request & { cookies?: Record<string, unknown> });
 
 
     const result = await db.execute(`

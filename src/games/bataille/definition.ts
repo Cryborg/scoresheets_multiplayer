@@ -1,4 +1,5 @@
 import { createIndividualGameDefinition, PlayerScores } from '@/lib/gameFramework';
+import { GameSessionWithRounds, Player } from '@/types/multiplayer';
 
 // Types pour Bataille
 interface BatailleRoundData {
@@ -6,12 +7,12 @@ interface BatailleRoundData {
 }
 
 // Logique ultra-simple : le gagnant de la manche gagne 1 point
-function calculateBatailleScore(roundData: BatailleRoundData, session: any): PlayerScores {
+function calculateBatailleScore(roundData: BatailleRoundData, session: GameSessionWithRounds): PlayerScores {
   const scores: PlayerScores = {};
   
   // Initialiser tous les joueurs à 0
   if (session?.players) {
-    session.players.forEach((player: any) => {
+    session.players.forEach((player: Player) => {
       scores[player.id] = 0;
     });
   
@@ -51,24 +52,24 @@ export const batailleDefinition = createIndividualGameDefinition(
 // Modifier la définition pour générer dynamiquement les options de gagnant
 batailleDefinition.ui.roundForm.fields[0].options = [];
 
-batailleDefinition.rules.getWinner = (session) => {
+batailleDefinition.rules.getWinner = (session: GameSessionWithRounds) => {
   if (!session.players) return null;
-  
+
   const playerScores = session.players.map(player => ({
     player,
     total: session.rounds?.reduce((sum, round) => sum + (round.scores[player.id] || 0), 0) || 0
   }));
-  
+
   const winner = playerScores.find(p => p.total >= 10);
   return winner?.player || null;
 };
 
-batailleDefinition.rules.isGameFinished = (session) => {
+batailleDefinition.rules.isGameFinished = (session: GameSessionWithRounds) => {
   if (!session.players || !session.rounds) return false;
-  
-  const maxScore = Math.max(...session.players.map(player => 
+
+  const maxScore = Math.max(...session.players.map(player =>
     session.rounds?.reduce((sum, round) => sum + (round.scores[player.id] || 0), 0) || 0
   ));
-  
+
   return maxScore >= 10;
 };

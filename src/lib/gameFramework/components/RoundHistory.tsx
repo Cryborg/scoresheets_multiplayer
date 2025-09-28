@@ -3,7 +3,7 @@ import GameCard from '@/components/layout/GameCard';
 import { UILayout } from '../types';
 
 interface RoundHistoryProps {
-  session: any;
+  session: { rounds?: Record<string, unknown>[] };
   layout: UILayout;
   roundLabel?: string; // "Manche", "Donne", "Partie"
 }
@@ -36,7 +36,7 @@ export default function RoundHistory({
             </tr>
           </thead>
           <tbody>
-            {session.rounds.map((round: any, roundIndex: number) => (
+            {session.rounds.map((round: Record<string, unknown>, roundIndex: number) => (
               <tr key={roundIndex} className="border-b dark:border-gray-700">
                 {layout.roundHistory.columns.map((column, colIndex) => (
                   <td 
@@ -60,7 +60,7 @@ export default function RoundHistory({
   );
 }
 
-function getDefaultColumnValue(round: any, columnKey: string, roundLabel: string): React.ReactNode {
+function getDefaultColumnValue(round: Record<string, unknown>, columnKey: string, roundLabel: string): React.ReactNode {
   switch (columnKey) {
     case 'round':
       return `${roundLabel} ${round.round_number}`;

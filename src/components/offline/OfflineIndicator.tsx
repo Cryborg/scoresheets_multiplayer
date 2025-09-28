@@ -17,10 +17,6 @@ export default function OfflineIndicator() {
   const [showDetails, setShowDetails] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  // Debug log pour vérifier l'initialisation
-  useEffect(() => {
-    console.log(`🔍 OfflineIndicator: Initialized - isOnline: ${isOnline}, pendingCount: ${pendingCount}`);
-  }, [isOnline, pendingCount]);
 
   // Évite les erreurs d'hydratation en rendant seulement côté client
   useEffect(() => {

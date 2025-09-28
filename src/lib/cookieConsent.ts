@@ -82,7 +82,7 @@ export function shouldShowConsentBanner(): boolean {
   try {
     const stored = localStorage.getItem(CONSENT_STORAGE_KEY);
     return !stored; // Show if no consent stored
-  } catch (error) {
+  } catch (_error) {
     return true; // Show if can't read localStorage
   }
 }

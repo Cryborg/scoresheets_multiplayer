@@ -1,6 +1,9 @@
 // Game Framework - Mini-framework pour créer facilement de nouveaux jeux
 // Exportations principales
 
+import React from 'react';
+import { GameSessionWithRounds, GameSessionWithCategories } from '@/types/multiplayer';
+
 // Types
 export type {
   GameDefinition,
@@ -26,19 +29,19 @@ export { default as RoundHistory } from './components/RoundHistory';
 export { default as DynamicForm } from './components/DynamicForm';
 
 // Helpers pour créer rapidement des définitions de jeux
-export const createIndividualGameDefinition = (
+export const createIndividualGameDefinition = <TRoundData = Record<string, unknown>>(
   slug: string,
   name: string,
   options: {
     players: { min: number; max: number };
     fields: FormField[];
-    calculateScore: (roundData: any, session: any) => PlayerScores;
+    calculateScore: (roundData: TRoundData, session: GameSessionWithRounds | GameSessionWithCategories) => PlayerScores;
     targetScore?: number;
     theme?: GameTheme;
     roundLabel?: string;
-    customColumns?: Array<{ key: string; label: string; render?: (round: any) => React.ReactNode }>;
+    customColumns?: Array<{ key: string; label: string; render?: (round: Record<string, unknown>) => React.ReactNode }>;
   }
-): GameDefinition => ({
+): GameDefinition<TRoundData> => ({
   slug,
   name,
   players: options.players,
@@ -74,20 +77,20 @@ export const createIndividualGameDefinition = (
   }
 });
 
-export const createTeamGameDefinition = (
+export const createTeamGameDefinition = <TRoundData = Record<string, unknown>>(
   slug: string,
   name: string,
   options: {
     players: { min: number; max: number; exactCount?: number };
     teams: TeamDefinition[];
     fields: FormField[];
-    calculateScore: (roundData: any, session: any) => PlayerScores;
+    calculateScore: (roundData: TRoundData, session: GameSessionWithRounds | GameSessionWithCategories) => PlayerScores;
     targetScore?: number;
     theme?: GameTheme;
     roundLabel?: string;
-    customColumns?: Array<{ key: string; label: string; render?: (round: any) => React.ReactNode }>;
+    customColumns?: Array<{ key: string; label: string; render?: (round: Record<string, unknown>) => React.ReactNode }>;
   }
-): GameDefinition => ({
+): GameDefinition<TRoundData> => ({
   slug,
   name,
   players: options.players,

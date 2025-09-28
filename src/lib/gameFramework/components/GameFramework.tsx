@@ -45,26 +45,28 @@ export default function GameFramework({ sessionId, definition }: GameFrameworkPr
 
 interface GameInterfaceProps {
   session: GameSessionWithRounds | GameSessionWithCategories;
-  gameState: any;
+  gameState: Record<string, unknown>;
   definition: GameDefinition;
 }
 
 function GameInterface({ session, gameState, definition }: GameInterfaceProps) {
-  const { isHost } = gameState;
-  
+  // Toujours appeler les hooks en premier
+  const gameLogic = useGameLogic({
+    definition,
+    session: session || { players: [], rounds: [] } as GameSessionWithRounds,
+    gameState
+  });
+
   // Attendre que la session soit complètement chargée
   if (!session) {
     return <div>Chargement de la session...</div>;
   }
-  
+
   if (!session.players || !Array.isArray(session.players)) {
     return <div>Chargement des joueurs...</div>;
   }
-  const gameLogic = useGameLogic({
-    definition,
-    session,
-    gameState
-  });
+
+  const { isHost } = gameState;
 
   const {
     roundData,

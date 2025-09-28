@@ -26,12 +26,12 @@ export function validateGamesResponse(data: unknown): unknown[] | null {
  */
 export async function processGamesWithMetadata(rawGames: unknown[]): Promise<Game[]> {
   // Filter out "jeu-libre" from the games list
-  const filteredGames = rawGames.filter((game: any) => game.slug !== 'jeu-libre');
-  
-  const slugs = filteredGames.map((game: any) => game.slug);
+  const filteredGames = rawGames.filter((game: Record<string, unknown>) => game.slug !== 'jeu-libre');
+
+  const slugs = filteredGames.map((game: Record<string, unknown>) => game.slug as string);
   const metadataMap = await loadMultipleGameMetadata(slugs);
-  
-  return filteredGames.map((game: any) => {
+
+  return filteredGames.map((game: Record<string, unknown>) => {
     const metadata = metadataMap[game.slug] || defaultGameMetadata;
     return {
       id: game.id,

@@ -1,5 +1,7 @@
 'use client';
 
+import { errorLogger } from '@/lib/errorLogger';
+
 // Gestion de l'enregistrement et des mises à jour du Service Worker
 
 interface PWAInstallPrompt extends Event {
@@ -22,12 +24,11 @@ export class PWAManager {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       this.deferredPrompt = e as PWAInstallPrompt;
-      console.log('💾 PWA: Install prompt ready');
     });
 
     // Écoute l'installation réussie
     window.addEventListener('appinstalled', () => {
-      console.log('✅ PWA: App installed successfully');
+      errorLogger.info('PWA: App installed successfully');
       this.deferredPrompt = null;
     });
 
@@ -39,7 +40,7 @@ export class PWAManager {
     if ('serviceWorker' in navigator) {
       // Désactive le Service Worker en développement pour éviter les conflits
       if (process.env.NODE_ENV === 'development') {
-        console.log('🔧 PWA: Skipping Service Worker registration in development mode');
+        errorLogger.silent('PWA: Skipping Service Worker registration in development mode');
 
         // Nettoie les service workers existants en dev
         await this.unregisterAllServiceWorkers();
@@ -47,23 +48,18 @@ export class PWAManager {
       }
 
       try {
-        console.log('🔧 PWA: Registering Service Worker...');
-
         this.registration = await navigator.serviceWorker.register('/sw.js', {
           scope: '/'
         });
 
-        console.log('✅ PWA: Service Worker registered:', this.registration.scope);
+        errorLogger.info(`PWA: Service Worker registered: ${this.registration.scope}`);
 
         // Gestion des mises à jour
         this.registration.addEventListener('updatefound', () => {
           const newWorker = this.registration?.installing;
           if (newWorker) {
-            console.log('🔄 PWA: New Service Worker found, installing...');
-
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('✅ PWA: New Service Worker installed, update available');
                 this.notifyUpdate();
               }
             });
@@ -72,7 +68,6 @@ export class PWAManager {
 
         // Force la prise de contrôle par le nouveau SW
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          console.log('🔄 PWA: Service Worker updated, reloading...');
           window.location.reload();
         });
 
@@ -82,7 +77,7 @@ export class PWAManager {
         return false;
       }
     } else {
-      console.log('❌ PWA: Service Workers not supported');
+      errorLogger.silent('PWA: Service Workers not supported');
       return false;
     }
   }
@@ -91,11 +86,9 @@ export class PWAManager {
     if ('serviceWorker' in navigator) {
       try {
         const registrations = await navigator.serviceWorker.getRegistrations();
-        console.log(`🧹 PWA: Found ${registrations.length} service workers to unregister`);
 
         for (const registration of registrations) {
           await registration.unregister();
-          console.log('✅ PWA: Unregistered service worker:', registration.scope);
         }
       } catch (error) {
         console.error('❌ PWA: Failed to unregister service workers:', error);
@@ -106,7 +99,6 @@ export class PWAManager {
   // Demande l'installation de l'app
   async promptInstall(): Promise<boolean> {
     if (!this.deferredPrompt) {
-      console.log('❌ PWA: No install prompt available');
       return false;
     }
 
@@ -115,10 +107,8 @@ export class PWAManager {
       const choiceResult = await this.deferredPrompt.userChoice;
 
       if (choiceResult.outcome === 'accepted') {
-        console.log('✅ PWA: User accepted install prompt');
         return true;
       } else {
-        console.log('❌ PWA: User dismissed install prompt');
         return false;
       }
     } catch (error) {
@@ -140,7 +130,7 @@ export class PWAManager {
 
     // Détection PWA installée
     return window.matchMedia('(display-mode: standalone)').matches ||
-           (window.navigator as any).standalone ||
+           (window.navigator as Navigator & { standalone?: boolean }).standalone ||
            document.referrer.includes('android-app://');
   }
 
@@ -150,7 +140,7 @@ export class PWAManager {
 
     try {
       await this.registration.update();
-      console.log('🔄 PWA: Service Worker update check completed');
+      errorLogger.silent('PWA: Service Worker update check completed');
     } catch (error) {
       console.error('❌ PWA: Service Worker update failed:', error);
     }

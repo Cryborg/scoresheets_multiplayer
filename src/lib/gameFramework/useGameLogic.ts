@@ -1,19 +1,13 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { GameSessionWithRounds, GameSessionWithCategories, Player } from '@/types/multiplayer';
-import { 
-  GameDefinition, 
-  UseGameLogicOptions, 
-  UseGameLogicResult,
-  PlayerScores 
-} from './types';
+import { UseGameLogicOptions, UseGameLogicResult } from './types';
 
 /**
  * Hook principal du Game Framework
  * Encapsule toute la logique commune des jeux multijoueurs
  */
-export function useGameLogic<TRoundData = any>({
+export function useGameLogic<TRoundData = Record<string, unknown>>({
   definition,
   session,
   gameState
@@ -23,7 +17,7 @@ export function useGameLogic<TRoundData = any>({
   // État du formulaire de manche
   const [roundData, setRoundData] = useState<TRoundData>(() => {
     // Créer les valeurs par défaut à partir de la définition
-    const defaultData: any = {};
+    const defaultData: Record<string, unknown> = {};
     definition.ui.roundForm.fields.forEach(field => {
       if (field.defaultValue !== undefined) {
         defaultData[field.name] = field.defaultValue;
@@ -53,7 +47,7 @@ export function useGameLogic<TRoundData = any>({
   // Reset du formulaire
   const resetForm = useCallback(() => {
     setRoundData(() => {
-      const defaultData: any = {};
+      const defaultData: Record<string, unknown> = {};
       definition.ui.roundForm.fields.forEach(field => {
         if (field.defaultValue !== undefined) {
           defaultData[field.name] = field.defaultValue;
@@ -115,7 +109,7 @@ export function useGameLogic<TRoundData = any>({
 
     // Validation générique basée sur les champs
     for (const field of definition.ui.roundForm.fields) {
-      const value = (data as any)[field.name];
+      const value = (data as Record<string, unknown>)[field.name];
       
       if (field.required && (value === undefined || value === null || value === '')) {
         return { valid: false, error: `Le champ "${field.label}" est requis.` };
@@ -136,7 +130,7 @@ export function useGameLogic<TRoundData = any>({
     }
     
     return { valid: true };
-  }, [definition, roundData]);
+  }, [definition]);
 
   // Soumission d'une manche
   const handleSubmitRound = useCallback(async () => {

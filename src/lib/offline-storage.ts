@@ -171,7 +171,6 @@ export class OfflineStorageService {
       max_retries: 3
     });
 
-    // Score added and sync action created
     return id;
   }
 
@@ -190,9 +189,7 @@ export class OfflineStorageService {
       sync_status: 'pending'
     };
 
-    console.log(`📝 Offline Storage: Queuing action ${action.type} for session ${action.session_id}`, action);
     await this.db.actions.add(action);
-    console.log(`✅ Offline Storage: Action ${id} queued successfully`);
     return id;
   }
 

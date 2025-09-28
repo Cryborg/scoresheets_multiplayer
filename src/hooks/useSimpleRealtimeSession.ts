@@ -24,7 +24,7 @@ interface UseSimpleRealtimeSessionProps {
   gameSlug?: string;
   enabled?: boolean;
   pollInterval?: number;
-  onUpdate?: (data: any) => void;
+  onUpdate?: (data: { session: GameSessionWithRounds | GameSessionWithCategories; events: SessionEvent[] }) => void;
   onError?: (error: Error) => void;
   onConnectionChange?: (connected: boolean) => void;
 }

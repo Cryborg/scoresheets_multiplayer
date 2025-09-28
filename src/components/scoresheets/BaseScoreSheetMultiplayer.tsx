@@ -87,7 +87,6 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
               const currentRounds = adaptedSession.rounds || [];
               const nextRoundNumber = currentRounds.length + 1;
 
-              console.log(`🎲 [addRound] Ajout manche ${nextRoundNumber} avec ${scores.length} scores`);
 
               // Convertir les IDs numériques back vers les IDs offline string
               const offlineScores = scores.map(({ playerId, score }) => {
@@ -108,7 +107,6 @@ export default function BaseScoreSheetMultiplayer<T extends GameSessionWithCateg
                 await gameState.addScore(playerId, score, details, roundNumber);
               }
 
-              console.log(`✅ [addRound] Manche ${nextRoundNumber} ajoutée avec succès`);
             },
             isHost: gameState.isHost,
             // Autres propriétés nécessaires...

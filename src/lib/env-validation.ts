@@ -4,6 +4,8 @@
  * Ensures all required secrets are present and valid
  */
 
+import { errorLogger } from './errorLogger';
+
 // Fail fast if running in browser environment
 if (typeof window !== 'undefined') {
   throw new Error('env-validation.ts should never be imported on client-side! Use server-only environment variables.');
@@ -124,7 +126,7 @@ export function getEnvConfig(): EnvConfig {
       cachedConfig = validateEnvironment();
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Environment variables validated successfully');
+        errorLogger.info('Environment variables validated successfully', 'env-validation');
       }
     } catch (error) {
       console.error('❌ Environment validation failed:', error instanceof Error ? error.message : error);

@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -41,7 +42,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await post<{user: unknown}>('/api/auth/login', { email, password }, {
+      const response = await post<{user: unknown}>('/api/auth/login', { email, password, rememberMe }, {
         context: 'auth',
         suppressToast: true // On gère l'erreur localement avec setError
       });
@@ -139,6 +140,20 @@ export default function LoginPage() {
                     )}
                   </button>
                 </div>
+              </div>
+
+              {/* Remember Me Checkbox */}
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 transition-colors"
+                />
+                <label htmlFor="rememberMe" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                  Rester connecté <span className="text-gray-500 dark:text-gray-400">(30 jours)</span>
+                </label>
               </div>
 
               {/* Error Message */}

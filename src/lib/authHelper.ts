@@ -49,7 +49,6 @@ async function ensureGuestUserExists(guestId: number): Promise<void> {
         'NO_PASSWORD_GUEST_USER'
       ]
     });
-    console.log('[Guest] Created guest user:', guestId);
   }
 }
 
@@ -83,7 +82,6 @@ export async function getUserId(request: NextRequest, providedGuestId?: number):
   // Last resort: create a new guest ID server-side
   const newGuestId = generateGuestId();
   await ensureGuestUserExists(newGuestId);
-  console.log('[Guest] Generated new server-side guest ID:', newGuestId);
   return newGuestId;
 }
 

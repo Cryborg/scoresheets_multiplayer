@@ -3,6 +3,7 @@ import { createClient } from '@libsql/client';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { getEnvConfig } from './env-validation';
+import { errorLogger } from '@/lib/errorLogger';
 
 // Get validated environment config
 const envConfig = getEnvConfig();
@@ -38,31 +39,20 @@ export async function initializeDatabase(): Promise<void> {
 
     // Create tables with Laravel-style architecture
     await createTables();
-    console.log('🔧 Tables created, checking existing data...');
-    
-    // Check existing data before seeding
-    const existingSessions = await tursoClient.execute('SELECT COUNT(*) as count FROM sessions');
-    console.log(`📊 Before seeding: ${existingSessions.rows[0].count} sessions`);
-    
+
     await seedInitialData();
     // 🔥 MIGRATION BARBARE : En prod, ne pas essayer de migrer depuis l'ancienne base
     if (!isProduction) {
       // En dev, migrer depuis l'ancienne base si elle existe
       await migrateUsers();
       await migrateSystemData();
-    } else {
-      console.log('🔥 PRODUCTION MODE: Skipping migration from old database (fresh start!)');
     }
-    
-    // Check data after seeding
-    const afterSessions = await tursoClient.execute('SELECT COUNT(*) as count FROM sessions');
-    console.log(`📊 After seeding: ${afterSessions.rows[0].count} sessions`);
-    
+
     // Mark as initialized
     databaseInitialized = true;
-    console.log('✅ Database initialization completed');
+    errorLogger.info('Database initialization completed', 'database');
   } catch (error) {
-    console.error('Database initialization error:', error);
+    errorLogger.error('Database initialization failed', 'database', { error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -80,20 +70,16 @@ export async function ensureDatabaseExists(): Promise<void> {
     const tableCount = result.rows[0]?.count as number;
     
     if (tableCount < 3) {
-      console.log('⚠️ Missing core tables, auto-initializing...');
       await initializeDatabase();
-      console.log('✅ Database auto-initialized successfully');
     } else {
-      console.log('✅ Database tables verified');
+      errorLogger.info('Database tables verified', 'database');
       databaseInitialized = true;
     }
   } catch (error) {
-    console.log('⚠️ Database connection error, attempting initialization...', error);
     try {
       await initializeDatabase();
-      console.log('✅ Database auto-initialized successfully');
     } catch (initError) {
-      console.error('❌ Failed to auto-initialize database:', initError);
+      errorLogger.error('Failed to auto-initialize database', 'database', { error: initError instanceof Error ? initError.message : String(initError) });
       throw new Error('Database not initialized. Please run /api/admin/migrate first.');
     }
   }
@@ -102,24 +88,19 @@ export async function ensureDatabaseExists(): Promise<void> {
 async function createTables(): Promise<void> {
   // 🔥 MIGRATION BARBARE : Nettoie tout l'ancien schéma en prod !
   if (isProduction) {
-    console.log('🔥 PRODUCTION MIGRATION: Cleaning old schema...');
-    
     // Drop old tables if they exist (ignore errors)
     const oldTables = [
-      'sessions', 'players', 'teams', 'scores', 'session_events', 
+      'sessions', 'players', 'teams', 'scores', 'session_events',
       'session_participants', 'user_players', 'password_resets', 'game_migrations'
     ];
-    
+
     for (const table of oldTables) {
       try {
         await tursoClient.execute(`DROP TABLE IF EXISTS ${table}`);
-        console.log(`✅ Dropped old table: ${table}`);
       } catch (error) {
-        console.log(`⏭️ Table ${table} didn't exist or couldn't be dropped`);
+        // Ignore drop errors - table might not exist
       }
     }
-    
-    console.log('🎉 Old schema cleaned! Creating new Laravel architecture...');
   }
   // Users table
   await tursoClient.execute(`
@@ -389,7 +370,6 @@ async function createTables(): Promise<void> {
   `);
 
   // Create indexes for performance optimization
-  console.log('Creating database indexes for optimal performance...');
   
   // Critical indexes for high-frequency queries
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_sessions_host ON sessions (host_user_id)`);
@@ -431,7 +411,7 @@ async function createTables(): Promise<void> {
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_login_history_date ON user_login_history (login_at DESC)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_activity_history_user ON user_activity_history (user_id)`);
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_activity_history_type ON user_activity_history (activity_type)`);
-  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_activity_history_date ON user_activity_history (created_at DESC)`)
+  await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_user_activity_history_date ON user_activity_history (created_at DESC)`);
   
   // Games catalog indexes
   await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_games_slug ON games (slug)`); // NEW: Critical for game lookup
@@ -439,136 +419,96 @@ async function createTables(): Promise<void> {
   // idx_games_active removed - games table doesn't have is_active column
   // idx_games_creator moved after migrations (created_by_user_id added via ALTER TABLE)
   
-  console.log('✅ Database indexes created successfully');
-  
   // Add missing columns to existing tables via ALTER TABLE (for migration)
   try {
     await tursoClient.execute(`ALTER TABLE sessions ADD COLUMN current_players INTEGER DEFAULT 0`);
-    console.log('✅ Added current_players column to sessions');
-  } catch (error: unknown) {
-    if (!(error as Error).message?.includes('duplicate column name')) {
-      console.log('ℹ️ current_players column already exists or error:', (error as Error).message);
-    }
+  } catch (_error: unknown) {
+    // Ignore if column already exists
   }
-  
+
   try {
     await tursoClient.execute(`ALTER TABLE sessions ADD COLUMN last_activity DATETIME DEFAULT CURRENT_TIMESTAMP`);
-    console.log('✅ Added last_activity column to sessions');
-  } catch (error: any) {
-    if (!error.message?.includes('duplicate column name')) {
-      console.log('ℹ️ last_activity column already exists or error:', error.message);
-    }
+  } catch (_error: unknown) {
+    // Ignore if column already exists
   }
-  
+
   try {
     await tursoClient.execute(`ALTER TABLE scores ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP`);
-    console.log('✅ Added updated_at column to scores');
-  } catch (error: any) {
-    if (!error.message?.includes('duplicate column name')) {
-      console.log('ℹ️ updated_at column already exists or error:', error.message);
-    }
+  } catch (_error: unknown) {
+    // Ignore if column already exists
   }
-  
+
   try {
     await tursoClient.execute(`ALTER TABLE teams ADD COLUMN session_id INTEGER`);
-    console.log('✅ Added session_id column to teams');
-  } catch (error: any) {
-    if (!error.message?.includes('duplicate column name')) {
-      console.log('ℹ️ session_id column already exists or error:', error.message);
-    }
+  } catch (_error: unknown) {
+    // Ignore if column already exists
   }
-  
+
   try {
     await tursoClient.execute(`ALTER TABLE app_settings RENAME COLUMN id TO key`);
-    console.log('✅ Renamed id column to key in app_settings');
-  } catch (error: any) {
+  } catch (_error: unknown) {
     // SQLite doesn't support RENAME COLUMN in older versions, ignore
   }
-  
+
   try {
     await tursoClient.execute(`ALTER TABLE app_settings ADD COLUMN type TEXT`);
-    console.log('✅ Added type column to app_settings');
-  } catch (error: any) {
-    if (!error.message?.includes('duplicate column name')) {
-      console.log('ℹ️ type column already exists or error:', error.message);
-    }
+  } catch (_error: unknown) {
+    // Ignore if column already exists
   }
   
   // Add is_guest column for guest users
   try {
     await tursoClient.execute(`ALTER TABLE users ADD COLUMN is_guest INTEGER DEFAULT 0`);
-    console.log('✅ Added is_guest column to users');
-  } catch (error) {
-    if (error instanceof Error && !error.message?.includes('duplicate column name')) {
-      console.log('ℹ️ is_guest column already exists or table is new');
-    }
+  } catch (_error) {
+    // Ignore if column already exists
   }
-  
+
   // Add guest_sessions_migrated for tracking migration status
   try {
     await tursoClient.execute(`ALTER TABLE users ADD COLUMN guest_sessions_migrated INTEGER DEFAULT 0`);
-    console.log('✅ Added guest_sessions_migrated column to users');
-  } catch (error) {
-    if (error instanceof Error && !error.message?.includes('duplicate column name')) {
-      console.log('ℹ️ guest_sessions_migrated column already exists');
-    }
+  } catch (_error) {
+    // Ignore if column already exists
   }
 
   // Add created_by_user_id for custom games
   try {
     await tursoClient.execute(`ALTER TABLE games ADD COLUMN created_by_user_id INTEGER REFERENCES users(id)`);
-    console.log('✅ Added created_by_user_id column to games');
-  } catch (error) {
-    if (error instanceof Error && !error.message?.includes('duplicate column name')) {
-      console.log('ℹ️ created_by_user_id column already exists or table is new');
-    }
+  } catch (_error) {
+    // Ignore if column already exists
   }
 
   // Add team configuration columns for custom games
   try {
     await tursoClient.execute(`ALTER TABLE games ADD COLUMN team_count INTEGER DEFAULT 2`);
-    console.log('✅ Added team_count column to games');
-  } catch (error) {
-    if (error instanceof Error && !error.message?.includes('duplicate column name')) {
-      console.log('ℹ️ team_count column already exists or table is new');
-    }
+  } catch (_error) {
+    // Ignore if column already exists
   }
 
   try {
     await tursoClient.execute(`ALTER TABLE games ADD COLUMN players_per_team INTEGER DEFAULT 2`);
-    console.log('✅ Added players_per_team column to games');
-  } catch (error) {
-    if (error instanceof Error && !error.message?.includes('duplicate column name')) {
-      console.log('ℹ️ players_per_team column already exists or table is new');
-    }
+  } catch (_error) {
+    // Ignore if column already exists
   }
 
   // Add is_active column to games table
   try {
     await tursoClient.execute(`ALTER TABLE games ADD COLUMN is_active INTEGER DEFAULT 1`);
-    console.log('✅ Added is_active column to games');
-  } catch (error: any) {
-    if (!error.message?.includes('duplicate column name')) {
-      console.log('ℹ️ is_active column already exists or table is new');
-    }
+  } catch (_error: unknown) {
+    // Ignore if column already exists
   }
 
   // Add custom_config column to games table for custom games
   try {
     await tursoClient.execute(`ALTER TABLE games ADD COLUMN custom_config TEXT`);
-    console.log('✅ Added custom_config column to games');
-  } catch (error: any) {
-    if (!error.message?.includes('duplicate column name')) {
-      console.log('ℹ️ custom_config column already exists or table is new');
-    }
+  } catch (_error: unknown) {
+    // Ignore if column already exists
   }
 
   // Create indexes that depend on migrated columns
   try {
     await tursoClient.execute(`CREATE INDEX IF NOT EXISTS idx_games_creator ON games (created_by_user_id)`);
-    console.log('✅ Created idx_games_creator index');
   } catch (error) {
-    console.log('ℹ️ idx_games_creator index already exists or column not available');
+    // Ignore if index already exists
   }
 }
 
@@ -593,9 +533,7 @@ async function seedInitialData(): Promise<void> {
               VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
         args: [adminUsername, adminEmail, hashedPassword]
       });
-      console.log(`✅ Admin user created: ${adminUsername} (${adminEmail})`);
-    } else {
-      console.log(`⏭️ Admin user already exists: ${adminEmail}`);
+      errorLogger.info(`Admin user created: ${adminUsername}`, 'database');
     }
   }
 
@@ -771,14 +709,12 @@ async function migrateSystemData(): Promise<void> {
       authToken: isProduction ? process.env.TURSO_AUTH_TOKEN : undefined
     });
 
-    console.log('🔄 Migrating system data from old database...');
 
     try {
       // Migrate game categories first
       const oldCategories = await oldDbClient.execute('SELECT * FROM game_categories ORDER BY id');
       
       if (oldCategories.rows.length > 0) {
-        console.log(`📂 Migrating ${oldCategories.rows.length} game categories...`);
         
         for (const category of oldCategories.rows) {
           const existing = await tursoClient.execute({
@@ -797,9 +733,6 @@ async function migrateSystemData(): Promise<void> {
                 category.updated_at || new Date().toISOString()
               ]
             });
-            console.log(`✅ Migrated category: ${category.name}`);
-          } else {
-            console.log(`⏭️ Category already exists: ${category.name}`);
           }
         }
       }
@@ -808,7 +741,6 @@ async function migrateSystemData(): Promise<void> {
       const oldGames = await oldDbClient.execute('SELECT * FROM games ORDER BY id');
       
       if (oldGames.rows.length > 0) {
-        console.log(`🎮 Migrating ${oldGames.rows.length} games...`);
         
         for (const game of oldGames.rows) {
           const existing = await tursoClient.execute({
@@ -860,9 +792,6 @@ async function migrateSystemData(): Promise<void> {
                 game.updated_at || new Date().toISOString()
               ]
             });
-            console.log(`✅ Migrated game: ${game.name} (${game.slug})`);
-          } else {
-            console.log(`⏭️ Game already exists: ${game.name} (${game.slug})`);
           }
         }
       }
@@ -872,7 +801,6 @@ async function migrateSystemData(): Promise<void> {
         const oldSettings = await oldDbClient.execute('SELECT * FROM app_settings');
         
         if (oldSettings.rows.length > 0) {
-          console.log(`⚙️ Migrating ${oldSettings.rows.length} app settings...`);
           
           for (const setting of oldSettings.rows) {
             const existing = await tursoClient.execute({
@@ -889,23 +817,19 @@ async function migrateSystemData(): Promise<void> {
                   setting.updated_at || new Date().toISOString()
                 ]
               });
-              console.log(`✅ Migrated setting: ${setting.id || setting.key}`);
-            } else {
-              console.log(`⏭️ Setting already exists: ${setting.id || setting.key}`);
             }
           }
         }
       } catch (settingsError) {
-        console.log('📝 No app_settings table found in old database - skipping');
+        // No app_settings table found in old database - skipping
       }
 
-      console.log('🎉 System data migration completed!');
       
     } catch (oldDbError) {
-      console.log('📝 Old database not found or tables missing - skipping system data migration');
+      // Old database not found or tables missing - skipping system data migration
     }
   } catch (error) {
-    console.error('❌ System data migration error:', error);
+    errorLogger.error('System data migration failed', 'database', { error: error instanceof Error ? error.message : String(error) });
     // Don't throw - migration is optional
   }
 }
@@ -926,7 +850,6 @@ async function migrateUsers(): Promise<void> {
       const oldUsers = await oldDbClient.execute('SELECT * FROM users ORDER BY id');
       
       if (oldUsers.rows.length > 0) {
-        console.log(`🔄 Migrating ${oldUsers.rows.length} users from old database...`);
         
         for (const user of oldUsers.rows) {
           // Check if user already exists in new database
@@ -959,21 +882,14 @@ async function migrateUsers(): Promise<void> {
                 user.updated_at
               ]
             });
-            console.log(`✅ Migrated user: ${user.username} (${user.email})`);
-          } else {
-            console.log(`⏭️ User already exists: ${user.username} (${user.email})`);
           }
         }
-        
-        console.log('🎉 User migration completed!');
-      } else {
-        console.log('📝 No users found in old database to migrate');
       }
     } catch (oldDbError) {
-      console.log('📝 Old database not found or no users table - skipping migration');
+      // Old database not found or no users table - skipping migration
     }
   } catch (error) {
-    console.error('❌ User migration error:', error);
+    errorLogger.error('User migration failed', 'database', { error: error instanceof Error ? error.message : String(error) });
     // Don't throw - migration is optional
   }
 }

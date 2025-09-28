@@ -1,6 +1,7 @@
 // Game Framework Types - Mini-framework pour créer facilement de nouveaux jeux
 
 import { GameSessionWithRounds, GameSessionWithCategories, Player } from '@/types/multiplayer';
+import React from 'react';
 
 export interface PlayerScores {
   [playerId: number]: number;
@@ -21,9 +22,9 @@ export interface FormField {
   min?: number;
   max?: number;
   step?: number;
-  options?: Array<{ value: any; label: string }>;
-  defaultValue?: any;
-  validation?: (value: any) => boolean;
+  options?: Array<{ value: string | number | boolean; label: string }>;
+  defaultValue?: string | number | boolean;
+  validation?: (value: unknown) => boolean;
   description?: string;
 }
 
@@ -36,7 +37,7 @@ export interface GameTheme {
   };
 }
 
-export interface ScoreCalculationRules<TRoundData = any> {
+export interface ScoreCalculationRules<TRoundData = Record<string, unknown>> {
   // Fonction principale de calcul des scores
   calculateScore: (
     roundData: TRoundData, 
@@ -75,12 +76,12 @@ export interface UILayout {
     columns: Array<{
       key: string;
       label: string;
-      render?: (round: any, session: any) => string | React.ReactNode;
+      render?: (round: Record<string, unknown>, session: GameSessionWithRounds | GameSessionWithCategories) => string | React.ReactNode;
     }>;
   };
 }
 
-export interface GameDefinition<TRoundData = any, TSession = GameSessionWithRounds> {
+export interface GameDefinition<TRoundData = Record<string, unknown>, TSession = GameSessionWithRounds> {
   // Métadonnées
   slug: string;
   name: string;
@@ -121,8 +122,8 @@ export interface GameDefinition<TRoundData = any, TSession = GameSessionWithRoun
   
   // Composants personnalisés (optionnel)
   customComponents?: {
-    scoreDisplay?: React.ComponentType<{ session: TSession; gameState: any }>;
-    roundForm?: React.ComponentType<{ session: TSession; gameState: any; onSubmit: (data: TRoundData) => void }>;
+    scoreDisplay?: React.ComponentType<{ session: TSession; gameState: Record<string, unknown> }>;
+    roundForm?: React.ComponentType<{ session: TSession; gameState: Record<string, unknown>; onSubmit: (data: TRoundData) => void }>;
     roundHistory?: React.ComponentType<{ session: TSession }>;
   };
 }
@@ -135,18 +136,18 @@ export interface GameFrameworkProps {
 
 export interface GameInterfaceProps<TSession = GameSessionWithRounds> {
   session: TSession;
-  gameState: any; // ReturnType de useMultiplayerGame
+  gameState: Record<string, unknown>; // ReturnType de useMultiplayerGame
   definition: GameDefinition;
 }
 
 // Hook personnalisé pour la logique de jeu
-export interface UseGameLogicOptions<TRoundData = any> {
+export interface UseGameLogicOptions<TRoundData = Record<string, unknown>> {
   definition: GameDefinition<TRoundData>;
   session: GameSessionWithRounds | GameSessionWithCategories;
-  gameState: any;
+  gameState: Record<string, unknown>;
 }
 
-export interface UseGameLogicResult<TRoundData = any> {
+export interface UseGameLogicResult<TRoundData = Record<string, unknown>> {
   // État du formulaire
   roundData: TRoundData;
   setRoundData: React.Dispatch<React.SetStateAction<TRoundData>>;

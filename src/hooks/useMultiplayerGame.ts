@@ -7,13 +7,14 @@ import { useGamePermissions } from './useGamePermissions';
 import { GameSession, Player } from '@/types/multiplayer';
 import { notify } from '@/lib/toast';
 import { getGuestId } from '@/lib/guestAuth';
+import { isOfflineSessionId } from './useOfflineSession';
 
 /**
  * Détermine si une session est "locale" (un seul utilisateur connecté)
  * Une session est locale quand tous les joueurs appartiennent au même user_id
  * ou quand il n'y a qu'un seul user_id unique non-null
  */
-function isLocalSession(session: GameSession | null, currentUserId: number | null): boolean {
+function isLocalSession(session: GameSession | null, _currentUserId: number | null): boolean {
   if (!session?.players || session.players.length === 0) {
     return false;
   }
@@ -43,6 +44,9 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
   // Calculer si on doit pauser le polling pour les sessions locales
   const [shouldPausePolling, setShouldPausePolling] = useState(false);
 
+  // Detecter si c'est une session offline
+  const isOffline = isOfflineSessionId(sessionId);
+
   // Calculer l'intervalle de polling optimisé
   const optimizedPollInterval = useMemo(() => {
     // Pour les sessions locales, utiliser un polling beaucoup plus lent
@@ -50,7 +54,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     return shouldPausePolling ? 30000 : undefined; // 30s pour sessions locales vs 2s par défaut
   }, [shouldPausePolling]);
 
-  // Use realtime session hook
+  // Use realtime session hook only for online sessions
   const {
     session: realtimeSession,
     events,
@@ -67,6 +71,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     sessionId,
     gameSlug,
     pollInterval: optimizedPollInterval,
+    enabled: !isOffline, // Disable realtime polling for offline sessions
     onError: useCallback(() => {
       // Silent error handling
     }, [])
@@ -75,27 +80,27 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
   const session = realtimeSession;
   const permissions = useGamePermissions(currentUserId);
 
-  // Effet séparé pour gérer la détection de session locale
+  // Effet séparé pour gérer la détection de session locale (seulement pour sessions online)
   useEffect(() => {
-    if (!session) return;
+    if (isOffline || !session) return;
 
     const isLocal = isLocalSession(session, currentUserId);
-    
+
     if (isLocal !== shouldPausePolling) {
       setShouldPausePolling(isLocal);
     }
-  }, [session, currentUserId, shouldPausePolling]);
+  }, [session, currentUserId, shouldPausePolling, isOffline]);
   
-  // Calculate permissions with session context
-  const canJoinSession = permissions.canJoinSession(session);
-  const canViewSession = permissions.canViewSession(session);
-  const canStartGame = permissions.canStartGame(session);
-  const isHost = session ? permissions.isHost(session.host_user_id, currentUserId) : false;
+  // Calculate permissions with session context (for offline sessions, provide defaults)
+  const canJoinSession = isOffline ? false : permissions.canJoinSession(session);
+  const canViewSession = isOffline ? true : permissions.canViewSession(session);
+  const canStartGame = isOffline ? false : permissions.canStartGame(session);
+  const isHost = isOffline ? true : (session ? permissions.isHost(session.host_user_id, currentUserId) : false);
 
-  // Handle joining the session
+  // Handle joining the session (skip for offline sessions)
   const handleJoinSession = async () => {
-    if (!playerName.trim()) return;
-    
+    if (isOffline || !playerName.trim()) return;
+
     setJoiningSession(true);
     try {
       const response = await fetch(`/api/sessions/${sessionId}/join`, {
@@ -125,8 +130,10 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     }
   };
 
-  // Handle starting the game (host only)
+  // Handle starting the game (host only, skip for offline sessions)
   const handleStartGame = async () => {
+    if (isOffline) return;
+
     try {
       const response = await fetch(`/api/sessions/${sessionId}/start`, {
         method: 'POST',
@@ -143,13 +150,19 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
 
       // Force immediate refresh to show the game has started
       forceRefresh();
-    } catch (error) {
+    } catch (_error) {
       // Handle start game error silently
     }
   };
 
-  // Handle leaving the session
-  const handleLeaveSession = async () => {
+  // Handle leaving the session (skip for offline sessions)
+  const handleLeaveSession = useCallback(async () => {
+    if (isOffline) {
+      // For offline sessions, just navigate back to dashboard
+      router.push('/dashboard');
+      return;
+    }
+
     try {
       const response = await fetch(`/api/sessions/${sessionId}/leave`, {
         method: 'POST',
@@ -166,7 +179,7 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
       }
 
       const result = await response.json();
-      
+
       // Afficher un message informatif selon le résultat
       if (result.sessionDeleted) {
         // Session supprimée car plus personne
@@ -179,10 +192,16 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     } catch (error) {
       notify.error(error instanceof Error ? error.message : 'Erreur lors de la sortie');
     }
-  };
+  }, [isOffline, router, sessionId]);
 
   // Smart navigation that handles leaving session when appropriate
   const goToDashboard = useCallback(() => {
+    if (isOffline) {
+      // For offline sessions, just navigate back to dashboard
+      router.push('/dashboard');
+      return;
+    }
+
     // Si nous sommes dans une session active, quitter proprement
     if (session && currentUserId && permissions.isUserInSession(session.players, currentUserId)) {
       handleLeaveSession();
@@ -190,26 +209,28 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
       // Sinon, navigation directe
       router.push('/dashboard');
     }
-  }, [session, currentUserId, permissions, handleLeaveSession, router]);
+  }, [session, currentUserId, permissions, handleLeaveSession, router, isOffline]);
 
   return {
-    // Session data
+    // Session data (for offline sessions, provide defaults)
     session,
-    events,
-    isConnected,
-    error,
-    lastUpdate,
-    currentUserId,
-    connectionStatus,
-    isLocalSession: isLocalFromServer, // Use server-determined local session flag
-    
+    events: isOffline ? [] : events,
+    isConnected: isOffline ? true : isConnected, // Offline sessions are always "connected"
+    error: isOffline ? null : error,
+    lastUpdate: isOffline ? new Date() : lastUpdate,
+    currentUserId: isOffline ? 1 : currentUserId, // Offline sessions have default user ID
+    connectionStatus: isOffline ? 'connected' : connectionStatus,
+    isLocalSession: isOffline ? true : isLocalFromServer, // Offline sessions are always local
+
     // Permissions
     canJoinSession,
     canViewSession,
     canStartGame,
-    canEditPlayerScores: (player: Player) => permissions.canEditPlayerScores(player, session),
+    canEditPlayerScores: isOffline
+      ? () => true // Offline sessions allow all edits
+      : (player: Player) => permissions.canEditPlayerScores(player, session),
     isHost,
-    
+
     // Join functionality
     playerName,
     setPlayerName,
@@ -217,14 +238,14 @@ export function useMultiplayerGame<T extends GameSession>({ sessionId, gameSlug 
     setPlayer2Name,
     joiningSession,
     handleJoinSession,
-    
-    // Game control
+
+    // Game control (for offline sessions, provide no-op functions)
     handleStartGame,
     handleLeaveSession,
-    addRound,
-    deleteRound,
-    forceRefresh,
-    
+    addRound: isOffline ? async () => {} : addRound, // No-op for offline
+    deleteRound: isOffline ? async () => {} : deleteRound, // No-op for offline
+    forceRefresh: isOffline ? async () => {} : forceRefresh, // No-op for offline
+
     // Navigation
     goToDashboard
   };

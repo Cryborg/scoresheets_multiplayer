@@ -71,28 +71,22 @@ export class SyncService {
    */
   private async syncPendingActions(): Promise<void> {
     if (!this.isRunning) {
-      console.log(`🔄 Sync Service: Not running, skipping sync`);
       return;
     }
 
     // Vérifier qu'on est toujours online avant de tenter une sync
     if (!navigator.onLine) {
-      console.log(`🔄 Sync Service: Offline detected, stopping sync`);
       this.stop();
       return;
     }
 
     try {
-      console.log(`🔄 Sync Service: Checking for pending actions...`);
       const pendingActions = await offlineStorage.getPendingActions();
 
       if (pendingActions.length === 0) {
-        console.log(`🔄 Sync Service: No pending actions found, scheduling next sync in 30s`);
         this.scheduleNextSync(30000); // 30s si rien à sync
         return;
       }
-
-      console.log(`🔄 Sync Service: Processing ${pendingActions.length} pending actions`);
 
       let syncedCount = 0;
       let failedCount = 0;
@@ -114,8 +108,6 @@ export class SyncService {
           failedCount++;
         }
       }
-
-      console.log(`✅ Sync Service: Complete (${syncedCount} synced, ${failedCount} failed)`);
 
       // Notifications aux callbacks
       if (syncedCount > 0) {
@@ -140,7 +132,6 @@ export class SyncService {
   private async syncAction(action: OfflineAction): Promise<boolean> {
     // Double check online status before each action
     if (!navigator.onLine) {
-      console.log(`🔄 Sync Service: Offline detected during action sync, aborting`);
       return false;
     }
 
@@ -170,8 +161,6 @@ export class SyncService {
     try {
       const { session_name, game_slug, players, team_based } = action.data;
 
-      console.log(`🏗️ [syncCreateSession] Création session avec ${players.length} joueurs`);
-
       const response = await authenticatedFetch(`/api/games/${game_slug}/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -195,7 +184,6 @@ export class SyncService {
         // Marque l'action comme synchronisée
         await offlineStorage.markActionAsSynced(action.id);
 
-        console.log(`✅ Session ${action.session_id} synced with server ID ${serverId}`);
         return true;
       } else {
         const error = await response.text();
@@ -222,7 +210,6 @@ export class SyncService {
 
       if (response.ok) {
         await offlineStorage.markActionAsSynced(action.id);
-        console.log(`✅ Join session ${sessionId} synced`);
         return true;
       } else {
         throw new Error(`Server error: ${response.status}`);
@@ -240,18 +227,14 @@ export class SyncService {
     try {
       const { sessionId, playerId, score, roundNumber, details } = action.data;
 
-      console.log(`🔄 [syncAddScore] Sync score pour session ${sessionId}, round ${roundNumber || 'undefined'}`);
-
       // Récupérer la session offline pour obtenir le game_slug
       const session = await offlineStorage.getOfflineSession(action.session_id);
       if (!session) {
-        console.error(`❌ [syncAddScore] Session offline ${action.session_id} introuvable`);
         return false;
       }
 
       // Vérifier que la session a été synchronisée côté serveur
       if (!session.server_id) {
-        console.log(`⏳ [syncAddScore] Session ${action.session_id} pas encore synchronisée, attente...`);
         return false; // Retry plus tard quand la session sera créée
       }
 
@@ -278,7 +261,6 @@ export class SyncService {
             // Récupérer le server_id du joueur
             const offlinePlayer = await offlineStorage.db.players.get(offlinePlayerId);
             if (!offlinePlayer?.server_id) {
-              console.log(`⏳ [syncAddScore] Joueur ${offlinePlayerId} pas encore mappé, attente...`);
               return false; // Retry plus tard quand les joueurs seront mappés
             }
 
@@ -303,7 +285,6 @@ export class SyncService {
             for (const roundAction of sameRoundActions) {
               await offlineStorage.markActionAsSynced(roundAction.id);
             }
-            console.log(`✅ Manche ${roundNumber} synchronisée avec ${scores.length} scores`);
             return true;
           } else {
             const errorText = await response.text();
@@ -320,7 +301,6 @@ export class SyncService {
 
         if (response.ok) {
           await offlineStorage.markActionAsSynced(action.id);
-          console.log(`✅ Score individuel synchronisé pour session ${serverSessionId}`);
           return true;
         } else {
           const errorText = await response.text();
@@ -350,7 +330,6 @@ export class SyncService {
 
       if (response.ok) {
         await offlineStorage.markActionAsSynced(action.id);
-        console.log(`✅ Session ${sessionId} update synced`);
         return true;
       } else {
         throw new Error(`Server error: ${response.status}`);
@@ -379,13 +358,10 @@ export class SyncService {
    */
   private async mapOfflinePlayersToServerIds(offlineSessionId: string, serverSessionId: number): Promise<void> {
     try {
-      console.log(`🔍 [mapOfflinePlayersToServerIds] Début mapping pour session ${offlineSessionId} → ${serverSessionId}`);
-
       // Récupérer la session offline pour obtenir le game_slug
       const session = await offlineStorage.getOfflineSession(offlineSessionId);
       if (!session) {
-        console.error(`❌ [mapOfflinePlayersToServerIds] Session offline ${offlineSessionId} introuvable`);
-        return;
+        throw new Error(`Session offline ${offlineSessionId} introuvable`);
       }
 
       const gameSlug = session.game_slug;
@@ -395,10 +371,8 @@ export class SyncService {
 
       const response = await authenticatedFetch(serverUrl);
       if (!response.ok) {
-        console.error(`❌ [mapOfflinePlayersToServerIds] Impossible de récupérer les joueurs serveur (${response.status})`);
         const errorText = await response.text();
-        console.error(`❌ [mapOfflinePlayersToServerIds] Erreur serveur: ${errorText}`);
-        return;
+        throw new Error(`Impossible de récupérer les joueurs serveur (${response.status}): ${errorText}`);
       }
 
       const serverData = await response.json();
@@ -407,8 +381,6 @@ export class SyncService {
       // Récupérer les joueurs offline et LES TRIER PAR POSITION
       const offlinePlayersUnsorted = await offlineStorage.getOfflineSessionPlayers(offlineSessionId);
       const offlinePlayers = offlinePlayersUnsorted.sort((a, b) => a.position - b.position);
-
-      console.log(`🔗 [mapOfflinePlayersToServerIds] Mapping ${offlinePlayers.length} joueurs offline vers ${serverPlayers.length} joueurs serveur`);
 
       // Mapper par position (les joueurs sont créés dans le même ordre)
       for (let i = 0; i < offlinePlayers.length && i < serverPlayers.length; i++) {
@@ -419,25 +391,18 @@ export class SyncService {
           server_id: serverPlayer.id,
           sync_status: 'synced'
         });
-
-        console.log(`✅ Joueur ${offlinePlayer.name}: ${offlinePlayer.id} → server ID ${serverPlayer.id}`);
       }
-
-      console.log(`✅ [mapOfflinePlayersToServerIds] Mapping terminé`);
 
       // Vérification finale : s'assurer que tous les joueurs ont bien été mappés
       const postMappingPlayers = await offlineStorage.getOfflineSessionPlayers(offlineSessionId);
       const unmappedPlayers = postMappingPlayers.filter(p => !p.server_id);
 
       if (unmappedPlayers.length > 0) {
-        const errorMsg = `❌ [mapOfflinePlayersToServerIds] ${unmappedPlayers.length} joueurs non mappés: ${unmappedPlayers.map(p => p.name).join(', ')}`;
-        console.error(errorMsg);
+        const errorMsg = `${unmappedPlayers.length} joueurs non mappés: ${unmappedPlayers.map(p => p.name).join(', ')}`;
         throw new Error(errorMsg);
       }
-
-      console.log(`✅ [mapOfflinePlayersToServerIds] Tous les joueurs sont correctement mappés`);
     } catch (error) {
-      console.error('❌ [mapOfflinePlayersToServerIds] Erreur:', error);
+      console.error('Erreur lors du mapping des joueurs:', error);
       throw error; // Re-throw pour que syncCreateSession échoue
     }
   }
@@ -473,11 +438,8 @@ export function useSyncService() {
 
   // Configure les callbacks une seule fois au montage
   useEffect(() => {
-    console.log(`🔄 useSyncService: Setting up callbacks (one time)`);
-
     const removeListeners = syncService.addEventListener(
       (syncedCount) => {
-        console.log(`✅ Sync success callback: ${syncedCount} actions synced`);
         setLastSyncSuccess({ count: syncedCount, timestamp: Date.now() });
         // Met à jour le compteur des actions en attente
         const updateCount = async () => {
@@ -486,13 +448,13 @@ export function useSyncService() {
         };
         updateCount();
       },
-      (failedCount) => {
-        console.log(`❌ Sync failed for ${failedCount} actions`);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      (_failedCount) => {
+        // Callback d'échec silencieux - les erreurs sont déjà loggées dans syncService
       }
     );
 
     return () => {
-      console.log(`🔄 useSyncService: Cleaning up callbacks`);
       removeListeners(); // Nettoie les callbacks
       syncService.stop();
     };
@@ -500,13 +462,9 @@ export function useSyncService() {
 
   // Gère le démarrage/arrêt du service selon le statut réseau
   useEffect(() => {
-    console.log(`🔄 useSyncService: Network status changed - isOnline: ${isOnline}`);
-
     if (isOnline) {
-      console.log(`🚀 Starting sync service because we're online`);
       syncService.start();
     } else {
-      console.log(`⏹️ Stopping sync service because we're offline`);
       syncService.stop();
     }
   }, [isOnline]);

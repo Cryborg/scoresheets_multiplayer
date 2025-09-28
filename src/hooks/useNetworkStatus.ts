@@ -117,7 +117,7 @@ class NetworkStatusService {
                         offlineSessions.some(session => session.sync_status === 'pending');
 
       this.hasPendingOfflineData = hasPending;
-    } catch (error) {
+    } catch (_error) {
       // En cas d'erreur, on assume qu'il pourrait y avoir des données
       this.hasPendingOfflineData = true;
     }

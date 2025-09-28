@@ -1,4 +1,5 @@
 import { createIndividualGameDefinition, PlayerScores } from '@/lib/gameFramework';
+import { GameSessionWithRounds, Player } from '@/types/multiplayer';
 
 // Types pour Pierre-Papier-Ciseaux
 interface PPCRoundData {
@@ -8,11 +9,11 @@ interface PPCRoundData {
 }
 
 // Logique du jeu Pierre-Papier-Ciseaux
-function calculatePPCScore(roundData: PPCRoundData, session: any): PlayerScores {
+function calculatePPCScore(roundData: PPCRoundData, session: GameSessionWithRounds): PlayerScores {
   const scores: PlayerScores = {};
   
   // Initialiser tous les joueurs à 0
-  session.players.forEach((player: any) => {
+  session.players.forEach((player: Player) => {
     scores[player.id] = 0;
   });
 
@@ -31,7 +32,7 @@ function calculatePPCScore(roundData: PPCRoundData, session: any): PlayerScores 
     return scores;
   }
 
-  let winner: any = null;
+  let winner: Player | null = null;
   if (
     (choice1 === 'pierre' && choice2 === 'ciseaux') ||
     (choice1 === 'papier' && choice2 === 'pierre') ||
@@ -88,26 +89,26 @@ export const pierrePapierCiseauxDefinition = createIndividualGameDefinition(
       {
         key: 'choices',
         label: 'Choix',
-        render: (round) => {
-          const details = round.details;
+        render: (round: Record<string, unknown>) => {
+          const details = round.details as PPCRoundData | undefined;
           if (!details) return '-';
-          
+
           const choice1Icon = getChoiceIcon(details.player1Choice);
           const choice2Icon = getChoiceIcon(details.player2Choice);
-          
+
           return `${choice1Icon} vs ${choice2Icon}`;
         }
       },
       {
         key: 'result',
         label: 'Résultat',
-        render: (round) => {
+        render: (round: Record<string, unknown>) => {
           // Trouver qui a gagné en regardant les scores
-          const scores = Object.entries(round.scores);
-          const winner = scores.find(([_, score]) => score > 0);
-          
+          const scores = Object.entries(round.scores as Record<string, number>);
+          const winner = scores.find(([, score]) => score > 0);
+
           if (!winner) return '🤝 Égalité';
-          
+
           // Récupérer le nom du joueur gagnant
           // (On devrait avoir accès à session ici, mais pour simplifier...)
           return `🏆 Gagnant`;
@@ -127,24 +128,24 @@ function getChoiceIcon(choice: string): string {
 }
 
 // Règles additionnelles pour Pierre-Papier-Ciseaux
-pierrePapierCiseauxDefinition.rules.getWinner = (session) => {
+pierrePapierCiseauxDefinition.rules.getWinner = (session: GameSessionWithRounds) => {
   if (!session.players) return null;
-  
+
   const playerScores = session.players.map(player => ({
     player,
     total: session.rounds?.reduce((sum, round) => sum + (round.scores[player.id] || 0), 0) || 0
   }));
-  
+
   const winner = playerScores.find(p => p.total >= 5);
   return winner?.player || null;
 };
 
-pierrePapierCiseauxDefinition.rules.isGameFinished = (session) => {
+pierrePapierCiseauxDefinition.rules.isGameFinished = (session: GameSessionWithRounds) => {
   if (!session.players || !session.rounds) return false;
-  
-  const maxScore = Math.max(...session.players.map(player => 
+
+  const maxScore = Math.max(...session.players.map(player =>
     session.rounds?.reduce((sum, round) => sum + (round.scores[player.id] || 0), 0) || 0
   ));
-  
+
   return maxScore >= 5;
 };

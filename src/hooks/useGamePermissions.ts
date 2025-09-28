@@ -1,10 +1,10 @@
-import { Player } from '@/types/multiplayer';
+import { Player, BaseGameSession } from '@/types/multiplayer';
 
 /**
  * Vérifie si on peut rejoindre un jeu d'équipe spécifique
  * Logique extraite pour réduire la complexité du hook principal
  */
-function canJoinTeamGame(session: any): boolean {
+function canJoinTeamGame(session: BaseGameSession): boolean {
   if (!session?.team_based) return true; // Not a team game
 
   switch (session.game_slug) {
@@ -41,7 +41,7 @@ function canJoinTeamGame(session: any): boolean {
 
 export function useGamePermissions(currentUserId: number | null) {
   // Check if current user can edit scores for a specific player
-  const canEditPlayerScores = (player: Player, session?: any): boolean => {
+  const canEditPlayerScores = (player: Player, session?: BaseGameSession): boolean => {
     if (!currentUserId) {
       // Not authenticated - can only edit if player is not linked to a user
       return !player.user_id;
@@ -66,7 +66,7 @@ export function useGamePermissions(currentUserId: number | null) {
   };
 
   // Check if current user can join this session (add new player)
-  const canJoinSession = (session: any): boolean => {
+  const canJoinSession = (session: BaseGameSession): boolean => {
     if (!session) return false;
     
     // Can't join if session is not in waiting state
@@ -90,7 +90,7 @@ export function useGamePermissions(currentUserId: number | null) {
   };
 
   // Check if current user can start the game
-  const canStartGame = (session: any): boolean => {
+  const canStartGame = (session: BaseGameSession): boolean => {
     if (!session || !currentUserId) return false;
     
     // Only host can start
@@ -105,7 +105,7 @@ export function useGamePermissions(currentUserId: number | null) {
   };
 
   // Check if current user can view/participate in this session
-  const canViewSession = (session: any): boolean => {
+  const canViewSession = (session: BaseGameSession): boolean => {
     if (!session) return false;
 
     // Host can always view their sessions

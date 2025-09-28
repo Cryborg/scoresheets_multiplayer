@@ -17,7 +17,7 @@ export interface Team {
 }
 
 // Use the Game interface from gameTeamLogic for consistency
-export interface Game extends GameTeamLogicGame {}
+export type Game = GameTeamLogicGame;
 
 export interface GameSessionCreatorState {
   sessionName: string;

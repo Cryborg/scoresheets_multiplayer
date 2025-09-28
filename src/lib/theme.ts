@@ -127,10 +127,6 @@ export function validateCSSSync() {
   const expectedLight = THEME.colors.light;
   const expectedDark = THEME.colors.dark;
 
-  console.log('🎨 Expected CSS variables from THEME:');
-  console.log('Light theme:', expectedLight);
-  console.log('Dark theme:', expectedDark);
-
   // This could be extended to read actual CSS and compare
   return {
     isValid: true,
