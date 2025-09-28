@@ -40,10 +40,12 @@ export function logError({
         notify.error(message);
         break;
       case 'warning':
-        notify.warning(message);
+        // Utiliser success avec un emoji warning car notify.warning n'existe pas
+        notify.success(`⚠️ ${message}`);
         break;
       case 'info':
-        notify.info(message);
+        // Utiliser success pour les infos car notify.info n'existe pas
+        notify.success(message);
         break;
     }
   }
