@@ -1,18 +1,21 @@
 // Service Worker pour Oh Sheet! PWA
 // Stratégie: Cache First pour assets, Network First pour API, Offline First pour données
 
-const CACHE_NAME = 'oh-sheet-v2';
-const OFFLINE_CACHE = 'oh-sheet-offline-v2';
-const API_CACHE = 'oh-sheet-api-v2';
+const CACHE_NAME = 'oh-sheet-v3';
+const OFFLINE_CACHE = 'oh-sheet-offline-v3';
+const API_CACHE = 'oh-sheet-api-v3';
 
 // Ressources à mettre en cache immédiatement
 const STATIC_ASSETS = [
   '/',
   '/dashboard',
+  '/profile',
+  '/sessions',
+  '/sessions/find',
+  '/auth/login',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
-  '/auth/login',
   // Next.js génère des noms de chunks dynamiques, on les gèrera différemment
 ];
 
@@ -22,6 +25,9 @@ const PRECACHE_URLS = [
   '/games/mille-bornes/new',
   '/games/belote/new',
   '/games/tarot/new',
+  '/games/rami/new',
+  '/games/bataille/new',
+  '/games/pierre-papier-ciseaux/new',
   '/games/jeu-libre/configure'
 ];
 

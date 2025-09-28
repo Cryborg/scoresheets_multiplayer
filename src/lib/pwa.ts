@@ -52,7 +52,7 @@ export class PWAManager {
           scope: '/'
         });
 
-        errorLogger.info(`PWA: Service Worker registered: ${this.registration.scope}`);
+        errorLogger.silent(`PWA: Service Worker registered: ${this.registration.scope}`);
 
         // Gestion des mises à jour
         this.registration.addEventListener('updatefound', () => {
