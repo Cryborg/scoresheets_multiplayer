@@ -171,7 +171,7 @@ export class OfflineStorageService {
       max_retries: 3
     });
 
-    console.log(`📝 [addOfflineScore] Score ajouté et action de sync créée pour session ${scoreData.session_id}`);
+    // Score added and sync action created
     return id;
   }
 

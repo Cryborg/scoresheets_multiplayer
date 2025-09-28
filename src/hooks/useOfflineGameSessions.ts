@@ -129,7 +129,7 @@ export function useOfflineGameSessions(options: { enableAutoRefresh?: boolean } 
       setSessions(validSessions);
 
       if (process.env.NODE_ENV === 'development') {
-        console.log(`🔄 [Offline-First] Loaded ${validSessions.length} sessions (${onlineSessions.length} online, ${offlineSessions.length} offline)`);
+        // Sessions loaded
       }
 
     } catch (error) {

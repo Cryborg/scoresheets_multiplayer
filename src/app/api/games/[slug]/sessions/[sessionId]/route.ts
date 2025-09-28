@@ -9,7 +9,7 @@ export async function GET(
     await ensureDatabaseExists();
     
     const { slug, sessionId } = await params;
-    console.log(`[API] GET /api/games/${slug}/sessions/${sessionId}`);
+    // GET session request
 
     // Get session with game info
     const sessionResult = await db.execute({
@@ -115,7 +115,7 @@ export async function GET(
       }
     };
 
-    console.log(`[API] Session data:`, JSON.stringify(responseData, null, 2));
+    // Returning session data
     return NextResponse.json(responseData);
 
   } catch (error) {

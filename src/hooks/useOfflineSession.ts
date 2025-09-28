@@ -19,32 +19,32 @@ export function useOfflineSession(sessionId: string) {
       setIsLoading(true);
       setError(null);
 
-      console.log(`🔍 [useOfflineSession] Chargement de la session ${sessionId}...`);
+      // Loading offline session
 
       const sessionData = await offlineStorage.getOfflineSession(sessionId);
       if (!sessionData) {
-        console.log(`❌ [useOfflineSession] Session ${sessionId} introuvable dans IndexedDB`);
+        // Session not found in IndexedDB
 
         // Vérifier si cette session existe côté serveur (synchronisée)
         try {
-          console.log(`🔍 [useOfflineSession] Vérification côté serveur pour ${sessionId}...`);
+          // Checking server for session
           const response = await fetch(`/api/sessions/${sessionId}`);
 
           if (response.ok) {
             const serverSession = await response.json();
-            console.log(`✅ [useOfflineSession] Session trouvée côté serveur:`, serverSession);
+            // Session found on server
 
             // Rediriger vers l'ID serveur si c'est une session synchronisée
             if (serverSession.session) {
               const gameSlug = serverSession.session.game_slug;
               const serverId = serverSession.session.id;
-              console.log(`🚀 [useOfflineSession] Redirection vers /games/${gameSlug}/${serverId}`);
+              // Redirecting to server session
               router.replace(`/games/${gameSlug}/${serverId}`);
               return;
             }
           }
         } catch (serverError) {
-          console.log(`ℹ️ [useOfflineSession] Session non trouvée côté serveur non plus`);
+          // Session not found on server either
         }
 
         setError('Session offline introuvable');
@@ -52,12 +52,12 @@ export function useOfflineSession(sessionId: string) {
         return;
       }
 
-      console.log(`✅ [useOfflineSession] Session ${sessionId} trouvée:`, sessionData);
+      // Session found
 
       const players = await offlineStorage.getOfflineSessionPlayers(sessionId);
       const scores = await offlineStorage.getOfflineSessionScores(sessionId);
 
-      console.log(`📊 [useOfflineSession] Données chargées: ${players.length} joueurs, ${scores.length} scores`);
+      // Data loaded
 
       setSession({
         ...sessionData,
