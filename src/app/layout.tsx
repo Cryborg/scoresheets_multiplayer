@@ -12,6 +12,7 @@ import MaintenanceCheck from "@/components/MaintenanceCheck";
 import CookieConsent from "@/components/CookieConsent";
 import PWAInit from "@/components/PWAInit";
 import OfflineIndicator from "@/components/offline/OfflineIndicator";
+import SyncNotification from "@/components/ui/SyncNotification";
 import { BRANDING } from "@/lib/branding";
 
 const geistSans = Geist({
@@ -88,6 +89,7 @@ export default function RootLayout({
                   {children}
                 </MaintenanceCheck>
                 <OfflineIndicator />
+                <SyncNotification />
                 <CookieConsent />
               </ConfirmationProvider>
             </ToastProvider>

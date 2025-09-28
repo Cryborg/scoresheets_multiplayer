@@ -15,8 +15,8 @@ const LoadingComponent = () => (
   <div className="text-center py-8">Chargement de la feuille de score...</div>
 );
 
-// Composants spécifiques multiplayer
-const specificComponents: Record<string, ComponentType<ScoreSheetProps>> = {
+// Composants de base (online uniquement)
+const baseComponents: Record<string, ComponentType<ScoreSheetProps>> = {
   'yams': dynamic(() => import('@/components/scoresheets/YamsScoreSheetMultiplayer'), {
     loading: LoadingComponent
   }),
@@ -45,6 +45,9 @@ const specificComponents: Record<string, ComponentType<ScoreSheetProps>> = {
     loading: LoadingComponent
   }),
 };
+
+// Composants finaux (on va gérer le wrapping directement dans chaque composant)
+const specificComponents: Record<string, ComponentType<ScoreSheetProps>> = baseComponents;
 
 /**
  * Détecte si un slug correspond à un jeu personnalisé

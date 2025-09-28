@@ -4,6 +4,7 @@ import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { GameSessionWithRounds } from '@/types/multiplayer';
 import { useState } from 'react';
 import { Trophy, TrendingDown, Edit3 } from 'lucide-react';
+import ScoreInput from '@/components/ui/ScoreInput';
 
 interface RoundBasedScoreSheetProps {
   sessionId: string;
@@ -98,7 +99,7 @@ export default function RoundBasedScoreSheet({
                 <div className="grid gap-3">
                   {session.players.map((player) => (
                     <div key={player.id} className="group">
-                      <div className="flex items-center gap-4 p-4 rounded-xl bg-white/70 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
+                      <div className="flex items-center gap-4 p-4 rounded-xl bg-white/70 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700">
                         {/* Nom du joueur */}
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
@@ -106,20 +107,17 @@ export default function RoundBasedScoreSheet({
                           </h3>
                         </div>
                         
-                        {/* Input score */}
+                        {/* Input score avec boutons +/- */}
                         <div className="flex-shrink-0">
-                          <div className="relative">
-                            <input
-                              type="number"
-                              placeholder="0"
-                              value={roundScores[player.id] || ''}
-                              onChange={(e) => handleScoreChange(player.id, parseInt(e.target.value) || 0)}
-                              className="w-16 sm:w-20 h-12 text-center text-lg font-semibold border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-colors bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                            />
-                            <div className="absolute -bottom-1 -right-1 text-xs text-gray-400 dark:text-gray-500">
-                              pts
-                            </div>
-                          </div>
+                          <ScoreInput
+                            value={roundScores[player.id] || ''}
+                            onChange={(value) => handleScoreChange(player.id, parseInt(value) || 0)}
+                            showButtons={true}
+                            size="md"
+                            placeholder="0"
+                            min={0}
+                            className="w-32"
+                          />
                         </div>
                       </div>
                     </div>

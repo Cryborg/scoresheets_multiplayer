@@ -44,8 +44,24 @@ export function useOfflineGameSessions(options: { enableAutoRefresh?: boolean } 
     });
 
     // Ajoute les sessions offline (non encore synchronisées)
+    // Exclure les sessions qui ont été synchronisées pour éviter les doublons
     offlineSessions.forEach(offlineSession => {
-      if (offlineSession.sync_status === 'pending') {
+      // Vérifier s'il y a un doublon basé sur le nom et les joueurs
+      const hasDuplicate = onlineSessions.some(onlineSession =>
+        onlineSession.session_name === offlineSession.session_name &&
+        onlineSession.game_slug === offlineSession.game_slug &&
+        JSON.stringify(onlineSession.players.sort()) === JSON.stringify(offlineSession.players.sort())
+      );
+
+      // Afficher les sessions offline si :
+      // 1. Elles sont en attente de synchronisation (pending)
+      // 2. Elles sont synchronisées MAIS pas encore récupérées comme session online (pas de doublon)
+      // 3. PAS si elles ont un server_id ET qu'il y a un doublon (éviter les vrais doublons)
+      const hasServerIdAndDuplicate = offlineSession.server_id && hasDuplicate;
+      const shouldShowOfflineSession = !hasServerIdAndDuplicate &&
+        (offlineSession.sync_status === 'pending' || offlineSession.sync_status === 'synced');
+
+      if (shouldShowOfflineSession) {
         merged.push({
           id: offlineSession.id,
           session_name: offlineSession.session_name,
@@ -172,10 +188,13 @@ export function useOfflineGameSessions(options: { enableAutoRefresh?: boolean } 
   }, [sessions]);
 
   const getActiveSessionsForGame = useCallback((gameSlug: string) => {
-    return sessions.filter(session =>
+    const filtered = sessions.filter(session =>
       session.game_slug === gameSlug &&
       (session.status === 'active' || session.status === 'waiting')
     );
+
+
+    return filtered;
   }, [sessions]);
 
   const getCompletedSessionsForGame = useCallback((gameSlug: string) => {
@@ -198,7 +217,7 @@ export function useOfflineGameSessions(options: { enableAutoRefresh?: boolean } 
         session_name: sessionData.session_name,
         game_name: sessionData.game_name,
         game_slug: sessionData.game_slug,
-        status: 'waiting',
+        status: 'active', // Offline = tous les joueurs sont déjà saisis, on démarre directement
         current_players: sessionData.players.length,
         max_players: sessionData.players.length, // Offline = tous les joueurs saisis
         created_at: new Date().toISOString(),
@@ -207,6 +226,15 @@ export function useOfflineGameSessions(options: { enableAutoRefresh?: boolean } 
         players: sessionData.players,
         team_based: sessionData.team_based
       });
+
+      // Créer les objets OfflinePlayer pour chaque joueur
+      for (let i = 0; i < sessionData.players.length; i++) {
+        await offlineStorage.addOfflinePlayer({
+          session_id: sessionId,
+          name: sessionData.players[i],
+          position: i + 1
+        });
+      }
 
       // Queue action de création pour synchronisation future
       await offlineStorage.queueAction({

@@ -60,8 +60,7 @@ function DashboardContent({ isAuthenticated }: { isAuthenticated: boolean }) {
     getCompletedSessionsForGame,
     refetch: refetchSessions,
     isOfflineMode,
-    offlineSessions,
-    onlineSessions
+    offlineSessions
   } = useOfflineGameSessions();
 
   // Check if guest banner should be shown (only client-side to avoid hydration)

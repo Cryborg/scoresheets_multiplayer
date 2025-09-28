@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Clock, Plus, Play, RotateCw, ArrowLeft, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Users, Clock, Plus, Play, RotateCw, ArrowLeft, Trash2, Loader2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useGlobalConfirm } from '@/contexts/ConfirmationContext';
-import OfflineGameCreator from '@/components/offline/OfflineGameCreator';
+import { notify } from '@/lib/toast';
+import { offlineStorage } from '@/lib/offline-storage';
 import { Game } from '@/types/dashboard';
 
 interface GameSession {
-  id: number;
+  id: number | string; // Les sessions offline ont des IDs string
   session_name: string;
   game_name: string;
   game_slug: string;
@@ -20,6 +22,7 @@ interface GameSession {
   ended_at?: string;
   is_host: boolean;
   players: string[];
+  offline_mode?: boolean; // Indique si c'est une session offline
 }
 
 interface GameCardProps {
@@ -39,8 +42,10 @@ export default function GameCard({
   onRefetchSessions
 }: GameCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
-  const [showGameCreator, setShowGameCreator] = useState(false);
+  const [deletingSessionId, setDeletingSessionId] = useState<string | number | null>(null);
+  const [deletedSessionIds, setDeletedSessionIds] = useState<Set<string | number>>(new Set());
   const { confirm } = useGlobalConfirm();
+  const router = useRouter();
 
   const handleFlip = () => {
     // Allow flipping back to front even if no active sessions (user might have deleted the last session)
@@ -58,40 +63,67 @@ export default function GameCard({
     });
   };
 
-  const handleDeleteSession = async (sessionId: number, sessionName: string) => {
+  const handleDeleteSession = async (session: GameSession) => {
     const confirmed = await confirm({
       title: 'Supprimer la partie',
-      message: `Êtes-vous sûr de vouloir supprimer la partie "${sessionName}" ? Cette action ne peut pas être annulée.`,
+      message: `Êtes-vous sûr de vouloir supprimer la partie "${session.session_name}" ? Cette action ne peut pas être annulée.`,
       confirmLabel: 'Supprimer',
       cancelLabel: 'Annuler',
       isDangerous: true
     });
 
     if (confirmed) {
-      try {
-        const response = await fetch(`/api/sessions/${sessionId}`, {
-          method: 'DELETE'
-        });
+      // Marquer comme en cours de suppression pour afficher le spinner
+      setDeletingSessionId(session.id);
 
-        if (response.ok) {
+      try {
+        if (session.offline_mode) {
+          // Session offline - supprimer depuis IndexedDB
+          await offlineStorage.deleteOfflineSession(session.id as string);
+        } else {
+          // Session online - supprimer via API
+          const response = await fetch(`/api/sessions/${session.id}`, {
+            method: 'DELETE'
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            notify.error(data.error || 'Erreur lors de la suppression');
+            setDeletingSessionId(null);
+            return;
+          }
+        }
+
+        // Marquer comme supprimé pour déclencher l'animation de slide-out
+        setDeletedSessionIds(prev => new Set([...prev, session.id]));
+
+        // Attendre la fin de l'animation avant de supprimer réellement
+        setTimeout(() => {
+          // Vérifier si c'était la dernière session active et qu'on est sur la face arrière
+          const remainingActiveSessions = activeSessions.filter(s => s.id !== session.id);
+          const wasLastActiveSession = remainingActiveSessions.length === 0 && activeSessions.length === 1 && isFlipped;
+
           // Actualiser la liste des sessions
           onRefetchSessions();
-        } else {
-          const data = await response.json();
-          alert(data.error || 'Erreur lors de la suppression');
-        }
+
+          // Reset les états
+          setDeletingSessionId(null);
+          setDeletedSessionIds(new Set());
+
+          // Auto-flip vers la face avant si c'était la dernière session active
+          if (wasLastActiveSession) {
+            setIsFlipped(false);
+          }
+        }, 300); // Durée de l'animation de slide-out
+
       } catch (error) {
         console.error('Error deleting session:', error);
-        alert('Erreur lors de la suppression');
+        notify.error('Erreur lors de la suppression');
+        setDeletingSessionId(null);
       }
     }
   };
 
-  const handleGameCreatorClose = () => {
-    setShowGameCreator(false);
-    // Actualise les sessions après création d'une partie
-    onRefetchSessions();
-  };
 
   return (
     <div className={`relative h-80 w-full perspective-1000 ${isLastPlayed ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`}>
@@ -139,7 +171,7 @@ export default function GameCard({
               
               {/* Bouton Nouvelle partie */}
               <Button
-                onClick={() => setShowGameCreator(true)}
+                onClick={() => router.push(`/games/${game.slug}/new`)}
                 variant="secondary"
                 size="sm"
                 leftIcon={<Plus className="h-4 w-4" />}
@@ -174,7 +206,14 @@ export default function GameCard({
                   En cours ({activeSessions.length})
                 </h6>
                 {activeSessions.map(session => (
-                  <div key={session.id} className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                  <div
+                    key={session.id}
+                    className={`p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-all duration-300 ${
+                      deletedSessionIds.has(session.id)
+                        ? 'transform translate-x-full opacity-0'
+                        : 'transform translate-x-0 opacity-100'
+                    }`}
+                  >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <h6 className="font-medium text-green-900 dark:text-green-100 text-sm truncate">
@@ -198,13 +237,18 @@ export default function GameCard({
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteSession(session.id, session.session_name);
+                            handleDeleteSession(session);
                           }}
                           variant="danger"
                           size="xs"
                           title="Supprimer cette partie"
+                          disabled={deletingSessionId === session.id}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          {deletingSessionId === session.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -220,7 +264,14 @@ export default function GameCard({
                   Terminées ({completedSessions.length})
                 </h6>
                 {completedSessions.slice(0, 3).map(session => (
-                  <div key={session.id} className="p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                  <div
+                    key={session.id}
+                    className={`p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-300 ${
+                      deletedSessionIds.has(session.id)
+                        ? 'transform translate-x-full opacity-0'
+                        : 'transform translate-x-0 opacity-100'
+                    }`}
+                  >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <h6 className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">
@@ -244,13 +295,18 @@ export default function GameCard({
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteSession(session.id, session.session_name);
+                            handleDeleteSession(session);
                           }}
                           variant="danger"
                           size="xs"
                           title="Supprimer cette partie"
+                          disabled={deletingSessionId === session.id}
                         >
-                          <Trash2 className="h-3 w-3" />
+                          {deletingSessionId === session.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -275,13 +331,6 @@ export default function GameCard({
         </div>
       </div>
 
-      {/* Modal de création de partie offline-first */}
-      {showGameCreator && (
-        <OfflineGameCreator
-          game={game}
-          onClose={handleGameCreatorClose}
-        />
-      )}
     </div>
   );
 }

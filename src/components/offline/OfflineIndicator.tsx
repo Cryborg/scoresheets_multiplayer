@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Wifi, WifiOff, RotateCw, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useSyncService } from '@/lib/sync-service';
@@ -15,9 +15,27 @@ export default function OfflineIndicator() {
   const { pendingCount, forceSync } = useSyncService();
   const { canInstall, isInstalled, promptInstall } = usePWA();
   const [showDetails, setShowDetails] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Debug log pour vérifier l'initialisation
+  useEffect(() => {
+    console.log(`🔍 OfflineIndicator: Initialized - isOnline: ${isOnline}, pendingCount: ${pendingCount}`);
+  }, [isOnline, pendingCount]);
+
+  // Évite les erreurs d'hydratation en rendant seulement côté client
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Pas de rendu côté serveur
+  if (!isClient) {
+    return null;
+  }
 
   // Ne s'affiche que si pertinent
-  if (isOnline && pendingCount === 0 && !canInstall) {
+  const shouldShow = !isOnline || pendingCount > 0 || (canInstall === true);
+
+  if (!shouldShow) {
     return null;
   }
 

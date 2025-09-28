@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import { authenticatedFetch } from '@/lib/authClient';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
 import { GamePageLayout } from '@/components/layout/PageLayout';
+import { notify } from '@/lib/toast';
 
 export default function JeuLibreConfigurePage() {
   const router = useRouter();
@@ -71,11 +72,11 @@ export default function JeuLibreConfigurePage() {
       } else {
         const error = await response.json();
         console.error('Failed to create custom game:', error);
-        alert(error.error || 'Erreur lors de la création du jeu. Veuillez réessayer.');
+        notify.error(error.error || 'Erreur lors de la création du jeu. Veuillez réessayer.');
       }
     } catch (error) {
       console.error('Error creating custom game:', error);
-      alert('Erreur lors de la création du jeu. Veuillez réessayer.');
+      notify.error('Erreur lors de la création du jeu. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }

@@ -155,6 +155,23 @@ export class OfflineStorageService {
     };
 
     await this.db.scores.add(score);
+
+    // Créer une action de synchronisation pour ce score
+    await this.queueAction({
+      type: 'add_score',
+      session_id: scoreData.session_id,
+      data: {
+        sessionId: scoreData.session_id,
+        playerId: scoreData.player_id,
+        score: scoreData.score,
+        roundNumber: scoreData.round_number,
+        details: scoreData.details
+      },
+      priority: 2,
+      max_retries: 3
+    });
+
+    console.log(`📝 [addOfflineScore] Score ajouté et action de sync créée pour session ${scoreData.session_id}`);
     return id;
   }
 
@@ -173,7 +190,9 @@ export class OfflineStorageService {
       sync_status: 'pending'
     };
 
+    console.log(`📝 Offline Storage: Queuing action ${action.type} for session ${action.session_id}`, action);
     await this.db.actions.add(action);
+    console.log(`✅ Offline Storage: Action ${id} queued successfully`);
     return id;
   }
 
@@ -181,11 +200,13 @@ export class OfflineStorageService {
     const actions = await this.db.actions
       .where('sync_status')
       .anyOf(['pending', 'failed'])
-      .and(action => action.retry_count < action.max_retries)
       .toArray();
 
+    // Filtre les actions qui n'ont pas atteint le max de retry
+    const pendingActions = actions.filter(action => action.retry_count < action.max_retries);
+
     // Trie par priorité après récupération
-    return actions.sort((a, b) => a.priority - b.priority);
+    return pendingActions.sort((a, b) => a.priority - b.priority);
   }
 
   async markActionAsSynced(actionId: string): Promise<void> {
@@ -233,6 +254,27 @@ export class OfflineStorageService {
     }
 
     return cache.data;
+  }
+
+  // Suppression de session offline
+  async deleteOfflineSession(sessionId: string): Promise<void> {
+    // Supprimer la session
+    await this.db.sessions.delete(sessionId);
+
+    // Supprimer tous les joueurs de cette session
+    const players = await this.db.players.where('session_id').equals(sessionId).toArray();
+    const playerIds = players.map(p => p.id);
+    await this.db.players.bulkDelete(playerIds);
+
+    // Supprimer tous les scores de cette session
+    const scores = await this.db.scores.where('session_id').equals(sessionId).toArray();
+    const scoreIds = scores.map(s => s.id);
+    await this.db.scores.bulkDelete(scoreIds);
+
+    // Supprimer toutes les actions en attente pour cette session
+    const actions = await this.db.actions.where('session_id').equals(sessionId).toArray();
+    const actionIds = actions.map(a => a.id);
+    await this.db.actions.bulkDelete(actionIds);
   }
 
   // Nettoyage

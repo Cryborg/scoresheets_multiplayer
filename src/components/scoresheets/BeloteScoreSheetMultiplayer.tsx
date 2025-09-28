@@ -6,6 +6,7 @@ import ScoreInput from '@/components/ui/ScoreInput';
 import GameCard from '@/components/layout/GameCard';
 import BaseScoreSheetMultiplayer from './BaseScoreSheetMultiplayer';
 import { useErrorHandler } from '@/contexts/ErrorContext';
+import { notify } from '@/lib/toast';
 import { GameSessionWithRounds } from '@/types/multiplayer';
 
 interface BeloteGameSession extends GameSessionWithRounds {
@@ -136,7 +137,7 @@ function BeloteGameInterface({
 
     // Validation : au moins une équipe doit avoir des points
     if (newRound.team1Points === 0 && newRound.team2Points === 0) {
-      alert('Veuillez saisir au moins des points pour une équipe.');
+      notify.error('Veuillez saisir des points pour au moins une équipe.');
       return;
     }
 

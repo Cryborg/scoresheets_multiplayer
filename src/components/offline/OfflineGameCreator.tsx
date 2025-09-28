@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useOfflineGameSessions } from '@/hooks/useOfflineGameSessions';
 import { Game } from '@/types/dashboard';
+import { notify } from '@/lib/toast';
 
 interface OfflineGameCreatorProps {
   game: Game;
@@ -59,19 +60,19 @@ export default function OfflineGameCreator({ game, onClose }: OfflineGameCreator
       const validPlayers = players.filter(name => name.trim() !== '');
 
       if (validPlayers.length < minPlayers) {
-        alert(`${isOnline ? 'Au moins 1 joueur' : `Au moins ${minPlayers} joueurs`} requis`);
+        notify.error(`${isOnline ? 'Au moins 1 joueur' : `Au moins ${minPlayers} joueurs`} requis`);
         return;
       }
 
       if (validPlayers.length > maxPlayers) {
-        alert(`Maximum ${maxPlayers} joueurs autorisés`);
+        notify.error(`Maximum ${maxPlayers} joueurs autorisés`);
         return;
       }
 
       // Vérifie les doublons
       const uniqueNames = new Set(validPlayers.map(name => name.trim().toLowerCase()));
       if (uniqueNames.size !== validPlayers.length) {
-        alert('Les noms des joueurs doivent être uniques');
+        notify.error('Les noms des joueurs doivent être uniques');
         return;
       }
 
@@ -91,7 +92,7 @@ export default function OfflineGameCreator({ game, onClose }: OfflineGameCreator
           router.push(`/games/${game.slug}/${result.sessionId}`);
         } else {
           const error = await response.json();
-          alert(error.error || 'Erreur lors de la création');
+          notify.error(error.error || 'Erreur lors de la création');
         }
       } else {
         // Mode offline : stockage local
@@ -107,7 +108,7 @@ export default function OfflineGameCreator({ game, onClose }: OfflineGameCreator
       }
     } catch (error) {
       console.error('Error creating game session:', error);
-      alert('Erreur lors de la création de la partie');
+      notify.error('Erreur lors de la création de la partie');
     } finally {
       setLoading(false);
     }

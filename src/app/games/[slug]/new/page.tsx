@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { useGameSessionCreator, Game } from '@/hooks/useGameSessionCreator';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
+import { useOfflineGameSessions } from '@/hooks/useOfflineGameSessions';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import GameSessionForm from '@/components/GameSessionForm';
 import { authenticatedFetch } from '@/lib/authClient';
 import { getGuestId } from '@/lib/guestAuth';
@@ -31,6 +33,8 @@ export default function NewGamePage() {
   } = useGameSessionCreator(game);
 
   const { setLastPlayedGame } = useLastPlayedGame();
+  const { createOfflineSession } = useOfflineGameSessions();
+  const { isOnline } = useNetworkStatus();
 
   const fetchGame = useCallback(async () => {
     try {
@@ -81,12 +85,38 @@ export default function NewGamePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!game) return;
-    
-    const result = await createSession(`/api/games/${slug}/sessions`);
-    
-    if (result) {
-      // Redirect directly to the game session (salon/lobby)
-      router.push(`/games/${slug}/${result.sessionId}`);
+
+    if (isOnline) {
+      // Mode online : utiliser l'API normale
+      const result = await createSession(`/api/games/${slug}/sessions`);
+
+      if (result) {
+        // Redirect directly to the game session (salon/lobby)
+        router.push(`/games/${slug}/${result.sessionId}`);
+      }
+    } else {
+      // Mode offline : créer une session locale
+      try {
+        const players = state.players.map(p => p.name).filter(p => p.trim());
+
+        if (players.length < 2) {
+          console.error('Au moins 2 joueurs sont requis');
+          return;
+        }
+
+        const sessionId = await createOfflineSession({
+          session_name: state.sessionName.trim() || `Partie de ${game.name}`,
+          game_slug: game.slug,
+          game_name: game.name,
+          players: players,
+          team_based: game.team_based
+        });
+
+        // Redirection vers la session offline
+        router.push(`/games/${slug}/${sessionId}`);
+      } catch (error) {
+        console.error('Erreur lors de la création de la session offline:', error);
+      }
     }
   };
 

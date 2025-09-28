@@ -10,6 +10,7 @@ import { GameSessionWithRounds } from '@/types/multiplayer';
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
 import { TeamRecord } from '@/types/realtime';
 import { useErrorHandler } from '@/contexts/ErrorContext';
+import { notify } from '@/lib/toast';
 
 interface MilleBornesGameSession extends GameSessionWithRounds {
   teams?: TeamRecord[];
@@ -85,6 +86,27 @@ function MilleBornesGameInterface({
   const [gameVariant, setGameVariant] = useState<GameVariant>('moderne');
   const [variantSelected, setVariantSelected] = useState(false);
 
+  // Persist variant selection per session to prevent reset after round submission
+  useEffect(() => {
+    const savedVariant = localStorage.getItem(`mille-bornes-variant-${session?.id}`);
+    const savedVariantSelected = localStorage.getItem(`mille-bornes-variant-selected-${session?.id}`);
+
+    if (savedVariant && savedVariantSelected === 'true') {
+      setGameVariant(savedVariant as GameVariant);
+      setVariantSelected(true);
+    }
+  }, [session?.id]);
+
+  const handleVariantSelection = (variant: GameVariant) => {
+    setGameVariant(variant);
+    setVariantSelected(true);
+    // Persist the selection
+    if (session?.id) {
+      localStorage.setItem(`mille-bornes-variant-${session.id}`, variant);
+      localStorage.setItem(`mille-bornes-variant-selected-${session.id}`, 'true');
+    }
+  };
+
   // Initialize form data for all players
   useEffect(() => {
     if (session?.players) {
@@ -158,7 +180,7 @@ function MilleBornesGameInterface({
       );
 
     if (!hasValidScores) {
-      alert('Veuillez saisir au moins un score ou une prime.');
+      notify.error('Veuillez saisir au moins un score ou une prime.');
       return;
     }
 
@@ -307,7 +329,7 @@ function MilleBornesGameInterface({
           </div>
           
           <button
-            onClick={() => setVariantSelected(true)}
+            onClick={() => handleVariantSelection(gameVariant)}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition-colors font-medium"
           >
             Commencer avec la version {gameVariant}
@@ -322,8 +344,15 @@ function MilleBornesGameInterface({
       {/* Variante choisie */}
       <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
         Variante : <span className="font-medium capitalize">{gameVariant}</span>
-        <button 
-          onClick={() => setVariantSelected(false)}
+        <button
+          onClick={() => {
+            setVariantSelected(false);
+            // Clear localStorage to show selection again
+            if (session?.id) {
+              localStorage.removeItem(`mille-bornes-variant-${session.id}`);
+              localStorage.removeItem(`mille-bornes-variant-selected-${session.id}`);
+            }
+          }}
           className="ml-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
         >
           (Changer)

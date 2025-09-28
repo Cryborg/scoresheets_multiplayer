@@ -540,6 +540,26 @@ JWT_SECRET=long-random-string
 
 ## 🧩 KEY COMPONENTS (AI REFERENCE)
 
+### ScoreInput (Modern Input Component)
+- **Location**: `src/components/ui/ScoreInput.tsx`
+- **Purpose**: Standardized score input with +/- buttons and consistent UX
+- **CRITICAL**: Always use this for score inputs, never raw `<input type="number">`
+- **Features**: Plus/minus buttons, validation, consistent styling, accessibility
+- **Usage**:
+```typescript
+import ScoreInput from '@/components/ui/ScoreInput';
+
+<ScoreInput
+  value={score}
+  onChange={(value) => setScore(parseInt(value) || 0)}
+  showButtons={true}
+  size="md"
+  placeholder="0"
+  min={0}
+  className="w-32"
+/>
+```
+
 ### BaseScoreSheetMultiplayer
 - **Location**: `src/components/scoresheets/BaseScoreSheetMultiplayer.tsx`
 - **Purpose**: Eliminates 90% of boilerplate across all game components

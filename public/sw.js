@@ -89,7 +89,11 @@ self.addEventListener('fetch', event => {
 
   // Détermine la stratégie en fonction de l'URL
   if (CACHE_STRATEGIES.health.test(url.pathname)) {
-    // Health check: Network Only
+    // Health check: Network Only - mais pas en dev pour éviter les conflits de port
+    if (url.origin !== self.location.origin) {
+      console.log('SW: Skipping cross-origin health check in dev mode');
+      return;
+    }
     event.respondWith(fetch(request));
     return;
   }

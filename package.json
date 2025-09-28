@@ -5,7 +5,7 @@
   "description": "Oh Sheet! Score like a pro - Multiplayer real-time game scoring made fun",
   "scripts": {
     "dev": "next dev --turbopack",
-    "dev:clean": "rm -rf .next && rm -rf node_modules/.cache && next dev --turbopack",
+    "dev:clean": "node scripts/dev-clean-with-init.js",
     "dev:fresh": "rm -rf .next && rm -rf node_modules/.cache && rm -f ./data/scoresheets.db && npm run dev:setup && next dev --turbopack",
     "dev:setup": "node scripts/setup-dev-simple.js",
     "dev:watch": "nodemon",

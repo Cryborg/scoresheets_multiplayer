@@ -37,6 +37,15 @@ export class PWAManager {
 
   async registerServiceWorker(): Promise<boolean> {
     if ('serviceWorker' in navigator) {
+      // Désactive le Service Worker en développement pour éviter les conflits
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔧 PWA: Skipping Service Worker registration in development mode');
+
+        // Nettoie les service workers existants en dev
+        await this.unregisterAllServiceWorkers();
+        return false;
+      }
+
       try {
         console.log('🔧 PWA: Registering Service Worker...');
 
@@ -75,6 +84,22 @@ export class PWAManager {
     } else {
       console.log('❌ PWA: Service Workers not supported');
       return false;
+    }
+  }
+
+  async unregisterAllServiceWorkers(): Promise<void> {
+    if ('serviceWorker' in navigator) {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        console.log(`🧹 PWA: Found ${registrations.length} service workers to unregister`);
+
+        for (const registration of registrations) {
+          await registration.unregister();
+          console.log('✅ PWA: Unregistered service worker:', registration.scope);
+        }
+      } catch (error) {
+        console.error('❌ PWA: Failed to unregister service workers:', error);
+      }
     }
   }
 

@@ -32,17 +32,17 @@ export async function GET(
 
     // Get players
     const playersResult = await db.execute({
-      sql: `SELECT p.*, sp.position 
-             FROM players p 
-             JOIN session_player sp ON p.id = sp.player_id 
-             WHERE sp.session_id = ? 
+      sql: `SELECT p.*, sp.position
+             FROM players p
+             JOIN session_player sp ON p.id = sp.player_id
+             WHERE sp.session_id = ?
              ORDER BY sp.position`,
       args: [sessionId]
     });
 
     const players = playersResult.rows.map(row => ({
       id: row.id,
-      player_name: row.player_name,
+      player_name: row.name,
       position: row.position,
       team_id: row.team_id,
       is_ready: row.is_ready,
