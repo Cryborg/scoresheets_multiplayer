@@ -9,6 +9,7 @@ import { useVisibilityOptimization } from './useVisibilityOptimization';
 import { useConnectionManager } from './useConnectionManager';
 import { useErrorHandler } from '@/contexts/ErrorContext';
 import { getGuestId } from '@/lib/guestAuth';
+import { isOfflineSessionId } from './useOfflineSession';
 import type { GameSessionWithRounds, GameSessionWithCategories } from '@/types/multiplayer';
 
 interface SessionEvent {
@@ -84,6 +85,11 @@ export function useSimpleRealtimeSession<T extends GameSessionWithRounds | GameS
   // Fonction de fetch des données
   const fetchSessionData = useCallback(async () => {
     if (!sessionId || sessionId === 'new') return;
+
+    // Ne pas faire d'appels API pour les sessions offline
+    if (isOfflineSessionId(sessionId)) {
+      return;
+    }
 
     try {
       const controller = new AbortController();
@@ -165,7 +171,8 @@ export function useSimpleRealtimeSession<T extends GameSessionWithRounds | GameS
   // Service de polling avec gestion des erreurs
   const pollingEnabled = enabled &&
                          !visibility.state.shouldPause &&
-                         connection.shouldRetry();
+                         connection.shouldRetry() &&
+                         !isOfflineSessionId(sessionId);
 
   const polling = usePollingService({
     interval: getAdaptiveInterval(),
@@ -176,7 +183,7 @@ export function useSimpleRealtimeSession<T extends GameSessionWithRounds | GameS
 
   // Effet pour forcer le premier fetch même si polling désactivé
   useEffect(() => {
-    if (sessionId && sessionId !== 'new' && !session) {
+    if (sessionId && sessionId !== 'new' && !session && !isOfflineSessionId(sessionId)) {
       fetchSessionData();
     }
   }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps

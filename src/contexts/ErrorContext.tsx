@@ -67,7 +67,7 @@ export function ErrorProvider({ children }: { children: React.ReactNode }) {
         notify.success(message);
         break;
       case 'info':
-        notify.info(message);
+        notify.success(message);
         break;
     }
 
