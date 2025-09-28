@@ -7,7 +7,6 @@ import { ArrowLeft } from 'lucide-react';
 import { useGameSessionCreator, Game } from '@/hooks/useGameSessionCreator';
 import { useLastPlayedGame } from '@/hooks/useLastPlayedGame';
 import { useOfflineGameSessions } from '@/hooks/useOfflineGameSessions';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import GameSessionForm from '@/components/GameSessionForm';
 import { authenticatedFetch } from '@/lib/authClient';
 import { getGuestId } from '@/lib/guestAuth';
@@ -34,7 +33,7 @@ export default function NewGamePage() {
 
   const { setLastPlayedGame } = useLastPlayedGame();
   const { createOfflineSession } = useOfflineGameSessions();
-  const { isOnline } = useNetworkStatus();
+  // Note: Removed isOnline dependency as we now use robust try-online-first approach
 
   const fetchGame = useCallback(async () => {
     try {
@@ -86,37 +85,45 @@ export default function NewGamePage() {
     e.preventDefault();
     if (!game) return;
 
-    if (isOnline) {
-      // Mode online : utiliser l'API normale
-      const result = await createSession(`/api/games/${slug}/sessions`);
+    // Stratégie robuste : toujours essayer online en premier, puis fallback offline
+    let result = null;
+
+    // Essayer d'abord la création online, même si la détection réseau dit offline
+    try {
+      result = await createSession(`/api/games/${slug}/sessions`);
 
       if (result) {
-        // Redirect directly to the game session (salon/lobby)
+        // Succès online - redirection vers la session
         router.push(`/games/${slug}/${result.sessionId}`);
+        return;
       }
-    } else {
-      // Mode offline : créer une session locale
-      try {
-        const players = state.players.map(p => p.name).filter(p => p.trim());
+    } catch (onlineError) {
+      console.log('Création online échouée, tentative offline...', onlineError);
+    }
 
-        if (players.length < 2) {
-          console.error('Au moins 2 joueurs sont requis');
-          return;
-        }
+    // Si la création online a échoué, créer une session offline
+    try {
+      const players = state.players.map(p => p.name).filter(p => p.trim());
 
-        const sessionId = await createOfflineSession({
-          session_name: state.sessionName.trim() || `Partie de ${game.name}`,
-          game_slug: game.slug,
-          game_name: game.name,
-          players: players,
-          team_based: game.team_based
-        });
-
-        // Redirection vers la session offline
-        router.push(`/games/${slug}/${sessionId}`);
-      } catch (error) {
-        console.error('Erreur lors de la création de la session offline:', error);
+      if (players.length < 2) {
+        console.error('Au moins 2 joueurs sont requis');
+        return;
       }
+
+      const sessionId = await createOfflineSession({
+        session_name: state.sessionName.trim() || `Partie de ${game.name}`,
+        game_slug: game.slug,
+        game_name: game.name,
+        players: players,
+        team_based: game.team_based
+      });
+
+      // Redirection vers la session offline
+      router.push(`/games/${slug}/${sessionId}`);
+    } catch (offlineError) {
+      console.error('Erreur lors de la création de la session offline:', offlineError);
+      // Si même la création offline échoue, on affiche une erreur
+      alert('Impossible de créer la partie. Vérifiez vos données et réessayez.');
     }
   };
 
