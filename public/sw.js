@@ -1,9 +1,9 @@
 // Service Worker pour Oh Sheet! PWA
 // Stratégie: Cache First pour assets, Network First pour API, Offline First pour données
 
-const CACHE_NAME = 'oh-sheet-v1';
-const OFFLINE_CACHE = 'oh-sheet-offline-v1';
-const API_CACHE = 'oh-sheet-api-v1';
+const CACHE_NAME = 'oh-sheet-v2';
+const OFFLINE_CACHE = 'oh-sheet-offline-v2';
+const API_CACHE = 'oh-sheet-api-v2';
 
 // Ressources à mettre en cache immédiatement
 const STATIC_ASSETS = [
@@ -12,7 +12,17 @@ const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
+  '/auth/login',
   // Next.js génère des noms de chunks dynamiques, on les gèrera différemment
+];
+
+// URLs à pré-cacher lors de la première visite
+const PRECACHE_URLS = [
+  '/games/yams/new',
+  '/games/mille-bornes/new',
+  '/games/belote/new',
+  '/games/tarot/new',
+  '/games/jeu-libre/configure'
 ];
 
 // Stratégies de cache par pattern d'URL
@@ -20,8 +30,11 @@ const CACHE_STRATEGIES = {
   // Assets statiques: Cache First
   static: /\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2)$/,
 
-  // Pages: Network First avec fallback
+  // Pages: Network First avec fallback, mais pas pour les sessions offline
   pages: /^\/(?:dashboard|games|admin|auth)/,
+
+  // Sessions offline: Laisser passer à l'app React (pas d'interception SW)
+  offlineSession: /^\/games\/[^\/]+\/offline_/,
 
   // API: Network First avec cache court
   api: /^\/api\//,
@@ -72,6 +85,11 @@ self.addEventListener('activate', event => {
       // Prend le contrôle de tous les clients
       await self.clients.claim();
       console.log('✅ Service Worker: Activated and controlling clients');
+
+      // Pré-cache des URLs importantes en arrière-plan
+      setTimeout(() => {
+        preacheImportantUrls();
+      }, 5000); // Attendre 5s pour ne pas surcharger au démarrage
     })()
   );
 });
@@ -108,6 +126,12 @@ self.addEventListener('fetch', event => {
     // Assets statiques: Cache First
     event.respondWith(handleStaticRequest(request));
     return;
+  }
+
+  if (CACHE_STRATEGIES.offlineSession.test(url.pathname)) {
+    // Sessions offline: Laisser passer à l'app React, pas d'interception SW
+    console.log('SW: Skipping offline session - let React handle it:', url.pathname);
+    return; // Ne pas intercepter, laisser l'app gérer
   }
 
   if (CACHE_STRATEGIES.pages.test(url.pathname) || url.pathname === '/') {
@@ -311,7 +335,7 @@ function createOfflinePage(request) {
     <p>Vérifiez votre connexion internet et réessayez.</p>
     <button onclick="window.location.reload()">Réessayer</button>
     <br><br>
-    <button onclick="window.location.href='/'">Retour à l'accueil</button>
+    <button onclick="window.location.href='/dashboard'">Retour au dashboard</button>
   </div>
 </body>
 </html>`;
@@ -343,4 +367,25 @@ async function cacheUrls(urls) {
   } catch (error) {
     console.error('❌ Error caching additional URLs:', error);
   }
+}
+
+// Pré-cache des URLs importantes en arrière-plan
+async function preacheImportantUrls() {
+  console.log('🔄 Service Worker: Pre-caching important URLs...');
+  const cache = await caches.open(CACHE_NAME);
+
+  for (const url of PRECACHE_URLS) {
+    try {
+      // Tenter de fetcher et cacher chaque URL
+      const response = await fetch(url);
+      if (response.ok) {
+        await cache.put(url, response);
+        console.log(`✅ Pre-cached: ${url}`);
+      }
+    } catch (error) {
+      console.log(`⚠️ Failed to pre-cache: ${url}`, error);
+    }
+  }
+
+  console.log('✅ Service Worker: Pre-caching completed');
 }
