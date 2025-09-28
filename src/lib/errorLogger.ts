@@ -2,8 +2,6 @@
  * Logger d'erreurs simple pour les hooks et fonctions qui ne peuvent pas utiliser React Context
  */
 
-import { notify } from '@/lib/toast';
-
 export type ErrorLevel = 'error' | 'warning' | 'info';
 
 interface LogError {
@@ -33,21 +31,26 @@ export function logError({
     logMethod(`[${context}] ${message}`, details || '');
   }
 
-  // Toast notification si demandé
-  if (showToast) {
-    switch (level) {
-      case 'error':
-        notify.error(message);
-        break;
-      case 'warning':
-        // Utiliser success avec un emoji warning car notify.warning n'existe pas
-        notify.success(`⚠️ ${message}`);
-        break;
-      case 'info':
-        // Utiliser success pour les infos car notify.info n'existe pas
-        notify.success(message);
-        break;
-    }
+  // Toast notification si demandé ET si on est côté client
+  if (showToast && typeof window !== 'undefined') {
+    // Import dynamique pour éviter les erreurs SSR
+    import('@/lib/toast').then(({ notify }) => {
+      switch (level) {
+        case 'error':
+          notify.error(message);
+          break;
+        case 'warning':
+          // Utiliser success avec un emoji warning car notify.warning n'existe pas
+          notify.success(`⚠️ ${message}`);
+          break;
+        case 'info':
+          // Utiliser success pour les infos car notify.info n'existe pas
+          notify.success(message);
+          break;
+      }
+    }).catch(() => {
+      // Si l'import échoue, on ignore silencieusement
+    });
   }
 
   // TODO: Ici on pourrait ajouter l'envoi vers un service de logging externe
