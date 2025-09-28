@@ -1,35 +1,20 @@
 // Service Worker pour Oh Sheet! PWA
 // Stratégie: Cache First pour assets, Network First pour API, Offline First pour données
 
-const CACHE_NAME = 'oh-sheet-v3';
-const OFFLINE_CACHE = 'oh-sheet-offline-v3';
-const API_CACHE = 'oh-sheet-api-v3';
+const CACHE_NAME = 'oh-sheet-v4';
+const OFFLINE_CACHE = 'oh-sheet-offline-v4';
+const API_CACHE = 'oh-sheet-api-v4';
 
-// Ressources à mettre en cache immédiatement
+// Ressources statiques uniquement - PAS de pages Next.js
 const STATIC_ASSETS = [
-  '/',
-  '/dashboard',
-  '/profile',
-  '/sessions',
-  '/sessions/find',
-  '/auth/login',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
   // Next.js génère des noms de chunks dynamiques, on les gèrera différemment
 ];
 
-// URLs à pré-cacher lors de la première visite
-const PRECACHE_URLS = [
-  '/games/yams/new',
-  '/games/mille-bornes/new',
-  '/games/belote/new',
-  '/games/tarot/new',
-  '/games/rami/new',
-  '/games/bataille/new',
-  '/games/pierre-papier-ciseaux/new',
-  '/games/jeu-libre/configure'
-];
+// Pas de pré-cache de pages Next.js - laissons l'app gérer
+const PRECACHE_URLS = [];
 
 // Stratégies de cache par pattern d'URL
 const CACHE_STRATEGIES = {
@@ -140,10 +125,11 @@ self.addEventListener('fetch', event => {
     return; // Ne pas intercepter, laisser l'app gérer
   }
 
-  if (CACHE_STRATEGIES.pages.test(url.pathname) || url.pathname === '/') {
-    // Pages: Network First avec fallback offline
-    event.respondWith(handlePageRequest(request));
-    return;
+  // Pour TOUTES les pages Next.js: laisser passer sans interception
+  // Le problème était ici: on interceptait les pages React ce qui cassait l'app
+  if (url.pathname.startsWith('/') && !url.pathname.includes('.')) {
+    console.log('SW: Skipping page request - let Next.js handle it:', url.pathname);
+    return; // Laisser Next.js gérer toutes les routes
   }
 
   // Par défaut: Network First
